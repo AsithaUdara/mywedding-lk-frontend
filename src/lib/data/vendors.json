@@ -1,0 +1,122 @@
+[
+  {
+    "id": 1,
+    "name": "Ethereal Frames",
+    "category": "Photographers",
+    "location": "Colombo",
+    "images": [
+      "https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1519225421980-715cb02852ed?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.9,
+    "reviews": 152,
+    "price": 75000,
+    "tags": ["Luxury", "Candid", "5-star"],
+    "description": "Capturing timeless moments with an artistic touch. Specializing in candid and destination wedding photography."
+  },
+  {
+    "id": 2,
+    "name": "Galle Face Hotel",
+    "category": "Venues",
+    "location": "Colombo",
+    "images": [
+      "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 5.0,
+    "reviews": 320,
+    "price": 1200000,
+    "tags": ["Luxury", "Beachfront", "5-star"],
+    "description": "Iconic colonial-style hotel offering breathtaking ocean views and unparalleled luxury for your special day."
+  },
+  {
+    "id": 3,
+    "name": "Heritance Kandalama",
+    "category": "Venues",
+    "location": "Dambulla",
+    "images": [
+      "https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.8,
+    "reviews": 280,
+    "price": 950000,
+    "tags": ["Nature", "Eco-Friendly", "5-star"],
+    "description": "A stunning eco-hotel seamlessly integrated with nature, offering a unique and serene wedding experience."
+  },
+  {
+    "id": 4,
+    "name": "Cinnamon Grand Catering",
+    "category": "Caterers",
+    "location": "Colombo",
+    "images": [
+      "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1621996346565-e30646e2090e?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.7,
+    "reviews": 180,
+    "price": 250000,
+    "tags": ["International Cuisine", "5-star"],
+    "description": "Exquisite culinary creations to delight your guests, from traditional Sri Lankan to international fare."
+  },
+  {
+    "id": 5,
+    "name": "The Elysian Harmony",
+    "category": "Music Bands",
+    "location": "Kandy",
+    "images": [
+      "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.9,
+    "reviews": 95,
+    "price": 150000,
+    "tags": ["Live Music", "Jazz", "Pop"],
+    "description": "A versatile live band to set the perfect mood, from soulful ceremony music to upbeat reception entertainment."
+  },
+  {
+    "id": 6,
+    "name": "Lassana Flora",
+    "category": "Florists",
+    "location": "Colombo",
+    "images": [
+      "https://images.unsplash.com/photo-1579624354228-b5b0373e35b7?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1526047732273-01317e753c12?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.8,
+    "reviews": 210,
+    "price": 120000,
+    "tags": ["Modern", "Traditional"],
+    "description": "Award-winning floral arrangements to transform your venue into a breathtaking paradise."
+  },
+  {
+    "id": 7,
+    "name": "Chapter One Films",
+    "category": "Videographers",
+    "location": "Galle",
+    "images": [
+      "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 5.0,
+    "reviews": 130,
+    "price": 90000,
+    "tags": ["Cinematic", "Drone", "5-star"],
+    "description": "Creating cinematic wedding films that tell your unique love story with emotion and artistry."
+  },
+  {
+    "id": 8,
+    "name": "Jetwing Lighthouse",
+    "category": "Venues",
+    "location": "Galle",
+    "images": [
+      "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.9,
+    "reviews": 190,
+    "price": 850000,
+    "tags": ["Luxury", "Beachfront", "5-star"],
+    "description": "A Geoffrey Bawa masterpiece, offering a dramatic and unforgettable setting for a seaside wedding."
+  }
+]

@@ -1,0 +1,363 @@
+/* src/app/globals.css */
+
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #6a040f;        /* Kandyan Royal Deep Maroon */
+  --color-accent: #daa520;         /* Royal Gold */
+  --color-cream: #fffaf0;          /* Ivory Cream */
+  --color-charcoal: #343a40;       /* Text */
+  --color-accent-light: #f4e4bc;   /* Light Royal Gold */
+  --color-gold-bright: #daa520;    /* Royal Gold Bright */
+  --color-gold-dark: #b8860b;      /* Royal Gold Dark */
+  --color-royal-burgundy: #8b0000; /* Deep Royal Red */
+  --color-royal-cream: #faf0e6;    /* Royal Cream */
+}
+
+/* === MAGICAL GOLD GRADIENT === */
+.magical-text-gold {
+  background: linear-gradient(
+    45deg,
+    #ffd700,     /* Bright Gold */
+    #ffed4e,     /* Light Gold */
+    #daa520,     /* Classic Gold */
+    #b8860b,     /* Dark Gold */
+    #ffd700,     /* Back to Bright Gold */
+    #ffffff      /* White highlight */
+  );
+  background-size: 400% 400%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: goldShimmer 3s ease-in-out infinite;
+}
+
+@keyframes goldShimmer {
+  0%, 100% { 
+    background-position: 0% 50%; 
+    filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.3));
+  }
+  50% { 
+    background-position: 100% 50%; 
+    filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.6));
+  }
+}
+
+/* === LEFT-TO-RIGHT WHITE TO GOLD ANIMATION === */
+.left-to-right-gold-animation {
+  position: relative;
+  color: white;
+  /* Create a mask for the reveal effect */
+  background: linear-gradient(
+    90deg,
+    white 0%,
+    white 50%,
+    #ffd700 50%,
+    #ffed4e 60%,
+    #daa520 70%,
+    #b8860b 80%,
+    #ffd700 90%,
+    #ffffff 100%
+  );
+  background-size: 200% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: leftToRightReveal 4s ease-in-out 0.5s forwards;
+}
+
+@keyframes leftToRightReveal {
+  0% {
+    background-position: 100% 0;
+    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
+  }
+  100% {
+    background-position: 0% 0;
+    filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.4));
+  }
+}
+
+/* === FINAL GRADIENT STATE === */
+.final-gold-gradient {
+  background: linear-gradient(
+    90deg,
+    #ffffff 0%,
+    #ffed4e 20%,
+    #ffd700 40%,
+    #daa520 60%,
+    #b8860b 80%,
+    #ffd700 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.4));
+  animation: subtleGoldShimmer 4s ease-in-out infinite;
+}
+
+@keyframes subtleGoldShimmer {
+  0%, 100% { 
+    filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.4));
+  }
+  50% { 
+    filter: drop-shadow(0 0 25px rgba(255, 215, 0, 0.7));
+  }
+}
+
+/* === NO BACKGROUND - PURE COLOR ANIMATION === */
+.wedding-title-animation {
+  color: white;
+  animation: textColorPaint 4s ease-in-out 0.3s forwards;
+}
+
+@keyframes textColorPaint {
+  0% {
+    color: white;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  }
+  100% {
+    color: #daa520;
+    text-shadow: 0 0 15px rgba(218, 165, 32, 0.4);
+  }
+}
+
+/* === NO BACKGROUND FOR "SIMPLIFIED" === */
+.simplified-enhanced {
+  color: white;
+  animation: simplifiedColorPaint 4s ease-in-out 0.3s forwards;
+}
+
+@keyframes simplifiedColorPaint {
+  0% {
+    color: white;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+  }
+  100% {
+    color: #e6d7a3;
+    text-shadow: 0 0 12px rgba(230, 215, 163, 0.3);
+  }
+}
+
+/* === SUBTITLE ANIMATION === */
+.animate-subtitle-appear {
+  animation: subtitleAppear 1.2s ease-out 2.8s both;
+}
+
+@keyframes subtitleAppear {
+  0% {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* === SEARCH BAR ANIMATION === */
+.animate-search-appear {
+  animation: searchAppear 1s ease-out 4s both;
+}
+
+@keyframes searchAppear {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* === ALWAYS VISIBLE SEARCH BAR === */
+.search-bar-always-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* === MAGICAL PARTICLES BACKGROUND === */
+.magical-particles {
+  background: 
+    radial-gradient(2px 2px at 20px 30px, rgba(255, 215, 0, 0.3), transparent),
+    radial-gradient(2px 2px at 40px 70px, rgba(255, 215, 0, 0.2), transparent),
+    radial-gradient(1px 1px at 90px 40px, rgba(255, 215, 0, 0.4), transparent),
+    radial-gradient(1px 1px at 130px 80px, rgba(255, 215, 0, 0.2), transparent),
+    radial-gradient(2px 2px at 160px 30px, rgba(255, 215, 0, 0.3), transparent);
+  background-repeat: repeat;
+  background-size: 200px 100px;
+  animation: sparkleMove 8s linear infinite;
+}
+
+@keyframes sparkleMove {
+  0% { transform: translateY(0px); }
+  100% { transform: translateY(-100px); }
+}
+
+/* === ELEGANT SEARCH BAR WITH SOPHISTICATED SHINE === */
+.search-bar-enhanced {
+  background: linear-gradient(145deg, #ffffff, #fefefe);
+  border: 2px solid rgba(248, 246, 240, 0.3);
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.search-bar-enhanced::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 250, 240, 0.3) 20%,
+    rgba(248, 246, 240, 0.6) 40%,
+    rgba(255, 255, 255, 0.9) 50%,
+    rgba(248, 246, 240, 0.6) 60%,
+    rgba(255, 250, 240, 0.3) 80%,
+    transparent 100%
+  );
+  animation: elegantShineMove 2.5s ease-in-out 3s forwards;
+  z-index: 1;
+}
+
+@keyframes elegantShineMove {
+  0% {
+    left: -100%;
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.8;
+  }
+  90% {
+    opacity: 0.8;
+  }
+  100% {
+    left: 100%;
+    opacity: 0;
+  }
+}
+
+.search-bar-enhanced:hover {
+  border-color: rgba(240, 230, 210, 0.5);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.search-bar-enhanced input {
+  position: relative;
+  z-index: 2;
+}
+
+/* === ELEGANT SEARCH BUTTON === */
+.sword-button-enhanced {
+  position: relative;
+  background: linear-gradient(145deg, var(--color-primary), #8b0513) !important;
+  transition: all 0.4s ease;
+  overflow: hidden;
+  z-index: 3;
+  box-shadow: 0 4px 20px rgba(106, 4, 15, 0.3);
+}
+
+.sword-button-enhanced::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.2) 40%,
+    rgba(255, 255, 255, 0.6) 50%,
+    rgba(255, 255, 255, 0.2) 60%,
+    transparent 100%
+  );
+  animation: elegantButtonShine 2.5s ease-in-out 3.1s forwards;
+}
+
+@keyframes elegantButtonShine {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+.sword-button-enhanced:hover {
+  background: linear-gradient(145deg, #8b0513, var(--color-primary)) !important;
+  box-shadow: 0 6px 25px rgba(106, 4, 15, 0.4);
+  transform: translateY(-1px);
+}
+
+.sword-button-enhanced:active {
+  animation: elegantPress 0.2s ease-out;
+}
+
+@keyframes elegantPress {
+  0% { transform: scale(1) translateY(-1px); }
+  50% { transform: scale(0.98) translateY(0px); }
+  100% { transform: scale(1) translateY(-1px); }
+}
+
+/* === EXISTING STYLES === */
+body {
+  font-family: var(--font-roboto), sans-serif;
+  background-color: var(--color-cream);
+  color: var(--color-charcoal);        
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-playfair), serif;
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+
+/* Add this to your globals.css for the testimonials scrolling animation */
+
+@keyframes scroll-left {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+/* Add this to your globals.css for the testimonials scrolling animation */
+
+@keyframes scroll-left {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-scroll-left {
+  /* The animation will run for 40 seconds, be linear, and loop forever */
+  animation: scroll-left 40s linear infinite;
+}
+
+/* Pause animation on hover */
+.hover\:pause:hover {
+  animation-play-state: paused;
+}
+
+/* === SMOOTH SCALE UP HOVER EFFECT FOR AUTH BUTTONS === */
+.smooth-scale-button {
+  transition: transform 0.3s ease-out;
+}
+
+.smooth-scale-button:hover {
+  transform: scale(1.05);
+}
