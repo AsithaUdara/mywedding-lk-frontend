@@ -9,29 +9,34 @@ import allVendorsData from '@/lib/data/vendors.json';
 import { Filter } from 'lucide-react';
 import FilterModal from '@/features/vendor-discovery/components/FilterModal';
 
+// Interface for our Vendor data
 interface Vendor {
   id: number; name: string; category: string; location: string; images: string[];
   rating: number; reviews: number; price: number; tags: string[]; description: string;
 }
 
-const VENDORS_PER_LOAD = 4;
+const VENDORS_PER_LOAD = 6; // Load 6 at a time to fill rows of 3
 
 const SearchResultsPage = () => {
   const [isAuthModalOpen, setAuthModalOpen] = useState(false);
   const [isFilterModalOpen, setFilterModalOpen] = useState(false);
   
+  // Filtering state
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedRatings, setSelectedRatings] = useState<number[]>([]);
   const [priceRange, setPriceRange] = useState<number>(1500000);
 
+  // Pagination state
   const [displayedVendors, setDisplayedVendors] = useState<Vendor[]>([]);
   const [hasMore, setHasMore] = useState(true);
   
   const allCategories = useMemo(() => Array.from(new Set(allVendorsData.map(v => v.category))), []);
 
+  // Filter handlers
   const handleCategoryChange = (category: string) => setSelectedCategories(prev => prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]);
   const handleRatingChange = (rating: number) => setSelectedRatings(prev => prev.includes(rating) ? prev.filter(r => r !== rating) : [...prev, rating]);
 
+  // Memoized filtering logic
   const filteredVendors = useMemo(() => {
     return allVendorsData.filter(vendor => {
       const categoryMatch = selectedCategories.length === 0 || selectedCategories.includes(vendor.category);
@@ -41,17 +46,22 @@ const SearchResultsPage = () => {
     });
   }, [selectedCategories, selectedRatings, priceRange]);
 
+  // Effect to handle loading vendors when filters change
   useEffect(() => {
     setDisplayedVendors(filteredVendors.slice(0, VENDORS_PER_LOAD));
     setHasMore(filteredVendors.length > VENDORS_PER_LOAD);
   }, [filteredVendors]);
 
+  // Function to load more vendors
   const loadMoreVendors = () => {
     const currentLength = displayedVendors.length;
     const nextVendors = filteredVendors.slice(currentLength, currentLength + VENDORS_PER_LOAD);
     setDisplayedVendors(prev => [...prev, ...nextVendors]);
     setHasMore(filteredVendors.length > currentLength + VENDORS_PER_LOAD);
   };
+
+  // URL for the map on this page
+  const mapUrl = `https://www.google.com/maps/embed/v1/search?key=AIzaSyAZXfMfsfRyCaPwkugdAlXNobgPHIQsH30&q=wedding+vendors+in+Colombo+Sri+Lanka`;
 
   return (
     <>
@@ -69,11 +79,12 @@ const SearchResultsPage = () => {
 
           <div className="flex">
             <div className="w-full md:w-3/5 lg:w-7/12 md:pr-8">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10">
                 {displayedVendors.map(vendor => (
                   <VendorCard key={vendor.id} vendor={vendor} />
                 ))}
               </div>
+              
               {hasMore && (
                 <div className="text-center py-10 col-span-full">
                   <button onClick={loadMoreVendors} className="px-8 py-3 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-opacity-90 transition-all duration-300" style={{ backgroundColor: 'var(--color-primary)' }}>
@@ -83,8 +94,16 @@ const SearchResultsPage = () => {
               )}
             </div>
             <div className="hidden md:block w-2/5 lg:w-5/12">
-              <div className="sticky top-28 h-[80vh] bg-gray-200 rounded-xl flex items-center justify-center">
-                <p className="text-gray-500">Map Area</p>
+              <div className="sticky top-28 h-[80vh] bg-gray-200 rounded-xl overflow-hidden">
+                <iframe
+                  src={mapUrl}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen={false}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                ></iframe>
               </div>
             </div>
           </div>

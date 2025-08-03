@@ -5,8 +5,12 @@
     "category": "Photographers",
     "location": "Colombo",
     "images": [
+      "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?auto=format&fit=crop&w=800&q=80",
       "https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1519225421980-715cb02852ed?auto=format&fit=crop&w=800&q=80"
+      "https://images.unsplash.com/photo-1519225421980-715cb02852ed?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=800&q=80"
     ],
     "rating": 4.9,
     "reviews": 152,
@@ -21,7 +25,11 @@
     "location": "Colombo",
     "images": [
       "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=800&q=80"
+      "https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=800&q=80"
     ],
     "rating": 5.0,
     "reviews": 320,
@@ -36,7 +44,11 @@
     "location": "Dambulla",
     "images": [
       "https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=800&q=80"
+      "https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1520637836862-4d197d17c52a?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=800&q=80"
     ],
     "rating": 4.8,
     "reviews": 280,
@@ -51,7 +63,11 @@
     "location": "Colombo",
     "images": [
       "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1621996346565-e30646e2090e?auto=format&fit=crop&w=800&q=80"
+      "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=800&q=80"
     ],
     "rating": 4.7,
     "reviews": 180,
@@ -66,7 +82,12 @@
     "location": "Kandy",
     "images": [
       "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=800&q=80"
+      "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80"
+      
     ],
     "rating": 4.9,
     "reviews": 95,
@@ -80,8 +101,12 @@
     "category": "Florists",
     "location": "Colombo",
     "images": [
-      "https://images.unsplash.com/photo-1579624354228-b5b0373e35b7?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1526047732273-01317e753c12?auto=format&fit=crop&w=800&q=80"
+      "https://images.unsplash.com/photo-1525310072745-f49212b5ac6d?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1526047732273-01317e753c12?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1490750967868-88aa4486c946?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1525310072745-f49212b5ac6d?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1563241527-3004b7be0ffd?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1518895949257-7621c3c786d7?auto=format&fit=crop&w=800&q=80"
     ],
     "rating": 4.8,
     "reviews": 210,
@@ -96,7 +121,11 @@
     "location": "Galle",
     "images": [
       "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=800&q=80"
+      "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1478720568477-b0ac8c65b46a?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1489599229345-5b0d1d2b6a62?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1500462918059-b1a0cb512f1d?auto=format&fit=crop&w=800&q=80"
     ],
     "rating": 5.0,
     "reviews": 130,
@@ -111,12 +140,814 @@
     "location": "Galle",
     "images": [
       "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=800&q=80"
+      "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1520637736862-4d197d17c52a?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=800&q=80"
     ],
     "rating": 4.9,
     "reviews": 190,
     "price": 850000,
     "tags": ["Luxury", "Beachfront", "5-star"],
     "description": "A Geoffrey Bawa masterpiece, offering a dramatic and unforgettable setting for a seaside wedding."
+  },
+  {
+    "id": 9,
+    "name": "Glamour Makeup Studio",
+    "category": "Makeup Artists",
+    "location": "Colombo",
+    "images": [
+      "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1583001931096-959e9a1a6223?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1526045431048-f857369baa09?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1512207946773-9bee4ee61d9d?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.9,
+    "reviews": 87,
+    "price": 45000,
+    "tags": ["Bridal", "Professional", "HD"],
+    "description": "Professional bridal makeup artist specializing in flawless, long-lasting looks for your special day."
+  },
+  {
+    "id": 10,
+    "name": "The Bentota Beach Resort",
+    "category": "Venues",
+    "location": "Bentota",
+    "images": [
+      "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1567767292278-a4f21aa2d36e?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.7,
+    "reviews": 165,
+    "price": 780000,
+    "tags": ["Beachfront", "Resort", "Tropical"],
+    "description": "Beautiful beachfront resort perfect for intimate beach weddings and tropical celebrations."
+  },
+  {
+    "id": 11,
+    "name": "Royal Strings Quartet",
+    "category": "Music Bands",
+    "location": "Colombo",
+    "images": [
+      "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1465821185615-20b3c2fbf41b?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1511192336575-5a79af67a629?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.8,
+    "reviews": 76,
+    "price": 120000,
+    "tags": ["Classical", "Elegant", "Strings"],
+    "description": "Elegant string quartet providing sophisticated classical music for ceremonies and receptions."
+  },
+  {
+    "id": 12,
+    "name": "Divine Delights Catering",
+    "category": "Caterers",
+    "location": "Kandy",
+    "images": [
+      "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.6,
+    "reviews": 143,
+    "price": 185000,
+    "tags": ["Traditional", "Sri Lankan", "Spicy"],
+    "description": "Authentic Sri Lankan cuisine with a modern twist, specializing in traditional Kandyan flavors."
+  },
+  {
+    "id": 13,
+    "name": "Moments Photography",
+    "category": "Photographers",
+    "location": "Negombo",
+    "images": [
+      "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1519225421980-715cb02852ed?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.5,
+    "reviews": 98,
+    "price": 65000,
+    "tags": ["Beach", "Sunset", "Natural"],
+    "description": "Beach wedding specialists capturing natural moments against stunning coastal backdrops."
+  },
+  {
+    "id": 14,
+    "name": "Elegant Decorations",
+    "category": "Decorators",
+    "location": "Colombo",
+    "images": [
+      "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1597298881806-34e0d4a7b3b8?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1478146896981-b80fe463b330?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1528605248644-14dd04022da1?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.7,
+    "reviews": 156,
+    "price": 200000,
+    "tags": ["Luxury", "Elegant", "Creative"],
+    "description": "Creating breathtaking wedding decorations and ambiance with attention to every detail."
+  },
+  {
+    "id": 15,
+    "name": "DJ Sampath",
+    "category": "DJs",
+    "location": "Colombo",
+    "images": [
+      "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.8,
+    "reviews": 234,
+    "price": 80000,
+    "tags": ["Modern", "Party", "Sound"],
+    "description": "Professional DJ with extensive music library and top-quality sound equipment for unforgettable celebrations."
+  },
+  {
+    "id": 16,
+    "name": "The Grand Oriental Hotel",
+    "category": "Venues",
+    "location": "Colombo",
+    "images": [
+      "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.6,
+    "reviews": 289,
+    "price": 950000,
+    "tags": ["Historic", "Colonial", "Elegant"],
+    "description": "Historic colonial hotel in the heart of Colombo, offering timeless elegance for traditional weddings."
+  },
+  {
+    "id": 17,
+    "name": "Tropicana Flowers",
+    "category": "Florists",
+    "location": "Kandy",
+    "images": [
+      "https://images.unsplash.com/photo-1490750967868-88aa4486c946?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1579624354228-b5b0373e35b7?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1518895949257-7621c3c786d7?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1563241527-3004b7be0ffd?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1525310072745-f49212b5ac6d?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1526047732273-01317e753c12?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.4,
+    "reviews": 128,
+    "price": 95000,
+    "tags": ["Tropical", "Exotic", "Colorful"],
+    "description": "Specialized in tropical and exotic floral arrangements using local Sri Lankan flowers and foliage."
+  },
+  {
+    "id": 18,
+    "name": "Ceylon Wedding Films",
+    "category": "Videographers",
+    "location": "Kandy",
+    "images": [
+      "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1500462918059-b1a0cb512f1d?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1489599229345-5b0d1d2b6a62?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1478720568477-b0ac8c65b46a?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.7,
+    "reviews": 112,
+    "price": 110000,
+    "tags": ["Traditional", "Cultural", "HD"],
+    "description": "Capturing the essence of Sri Lankan wedding traditions with modern cinematography techniques."
+  },
+  {
+    "id": 19,
+    "name": "Perfect Bridal Makeup",
+    "category": "Makeup Artists",
+    "location": "Galle",
+    "images": [
+      "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1512207946773-9bee4ee61d9d?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1526045431048-f857369baa09?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1583001931096-959e9a1a6223?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.9,
+    "reviews": 67,
+    "price": 40000,
+    "tags": ["Natural", "Elegant", "Waterproof"],
+    "description": "Specializing in natural, elegant bridal looks that photograph beautifully and last all day."
+  },
+  {
+    "id": 20,
+    "name": "Spice Garden Catering",
+    "category": "Caterers",
+    "location": "Matale",
+    "images": [
+      "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1547573854-74d2a71d0826?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.3,
+    "reviews": 89,
+    "price": 140000,
+    "tags": ["Organic", "Spices", "Authentic"],
+    "description": "Farm-to-table catering using fresh organic spices and ingredients from local Matale gardens."
+  },
+  {
+    "id": 21,
+    "name": "Nuwara Eliya Hill Club",
+    "category": "Venues",
+    "location": "Nuwara Eliya",
+    "images": [
+      "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.8,
+    "reviews": 156,
+    "price": 650000,
+    "tags": ["Mountain", "Colonial", "Cool Climate"],
+    "description": "Historic hill country club offering a cool mountain climate and stunning views for your wedding."
+  },
+  {
+    "id": 22,
+    "name": "Flash & Focus Photography",
+    "category": "Photographers",
+    "location": "Matara",
+    "images": [
+      "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1519225421980-715cb02852ed?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.6,
+    "reviews": 124,
+    "price": 55000,
+    "tags": ["Creative", "Artistic", "Budget-Friendly"],
+    "description": "Creative and artistic wedding photography with a focus on storytelling and emotion."
+  },
+  {
+    "id": 23,
+    "name": "Rhythm & Soul Band",
+    "category": "Music Bands",
+    "location": "Galle",
+    "images": [
+      "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.7,
+    "reviews": 98,
+    "price": 175000,
+    "tags": ["Rock", "Pop", "Covers"],
+    "description": "Energetic live band specializing in popular covers and original music for dancing celebrations."
+  },
+  {
+    "id": 24,
+    "name": "Kandyan Dance Troupe",
+    "category": "Entertainment",
+    "location": "Kandy",
+    "images": [
+      "https://images.unsplash.com/photo-1465821185615-20b3c2fbf41b?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1465821185615-20b3c2fbf41b?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.9,
+    "reviews": 145,
+    "price": 200000,
+    "tags": ["Traditional", "Cultural", "Authentic"],
+    "description": "Authentic Kandyan dance performances to celebrate Sri Lankan heritage and culture at your wedding."
+  },
+  {
+    "id": 25,
+    "name": "Bella Vista Decorations",
+    "category": "Decorators",
+    "location": "Negombo",
+    "images": [
+      "https://images.unsplash.com/photo-1478146896981-b80fe463b330?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1597298881806-34e0d4a7b3b8?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1528605248644-14dd04022da1?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.5,
+    "reviews": 78,
+    "price": 160000,
+    "tags": ["Beach", "Tropical", "Romantic"],
+    "description": "Specializing in beach and tropical wedding decorations with natural elements and romantic lighting."
+  },
+  {
+    "id": 26,
+    "name": "Royal Feast Catering",
+    "category": "Caterers",
+    "location": "Anuradhapura",
+    "images": [
+      "https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.4,
+    "reviews": 67,
+    "price": 120000,
+    "tags": ["Traditional", "Royal", "Ancient"],
+    "description": "Traditional royal-style feasts inspired by ancient Sri Lankan cuisine and presentation."
+  },
+  {
+    "id": 27,
+    "name": "Studio Glamour",
+    "category": "Makeup Artists",
+    "location": "Kandy",
+    "images": [
+      "https://images.unsplash.com/photo-1583001931096-959e9a1a6223?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1526045431048-f857369baa09?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1512207946773-9bee4ee61d9d?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.6,
+    "reviews": 93,
+    "price": 50000,
+    "tags": ["Glamorous", "Bold", "Modern"],
+    "description": "Bold and glamorous makeup styles for brides who want to make a statement on their special day."
+  },
+  {
+    "id": 28,
+    "name": "Sigiriya Village Hotel",
+    "category": "Venues",
+    "location": "Sigiriya",
+    "images": [
+      "https://images.unsplash.com/photo-1567767292278-a4f21aa2d36e?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.7,
+    "reviews": 134,
+    "price": 720000,
+    "tags": ["Heritage", "Village", "Cultural"],
+    "description": "Traditional village-style hotel offering authentic Sri Lankan hospitality with views of Sigiriya Rock."
+  },
+  {
+    "id": 29,
+    "name": "Paradise Films",
+    "category": "Videographers",
+    "location": "Bentota",
+    "images": [
+      "https://images.unsplash.com/photo-1500462918059-b1a0cb512f1d?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1489599229345-5b0d1d2b6a62?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1478720568477-b0ac8c65b46a?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.5,
+    "reviews": 89,
+    "price": 85000,
+    "tags": ["Beach", "Sunset", "Romantic"],
+    "description": "Romantic beach wedding cinematography specializing in sunset ceremonies and coastal venues."
+  },
+  {
+    "id": 30,
+    "name": "Garden Blooms",
+    "category": "Florists",
+    "location": "Nuwara Eliya",
+    "images": [
+      "https://images.unsplash.com/photo-1518895949257-7621c3c786d7?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1563241527-3004b7be0ffd?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1525310072745-f49212b5ac6d?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1490750967868-88aa4486c946?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1526047732273-01317e753c12?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1579624354228-b5b0373e35b7?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.8,
+    "reviews": 167,
+    "price": 140000,
+    "tags": ["English", "Garden", "Seasonal"],
+    "description": "English garden-style arrangements using seasonal flowers from the cool hill country climate."
+  },
+  {
+    "id": 31,
+    "name": "DJ Pradeep",
+    "category": "DJs",
+    "location": "Kandy",
+    "images": [
+      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1571115764595-644a1f56a55c?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.4,
+    "reviews": 156,
+    "price": 60000,
+    "tags": ["Traditional", "Modern", "Mixing"],
+    "description": "Versatile DJ blending traditional Sri Lankan music with modern party hits for all generations."
+  },
+  {
+    "id": 32,
+    "name": "The Tea Factory Hotel",
+    "category": "Venues",
+    "location": "Nuwara Eliya",
+    "images": [
+      "https://images.unsplash.com/photo-1567767292278-a4f21aa2d36e?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1567767292278-a4f21aa2d36e?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.9,
+    "reviews": 198,
+    "price": 890000,
+    "tags": ["Unique", "Tea Estate", "Mountain"],
+    "description": "Unique converted tea factory offering spectacular mountain views and cool climate for hill country weddings."
+  },
+  {
+    "id": 33,
+    "name": "Capture Moments",
+    "category": "Photographers",
+    "location": "Ella",
+    "images": [
+      "https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.7,
+    "reviews": 134,
+    "price": 68000,
+    "tags": ["Scenic", "Mountain", "Adventure"],
+    "description": "Adventure and scenic wedding photography in the stunning hill country landscapes of Ella."
+  },
+  {
+    "id": 34,
+    "name": "Golden Spoon Catering",
+    "category": "Caterers",
+    "location": "Galle",
+    "images": [
+      "https://images.unsplash.com/photo-1547573854-74d2a71d0826?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.6,
+    "reviews": 178,
+    "price": 220000,
+    "tags": ["Seafood", "Coastal", "Fresh"],
+    "description": "Fresh seafood and coastal cuisine specialists, perfect for beach weddings and coastal celebrations."
+  },
+  {
+    "id": 35,
+    "name": "Lighthouse Makeup Studio",
+    "category": "Makeup Artists",
+    "location": "Negombo",
+    "images": [
+      "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1526045431048-f857369baa09?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1583001931096-959e9a1a6223?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.5,
+    "reviews": 79,
+    "price": 42000,
+    "tags": ["Beach", "Tropical", "Long-lasting"],
+    "description": "Beach wedding makeup specialist using tropical-weather resistant products for coastal ceremonies."
+  },
+  {
+    "id": 36,
+    "name": "Mount Lavinia Hotel",
+    "category": "Venues",
+    "location": "Mount Lavinia",
+    "images": [
+      "https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1618773928121-c32242e63f39?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.8,
+    "reviews": 267,
+    "price": 1100000,
+    "tags": ["Historic", "Beachfront", "Colonial"],
+    "description": "Historic colonial mansion on the beach, offering vintage charm with modern luxury amenities."
+  },
+  {
+    "id": 37,
+    "name": "Dreamscape Decorations",
+    "category": "Decorators",
+    "location": "Kandy",
+    "images": [
+      "https://images.unsplash.com/photo-1597298881806-34e0d4a7b3b8?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1478146896981-b80fe463b330?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1528605248644-14dd04022da1?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.6,
+    "reviews": 112,
+    "price": 180000,
+    "tags": ["Fantasy", "Dreamy", "Magical"],
+    "description": "Creating magical and dreamy wedding atmospheres with creative lighting and fantasy elements."
+  },
+  {
+    "id": 38,
+    "name": "Acoustic Soul",
+    "category": "Music Bands",
+    "location": "Colombo",
+    "images": [
+      "https://images.unsplash.com/photo-1465821185615-20b3c2fbf41b?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1511192336575-5a79af67a629?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.7,
+    "reviews": 167,
+    "price": 130000,
+    "tags": ["Acoustic", "Intimate", "Soulful"],
+    "description": "Intimate acoustic performances perfect for ceremony music and cocktail hour entertainment."
+  },
+  {
+    "id": 39,
+    "name": "Cinnamon Lodge Habarana",
+    "category": "Venues",
+    "location": "Habarana",
+    "images": [
+      "https://images.unsplash.com/photo-1520637736862-4d197d17c52a?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1567767292278-a4f21aa2d36e?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.6,
+    "reviews": 145,
+    "price": 750000,
+    "tags": ["Wildlife", "Safari", "Adventure"],
+    "description": "Unique safari-style wedding venue surrounded by wildlife, perfect for adventure-loving couples."
+  },
+  {
+    "id": 40,
+    "name": "Memory Lane Photography",
+    "category": "Photographers",
+    "location": "Anuradhapura",
+    "images": [
+      "https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1519225421980-715cb02852ed?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.3,
+    "reviews": 89,
+    "price": 48000,
+    "tags": ["Heritage", "Historical", "Classic"],
+    "description": "Capturing timeless moments against the backdrop of ancient Sri Lankan heritage sites and temples."
+  },
+  {
+    "id": 41,
+    "name": "Island Spice Catering",
+    "category": "Caterers",
+    "location": "Trincomalee",
+    "images": [
+      "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.2,
+    "reviews": 76,
+    "price": 165000,
+    "tags": ["Eastern", "Spicy", "Authentic"],
+    "description": "Authentic Eastern Sri Lankan cuisine with aromatic spices and traditional cooking methods."
+  },
+  {
+    "id": 42,
+    "name": "Tropical Paradise Films",
+    "category": "Videographers",
+    "location": "Unawatuna",
+    "images": [
+      "https://images.unsplash.com/photo-1489599229345-5b0d1d2b6a62?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1478720568477-b0ac8c65b46a?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1500462918059-b1a0cb512f1d?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.8,
+    "reviews": 123,
+    "price": 95000,
+    "tags": ["Tropical", "Beach", "Underwater"],
+    "description": "Tropical beach wedding films with optional underwater photography for unique coastal ceremonies."
+  },
+  {
+    "id": 43,
+    "name": "DJ Kamal",
+    "category": "DJs",
+    "location": "Galle",
+    "images": [
+      "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1571115764595-644a1f56a55c?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.5,
+    "reviews": 134,
+    "price": 70000,
+    "tags": ["Beach Party", "Reggae", "Tropical"],
+    "description": "Beach party specialist with reggae and tropical music perfect for coastal wedding celebrations."
+  },
+  {
+    "id": 44,
+    "name": "Orchid Gardens",
+    "category": "Florists",
+    "location": "Peradeniya",
+    "images": [
+      "https://images.unsplash.com/photo-1525310072745-f49212b5ac6d?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1563241527-3004b7be0ffd?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1518895949257-7621c3c786d7?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1490750967868-88aa4486c946?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1579624354228-b5b0373e35b7?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1526047732273-01317e753c12?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.9,
+    "reviews": 189,
+    "price": 155000,
+    "tags": ["Orchids", "Exotic", "Botanical"],
+    "description": "Exotic orchid arrangements and botanical designs inspired by the famous Peradeniya Botanical Gardens."
+  },
+  {
+    "id": 45,
+    "name": "Radiance Beauty",
+    "category": "Makeup Artists",
+    "location": "Mount Lavinia",
+    "images": [
+      "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1583001931096-959e9a1a6223?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1526045431048-f857369baa09?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1512207946773-9bee4ee61d9d?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.7,
+    "reviews": 156,
+    "price": 55000,
+    "tags": ["Radiant", "Natural Glow", "Photo-ready"],
+    "description": "Creating radiant, natural glow makeup that enhances your beauty and photographs perfectly."
+  },
+  {
+    "id": 46,
+    "name": "The Fortress Resort",
+    "category": "Venues",
+    "location": "Koggala",
+    "images": [
+      "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1602583019135-69e8c4ac4bb7?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1567767292278-a4f21aa2d36e?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 5.0,
+    "reviews": 243,
+    "price": 1350000,
+    "tags": ["Ultra-Luxury", "Spa", "Exclusive"],
+    "description": "Ultra-luxury resort offering exclusive wedding packages with world-class spa and dining facilities."
+  },
+  {
+    "id": 47,
+    "name": "Creative Visions",
+    "category": "Decorators",
+    "location": "Ella",
+    "images": [
+      "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1597298881806-34e0d4a7b3b8?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1478146896981-b80fe463b330?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1528605248644-14dd04022da1?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.8,
+    "reviews": 98,
+    "price": 220000,
+    "tags": ["Mountain", "Rustic", "Creative"],
+    "description": "Creative rustic decorations perfect for mountain weddings with natural and artistic elements."
+  },
+  {
+    "id": 48,
+    "name": "Traditional Drummers",
+    "category": "Entertainment",
+    "location": "Polonnaruwa",
+    "images": [
+      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1465821185615-20b3c2fbf41b?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.6,
+    "reviews": 87,
+    "price": 150000,
+    "tags": ["Traditional", "Drums", "Ceremonial"],
+    "description": "Traditional Sri Lankan drummers and ceremonial musicians for authentic cultural wedding celebrations."
+  },
+  {
+    "id": 49,
+    "name": "Fresh Catch Catering",
+    "category": "Caterers",
+    "location": "Mirissa",
+    "images": [
+      "https://images.unsplash.com/photo-1547573854-74d2a71d0826?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.4,
+    "reviews": 92,
+    "price": 195000,
+    "tags": ["Fresh Seafood", "Ocean", "Sustainable"],
+    "description": "Sustainable seafood specialists serving the freshest catch from local fishermen for coastal weddings."
+  },
+  {
+    "id": 50,
+    "name": "Serendipity Photography",
+    "category": "Photographers",
+    "location": "Mirissa",
+    "images": [
+      "https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1519225421980-715cb02852ed?auto=format&fit=crop&w=800&q=80"
+    ],
+    "rating": 4.9,
+    "reviews": 167,
+    "price": 85000,
+    "tags": ["Serendipitous", "Whale Watching", "Ocean"],
+    "description": "Capturing serendipitous moments with the ocean as backdrop, specializing in whale watching season weddings."
   }
 ]
