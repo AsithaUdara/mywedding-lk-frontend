@@ -25,8 +25,8 @@ import { Star, Camera, Music } from 'lucide-react';
 const VendorsHubPage = () => {
   const [isAuthModalOpen, setAuthModalOpen] = useState(false);
   
-  const topRatedVendors = allVendorsData.filter(v => v.rating >= 4.9);
-  const allVendors = allVendorsData;
+  const topRatedVendors = allVendorsData.filter(v => v.rating >= 4.9 && v.category !== 'Venues');
+  const allVendors = allVendorsData.filter(v => v.category !== 'Venues');
 
   const styleCategories = [
     { title: 'Luxury Venues', subtitle: 'Grand hotels and beautiful estates', imageUrl: 'https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=800&q=80' },
@@ -44,14 +44,16 @@ const VendorsHubPage = () => {
     <>
       <main className="bg-white">
         <Header onLoginClick={() => setAuthModalOpen(true)} />
-        <HeroWithSearch />
+
+        <HeroWithSearch 
+          imageUrl="https://images.unsplash.com/photo-1469371670807-013ccf25f16a?auto=format&fit=crop&w=1600&q=80"
+          searchType="vendor"
+        />
 
         <div className="container mx-auto px-4 py-16 space-y-20">
           
-          {/* THE FIX IS HERE: We pass the styled children directly. */}
           <HorizontalScrollSection title="Top-rated vendors in Sri Lanka" subtitle="Guests agree: these vendors are highly rated for their service and quality.">
             {topRatedVendors.map(vendor => (
-              // This div sets the precise width to ensure exactly 4 cards are visible.
               <div key={vendor.id} className="flex-shrink-0" style={{ width: 'calc(25% - 18px)' }}>
                 <VendorCard vendor={vendor} />
               </div>

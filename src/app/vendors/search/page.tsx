@@ -15,7 +15,7 @@ interface Vendor {
   rating: number; reviews: number; price: number; tags: string[]; description: string;
 }
 
-const VENDORS_PER_LOAD = 6; // Load 6 at a time to fill rows of 3
+const VENDORS_PER_LOAD = 9; // Load 6 at a time to fill rows of 3
 
 const SearchResultsPage = () => {
   const [isAuthModalOpen, setAuthModalOpen] = useState(false);

@@ -8,7 +8,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react';
 interface HorizontalScrollSectionProps {
   title: string;
   subtitle: string;
-  children: React.ReactNode; // THE FIX: Reverted to the standard 'children' prop type.
+  children: React.ReactNode; // THE FIX: Reverted to the standard 'children' prop.
 }
 
 const HorizontalScrollSection = ({ title, subtitle, children }: HorizontalScrollSectionProps) => {
