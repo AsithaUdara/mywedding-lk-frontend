@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import { Roboto, Playfair_Display } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/context/AuthContext";
 
 const roboto = Roboto({
   weight: ['400', '500', '700'],
@@ -27,10 +28,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    // THE FIX: Added suppressHydrationWarning={true}
     <html lang="en" suppressHydrationWarning={true}>
       <body className={`${roboto.variable} ${playfairDisplay.variable} antialiased`}>
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
