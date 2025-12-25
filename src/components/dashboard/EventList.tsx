@@ -1,6 +1,7 @@
 // File: src/components/dashboard/EventList.tsx
 import React from 'react';
 import EventCard from './EventCard';
+import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
 
 interface Event {
   id: string;
@@ -15,7 +16,19 @@ interface EventListProps {
 
 const EventList = ({ events, isLoading }: EventListProps) => {
   if (isLoading) {
-    return <p className="text-center text-gray-500">Loading your events...</p>;
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="bg-white rounded-xl shadow-md p-6">
+            <LoadingSkeleton className="h-6 w-3/4 mb-3" />
+            <LoadingSkeleton className="h-4 w-1/3 mb-6" />
+            <div className="flex justify-end">
+              <LoadingSkeleton className="h-6 w-24" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   }
 
   if (events.length === 0) {

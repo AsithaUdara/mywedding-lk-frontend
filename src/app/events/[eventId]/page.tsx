@@ -6,9 +6,11 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
 import { getEventById } from '@/lib/api/events';
 import { Calendar } from 'lucide-react';
-import TeamSection from '@/features/event-planning/components/TeamSection'; // <-- IMPORT THE NEW COMPONENT
+import TeamSection from '@/features/event-planning/components/TeamSection';
+import ChecklistSection from '@/features/event-planning/components/ChecklistSection'; // <-- IMPORT THE NEW COMPONENT
 
 interface EventDetails {
   id: string;
@@ -17,11 +19,10 @@ interface EventDetails {
   createdById: string;
 }
 
-const EventDetailPage = ({ params }: { params: Promise<{ eventId: string }> }) => {
+const EventDetailPage = ({ params }: { params: { eventId: string } }) => {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const resolvedParams = React.use(params);
-  const { eventId } = resolvedParams;
+  const { eventId } = params;
 
   const [event, setEvent] = useState<EventDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -29,9 +30,9 @@ const EventDetailPage = ({ params }: { params: Promise<{ eventId: string }> }) =
 
   // Effect to protect the route and fetch data
   useEffect(() => {
-    if (authLoading) return; // Wait until we know if a user is logged in
+    if (authLoading) return;
     if (!user) {
-      router.push('/'); // Redirect if not logged in
+      router.push('/');
       return;
     }
 
@@ -60,8 +61,27 @@ const EventDetailPage = ({ params }: { params: Promise<{ eventId: string }> }) =
     return (
       <div className="flex flex-col min-h-screen bg-cream">
         <Header />
-        <main className="flex-grow container mx-auto px-4 py-12 text-center">
-          <p className="text-gray-500">Loading your event details...</p>
+        <main className="flex-grow container mx-auto px-4 py-12">
+          <div className="space-y-12">
+            <div>
+              <LoadingSkeleton className="h-10 w-2/3 mb-4" />
+              <LoadingSkeleton className="h-5 w-1/3" />
+            </div>
+            <div className="grid grid-cols-1 gap-8">
+              <div className="p-6 bg-white rounded-lg shadow-sm">
+                <LoadingSkeleton className="h-6 w-1/4 mb-4" />
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <LoadingSkeleton key={i} className="h-4 w-full mb-2" />
+                ))}
+              </div>
+              <div className="p-6 bg-white rounded-lg shadow-sm">
+                <LoadingSkeleton className="h-6 w-1/4 mb-4" />
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <LoadingSkeleton key={i} className="h-4 w-full mb-2" />
+                ))}
+              </div>
+            </div>
+          </div>
         </main>
         <Footer />
       </div>
@@ -92,11 +112,11 @@ const EventDetailPage = ({ params }: { params: Promise<{ eventId: string }> }) =
               </div>
             </div>
             
-            {/* --- THE INTEGRATION IS HERE --- */}
-            {/* We are replacing the old placeholder with our new dynamic component */}
+            {/* --- Team Section --- */}
             <TeamSection eventId={eventId} />
 
-            {/* You can add more sections here later, like Budget, Checklist, etc. */}
+            {/* --- CHECKLIST SECTION (THE INTEGRATION) --- */}
+            <ChecklistSection eventId={eventId} />
             
           </div>
         ) : (
