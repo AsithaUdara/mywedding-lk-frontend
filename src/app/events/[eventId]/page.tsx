@@ -1,7 +1,7 @@
 // File: src/app/events/[eventId]/page.tsx
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { use, useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/layout/Header';
@@ -10,7 +10,8 @@ import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
 import { getEventById } from '@/lib/api/events';
 import { Calendar } from 'lucide-react';
 import TeamSection from '@/features/event-planning/components/TeamSection';
-import ChecklistSection from '@/features/event-planning/components/ChecklistSection'; // <-- IMPORT THE NEW COMPONENT
+import ChecklistSection from '@/features/event-planning/components/ChecklistSection';
+import BudgetSection from '@/features/event-planning/components/BudgetSection';
 
 interface EventDetails {
   id: string;
@@ -19,10 +20,10 @@ interface EventDetails {
   createdById: string;
 }
 
-const EventDetailPage = ({ params }: { params: { eventId: string } }) => {
+const EventDetailPage = ({ params }: { params: Promise<{ eventId: string }> }) => {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const { eventId } = params;
+  const { eventId } = use(params);
 
   const [event, setEvent] = useState<EventDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -115,9 +116,12 @@ const EventDetailPage = ({ params }: { params: { eventId: string } }) => {
             {/* --- Team Section --- */}
             <TeamSection eventId={eventId} />
 
-            {/* --- CHECKLIST SECTION (THE INTEGRATION) --- */}
+            {/* --- Checklist Section --- */}
             <ChecklistSection eventId={eventId} />
             
+            {/* --- Budget Section --- */}
+            <BudgetSection eventId={eventId} />
+
           </div>
         ) : (
           <p>No event data found.</p>
