@@ -33,7 +33,7 @@ const BookingPanel = ({ price, rating, reviews }: BookingPanelProps) => {
       <button className="w-full mt-6 py-4 rounded-lg text-white font-semibold elegant-lift-button" style={{ backgroundColor: 'var(--color-primary)' }}>
         Request a Quote
       </button>
-      <p className="text-center text-xs text-gray-400 mt-3">You won't be charged yet</p>
+      <p className="text-center text-xs text-gray-400 mt-3">You won&apos;t be charged yet</p>
     </div>
   );
 };

@@ -11,7 +11,7 @@ interface SearchableDropdownProps {
 }
 
 const SearchableDropdown = ({ options, placeholder }: SearchableDropdownProps) => {
-  const [selected, setSelected] = useState('');
+  const [selected, setSelected] = useState<string | null>(null);
   const [query, setQuery] = useState('');
 
   const filteredOptions = query === ''

@@ -1,5 +1,4 @@
 // src/app/layout.tsx
-import type { Metadata } from "next";
 import { Roboto, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";

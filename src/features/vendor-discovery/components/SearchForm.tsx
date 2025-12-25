@@ -1,7 +1,7 @@
 // src/features/vendor-discovery/components/SearchForm.tsx
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Search } from 'lucide-react';
 import Link from 'next/link';
 import SearchableDropdown from '@/components/ui/SearchableDropdown';
@@ -13,8 +13,6 @@ interface SearchFormProps {
 }
 
 const SearchForm = ({ type }: SearchFormProps) => {
-  const [category, setCategory] = useState('');
-  const [location, setLocation] = useState('');
 
   // Use useMemo for performance, so we don't recalculate on every render
   const { title, allCategories, allLocations } = useMemo(() => {
@@ -34,8 +32,6 @@ const SearchForm = ({ type }: SearchFormProps) => {
     };
   }, [type]);
 
-  // We will build the search URL with query parameters later
-  const searchUrl = `/vendors/search?category=${category}&location=${location}`;
 
   return (
     <div className="bg-white p-6 rounded-2xl shadow-2xl max-w-lg w-full">
