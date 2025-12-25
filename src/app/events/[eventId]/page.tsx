@@ -8,6 +8,7 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { getEventById } from '@/lib/api/events';
 import { Calendar } from 'lucide-react';
+import TeamSection from '@/features/event-planning/components/TeamSection'; // <-- IMPORT THE NEW COMPONENT
 
 interface EventDetails {
   id: string;
@@ -59,8 +60,8 @@ const EventDetailPage = ({ params }: { params: Promise<{ eventId: string }> }) =
     return (
       <div className="flex flex-col min-h-screen bg-cream">
         <Header />
-        <main className="flex-grow container mx-auto px-4 py-12">
-          <p>Loading event details...</p>
+        <main className="flex-grow container mx-auto px-4 py-12 text-center">
+          <p className="text-gray-500">Loading your event details...</p>
         </main>
         <Footer />
       </div>
@@ -77,20 +78,26 @@ const EventDetailPage = ({ params }: { params: Promise<{ eventId: string }> }) =
             <p>{error}</p>
           </div>
         ) : event ? (
-          <div>
-            <h1 className="text-4xl font-bold font-playfair text-charcoal">{event.eventName}</h1>
-            <div className="flex items-center text-lg text-gray-500 mt-4">
-              <Calendar size={18} className="mr-3" />
-              <span>
-                {new Date(event.eventDate).toLocaleDateString('en-US', { 
-                  weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
-                })}
-              </span>
+          <div className="space-y-12">
+            {/* --- Event Header --- */}
+            <div>
+              <h1 className="text-4xl lg:text-5xl font-bold font-playfair text-charcoal">{event.eventName}</h1>
+              <div className="flex items-center text-lg text-gray-500 mt-4">
+                <Calendar size={18} className="mr-3" />
+                <span>
+                  {new Date(event.eventDate).toLocaleDateString('en-US', { 
+                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+                  })}
+                </span>
+              </div>
             </div>
-            <div className="mt-8 p-6 bg-white rounded-lg shadow-sm">
-              <h2 className="text-2xl font-semibold text-charcoal">Event Info</h2>
-              <p className="mt-4 font-mono text-sm">Event ID: {event.id}</p>
-            </div>
+            
+            {/* --- THE INTEGRATION IS HERE --- */}
+            {/* We are replacing the old placeholder with our new dynamic component */}
+            <TeamSection eventId={eventId} />
+
+            {/* You can add more sections here later, like Budget, Checklist, etc. */}
+            
           </div>
         ) : (
           <p>No event data found.</p>
