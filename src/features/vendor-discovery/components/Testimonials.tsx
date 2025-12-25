@@ -41,7 +41,7 @@ const Testimonials = () => {
                   style={{ color: 'var(--color-primary)' }}
                 />
                 <p className="text-gray-700 italic text-lg mb-6 flex-grow">
-                  "{testimonial.quote}"
+                  &quot;{testimonial.quote}&quot;
                 </p>
                 <div className="mt-auto">
                   <p className="font-bold text-xl" style={{ color: 'var(--color-charcoal)' }}>

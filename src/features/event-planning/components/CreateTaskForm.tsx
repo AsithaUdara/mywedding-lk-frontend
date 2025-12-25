@@ -28,8 +28,9 @@ const CreateTaskForm = ({ eventId, onTaskCreated, onCancel }: CreateTaskFormProp
       const token = await user.getIdToken();
       await createTask(token, eventId, { title });
       onTaskCreated(); // Notify parent to refresh
-    } catch (err: any) {
-      setError(err.message || 'Failed to create task.');
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      setError(error.message || 'Failed to create task.');
     } finally {
       setLoading(false);
     }

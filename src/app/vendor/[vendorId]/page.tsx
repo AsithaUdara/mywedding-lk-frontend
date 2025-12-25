@@ -30,8 +30,9 @@ const getTagIcon = (tag: string) => {
   }
 };
 
-const VendorDetailPage = async ({ params }: { params: { vendorId: string } }) => {
-  const vendor = allVendorsData.find(v => v.id.toString() === params.vendorId);
+const VendorDetailPage = async ({ params }: { params: Promise<{ vendorId: string }> }) => {
+  const { vendorId } = await params;
+  const vendor = allVendorsData.find(v => v.id.toString() === vendorId);
   if (!vendor) { notFound(); }
 
   const dummyReviews = [
@@ -110,7 +111,7 @@ const VendorDetailPage = async ({ params }: { params: { vendorId: string } }) =>
 
           {/* MAP SECTION - AIRBNB STYLE WITH FULL WIDTH BORDER */}
           <div className="py-8 border-t border-gray-300">
-            <h3 className="text-2xl font-bold mb-4">Where you'll be</h3>
+            <h3 className="text-2xl font-bold mb-4">Where you&apos;ll be</h3>
             <p className="text-gray-600 mb-6">{vendor.location}, Sri Lanka</p>
             <div className="h-[500px] w-4/5 mx-auto bg-gray-200 rounded-xl overflow-hidden relative">
               <iframe

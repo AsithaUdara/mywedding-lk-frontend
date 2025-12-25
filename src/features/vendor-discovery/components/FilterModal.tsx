@@ -1,6 +1,6 @@
 // src/components/FilterModal.tsx
 import React from 'react';
-import { X, Star, DollarSign } from 'lucide-react';
+import { X, Star } from 'lucide-react';
 
 interface FilterModalProps {
   isOpen: boolean;

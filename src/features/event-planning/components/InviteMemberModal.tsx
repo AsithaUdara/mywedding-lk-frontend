@@ -17,7 +17,7 @@ const InviteMemberModal = ({ isOpen, onClose, eventId, onInviteSuccess }: Invite
   const { user } = useAuth();
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('FamilyMember'); // Default role
-  const [permissionLevel, setPermissionLevel] = useState('Viewer'); // Default permission
+  const [permissionLevel] = useState('Viewer'); // Default permission
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -46,8 +46,9 @@ const InviteMemberModal = ({ isOpen, onClose, eventId, onInviteSuccess }: Invite
       
       onInviteSuccess(); // This calls the function from the parent to refresh the list
 
-    } catch (err: any) {
-      setError(err.message || "An unexpected error occurred.");
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      setError(error.message || "An unexpected error occurred.");
     } finally {
       setLoading(false);
     }
@@ -63,7 +64,7 @@ const InviteMemberModal = ({ isOpen, onClose, eventId, onInviteSuccess }: Invite
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="inviteEmail" className="block text-sm font-medium text-charcoal mb-2">Member's Email</label>
+            <label htmlFor="inviteEmail" className="block text-sm font-medium text-charcoal mb-2">Member&apos;s Email</label>
             <div className="relative">
               <Mail size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"/>
               <input

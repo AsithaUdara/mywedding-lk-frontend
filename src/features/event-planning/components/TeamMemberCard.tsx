@@ -18,11 +18,11 @@ const TeamMemberCard = ({ organizer }: { organizer: Organizer }) => {
   const getPermissionIcon = (level: string) => {
     switch (level) {
       case 'Owner':
-        return <Shield size={14} className="text-yellow-500" title="Owner" />;
+        return <Shield size={14} className="text-yellow-500" />;
       case 'Editor':
-        return <Edit3 size={14} className="text-blue-500" title="Editor" />;
+        return <Edit3 size={14} className="text-blue-500" />;
       case 'Viewer':
-        return <Eye size={14} className="text-gray-500" title="Viewer" />;
+        return <Eye size={14} className="text-gray-500" />;
       default:
         return null;
     }

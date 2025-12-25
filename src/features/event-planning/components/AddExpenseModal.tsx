@@ -67,8 +67,9 @@ const AddExpenseModal = ({ isOpen, onClose, eventId, onExpenseAdded }: AddExpens
       
       onExpenseAdded(); // Notify parent to refresh
 
-    } catch (err: any) {
-      setError(err.message || "An unexpected error occurred.");
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      setError(error.message || "An unexpected error occurred.");
     } finally {
       setLoading(false);
     }

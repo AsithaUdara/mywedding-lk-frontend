@@ -84,7 +84,7 @@ const ChecklistSection = ({ eventId }: ChecklistSectionProps) => {
           ))}
         </div>
       ) : tasks.length === 0 && !showCreateForm ? (
-        <p className="text-center text-gray-500 py-8">Your checklist is empty. Click "Add Task" to get started!</p>
+        <p className="text-center text-gray-500 py-8">Your checklist is empty. Click &quot;Add Task&quot; to get started!</p>
       ) : (
         <div className="space-y-3 mt-4">
           {tasks.map((task) => (

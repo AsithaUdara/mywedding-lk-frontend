@@ -38,8 +38,9 @@ const CreateEventModal = ({ isOpen, onClose }: CreateEventModalProps) => {
       onClose(); // Close the modal
       router.push(`/events/${newEvent.eventId}`); // Redirect to the new event's page
 
-    } catch (err: any) {
-      setError(err.message || "An unexpected error occurred.");
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      setError(error.message || "An unexpected error occurred.");
     } finally {
       setLoading(false);
     }

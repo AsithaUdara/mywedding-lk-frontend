@@ -12,7 +12,9 @@ import AuthModal from '@/features/authentication/AuthModal';
 import { useAuth } from '@/context/AuthContext';
 import { AnimatePresence } from 'framer-motion';
 
-const Header = () => {
+type HeaderProps = { onLoginClick?: () => void };
+
+const Header = ({ onLoginClick }: HeaderProps) => {
   const [isModalOpen, setModalOpen] = useState(false);
   const [isVendorDropdownOpen, setVendorDropdownOpen] = useState(false);
   const { user } = useAuth();
@@ -55,7 +57,7 @@ const Header = () => {
               <UserDropdown />
             ) : (
               <button 
-                onClick={() => setModalOpen(true)} 
+                onClick={() => (onLoginClick ? onLoginClick() : setModalOpen(true))} 
                 className="flex items-center space-x-2 rounded-full px-5 py-1.5 text-sm font-semibold text-white hover:bg-opacity-90 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105" 
                 style={{ backgroundColor: 'var(--color-primary)' }}
               >

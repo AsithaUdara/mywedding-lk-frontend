@@ -76,12 +76,13 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
         router.push('/dashboard');
         onClose();
       }
-    } catch (err: any) {
-      if (err.code === 'auth/email-already-in-use') {
+    } catch (err: unknown) {
+      const error = err as { code?: string; message?: string };
+      if (error.code === 'auth/email-already-in-use') {
         setError('This email is already registered. Please sign in to continue.');
         setView('signIn');
       } else {
-        setError((err.message || 'An error occurred').replace('Firebase: ', ''));
+        setError((error.message || 'An error occurred').replace('Firebase: ', ''));
       }
     } finally {
       setLoading(false);
@@ -97,8 +98,9 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
       await handleBackendSync();
       router.push('/dashboard');
       onClose();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      setError(error.message || 'Sign-in failed');
     } finally {
       setLoading(false);
     }

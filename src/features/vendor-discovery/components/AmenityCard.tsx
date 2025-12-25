@@ -1,6 +1,5 @@
 // src/features/vendor-discovery/components/AmenityCard.tsx
 import React from 'react';
-import { Wifi, Star, Image as ImageIcon } from 'lucide-react'; // Example icons
 
 interface AmenityCardProps { title: string; icon: React.ReactNode; }
 

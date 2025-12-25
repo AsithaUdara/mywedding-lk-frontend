@@ -1,6 +1,7 @@
 // File: src/components/layout/UserDropdown.tsx
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';

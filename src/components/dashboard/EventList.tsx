@@ -35,7 +35,7 @@ const EventList = ({ events, isLoading }: EventListProps) => {
     return (
       <div className="text-center py-16 border-2 border-dashed border-gray-300 rounded-lg">
         <h3 className="text-xl font-semibold text-charcoal">No Events Found</h3>
-        <p className="text-gray-500 mt-2">Click "Create New Event" to start planning your big day!</p>
+        <p className="text-gray-500 mt-2">Click &quot;Create New Event&quot; to start planning your big day!</p>
       </div>
     );
   }
