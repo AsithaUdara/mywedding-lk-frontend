@@ -1,7 +1,6 @@
-// File: src/app/events/[eventId]/page.tsx
 "use client";
 
-import React, { use, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/layout/Header';
@@ -20,18 +19,18 @@ interface EventDetails {
   createdById: string;
 }
 
-const EventDetailPage = ({ params }: { params: Promise<{ eventId: string }> }) => {
+const EventDetailPage = ({ params }: { params: { eventId: string } }) => {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const { eventId } = use(params);
+  const { eventId } = params;
 
   const [event, setEvent] = useState<EventDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Effect to protect the route and fetch data
   useEffect(() => {
     if (authLoading) return;
+
     if (!user) {
       router.push('/');
       return;
@@ -41,21 +40,26 @@ const EventDetailPage = ({ params }: { params: Promise<{ eventId: string }> }) =
       try {
         const token = await user.getIdToken();
         const eventData = await getEventById(token, eventId);
-        
+
         if (eventData) {
           setEvent(eventData);
         } else {
           setError("Event not found or you don't have permission to view it.");
         }
       } catch (err) {
-        setError("Failed to load event details.");
         console.error(err);
+        setError("Failed to load event details.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchEventDetails();
+    if (eventId) {
+      fetchEventDetails();
+    } else {
+      setError('Invalid event ID.');
+      setLoading(false);
+    }
   }, [user, authLoading, eventId, router]);
 
   if (authLoading || loading) {
@@ -106,22 +110,24 @@ const EventDetailPage = ({ params }: { params: Promise<{ eventId: string }> }) =
               <div className="flex items-center text-lg text-gray-500 mt-4">
                 <Calendar size={18} className="mr-3" />
                 <span>
-                  {new Date(event.eventDate).toLocaleDateString('en-US', { 
-                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+                  {new Date(event.eventDate).toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
                   })}
                 </span>
               </div>
             </div>
-            
+
             {/* --- Team Section --- */}
             <TeamSection eventId={eventId} />
 
             {/* --- Checklist Section --- */}
             <ChecklistSection eventId={eventId} />
-            
+
             {/* --- Budget Section --- */}
             <BudgetSection eventId={eventId} />
-
           </div>
         ) : (
           <p>No event data found.</p>
