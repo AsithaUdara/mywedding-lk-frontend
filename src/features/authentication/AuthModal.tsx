@@ -1,4 +1,4 @@
-// src/features/authentication/AuthModal.tsx
+// File: src/features/authentication/AuthModal.tsx
 "use client";
 
 import React, { useState } from 'react';
@@ -22,7 +22,8 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
   const [view, setView] = useState<'signIn' | 'signUp'>('signIn');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -30,28 +31,18 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
   if (!isOpen) return null;
 
   const handleBackendSync = async () => {
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL;
-    if (!apiBase) {
-      throw new Error('API base URL is not configured. Set NEXT_PUBLIC_API_BASE_URL in .env.local');
-    }
-
     const user = auth.currentUser;
-    if (!user) {
-      throw new Error("User not found after authentication.");
-    }
-    const token = await user.getIdToken();
-
-    const apiUrl = `${apiBase}/api/auth/sync-user`;
+    if (!user) { throw new Error("User not found after authentication."); }
+    const token = await user.getIdToken(true);
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/sync-user`;
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}` },
     });
-
-    if (!response.ok) {
-      throw new Error('Failed to sync user with backend.');
-    }
+    if (!response.ok) { throw new Error('Failed to sync user with backend.'); }
   };
 
+  // --- THIS IS THE CORRECTED WORKFLOW ---
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
@@ -60,16 +51,29 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
     try {
       if (view === 'signUp') {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        // Step 1: User is created in Firebase
         if (userCredential.user) {
+          const fullName = `${firstName} ${lastName}`.trim();
           await updateProfile(userCredential.user, { displayName: fullName });
+          // Step 2: Firebase profile is updated with name
         }
+
+        // Step 3: Now that user exists in Firebase, sync them to our backend
         await handleBackendSync();
-        router.push('/vendors');
+
+        // Step 4: Only navigate after everything is successful
+        router.push('/dashboard');
         onClose();
-      } else {
+
+      } else { // Sign In Logic
         await signInWithEmailAndPassword(auth, email, password);
+        // Step 1: User is logged into Firebase
+
+        // Step 2: Sync their data to ensure our backend has their record
         await handleBackendSync();
-        router.push('/vendors');
+
+        // Step 3: Navigate to the dashboard
+        router.push('/dashboard');
         onClose();
       }
     } catch (err: any) {
@@ -77,7 +81,7 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
         setError('This email is already registered. Please sign in to continue.');
         setView('signIn');
       } else {
-        setError(err.message);
+        setError((err.message || 'An error occurred').replace('Firebase: ', ''));
       }
     } finally {
       setLoading(false);
@@ -91,7 +95,7 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
     try {
       await signInWithPopup(auth, provider);
       await handleBackendSync();
-      router.push('/vendors');
+      router.push('/dashboard');
       onClose();
     } catch (err: any) {
       setError(err.message);
@@ -123,7 +127,17 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
         {error && <p className="text-red-500 text-center mb-4 text-sm font-medium">{error}</p>}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {view === 'signUp' && (<div className="relative"><UserIcon size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"/><input type="text" placeholder="Full Name" value={fullName} onChange={(e) => setFullName(e.target.value)} required disabled={loading} className="w-full py-3 pl-12 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent outline-none disabled:opacity-50"/></div>)}
+          {view === 'signUp' && (
+            <div className="flex gap-4">
+              <div className="relative w-1/2">
+                <UserIcon size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"/>
+                <input type="text" placeholder="First Name" value={firstName} onChange={(e) => setFirstName(e.target.value)} required disabled={loading} className="w-full py-3 pl-12 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent outline-none disabled:opacity-50"/>
+              </div>
+              <div className="relative w-1/2">
+                <input type="text" placeholder="Last Name" value={lastName} onChange={(e) => setLastName(e.target.value)} required disabled={loading} className="w-full py-3 pl-4 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent outline-none disabled:opacity-50"/>
+              </div>
+            </div>
+          )}
           <div className="relative"><Mail size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"/><input type="email" placeholder="Email Address" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={loading} className="w-full py-3 pl-12 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent outline-none disabled:opacity-50"/></div>
           <div className="relative"><Lock size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"/><input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required disabled={loading} className="w-full py-3 pl-12 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent outline-none disabled:opacity-50"/></div>
 
