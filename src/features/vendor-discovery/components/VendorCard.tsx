@@ -8,7 +8,7 @@ import Link from 'next/link';
 
 interface VendorCardProps {
   vendor: {
-    id: number;
+    id: string | number;
     name: string;
     category: string;
     location: string;

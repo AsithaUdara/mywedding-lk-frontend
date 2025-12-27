@@ -26,7 +26,7 @@ const SearchResultsPage = () => {
   const [priceRange, setPriceRange] = useState<number>(1500000);
 
   // Pagination state
-  const [displayedVendors, setDisplayedVendors] = useState<any[]>([]);
+  const [displayedVendors, setDisplayedVendors] = useState<Vendor[]>([]);
   const [hasMore, setHasMore] = useState(true);
 
   // Fetch data from the API
@@ -112,10 +112,7 @@ const SearchResultsPage = () => {
                         location: vendor.city,
                         images: ["https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=800&q=80"],
                         rating: vendor.averageRating,
-                        reviews: 0,
                         price: 0,
-                        tags: [vendor.categoryName],
-                        description: vendor.businessDescription || ""
                       }} 
                     />
                   ))}
