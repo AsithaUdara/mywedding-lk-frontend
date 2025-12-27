@@ -91,3 +91,30 @@ export const getVendorById = async (vendorId: string): Promise<VendorDetail | nu
   }
   return response.json();
 };
+
+// --- NEW TYPES FOR BOOKING ---
+export interface BookingData {
+  eventId: string;
+  serviceId: string;
+  finalAmount: number;
+  serviceDate: string;
+}
+
+// --- NEW FUNCTION: Create a new booking ---
+export const createBooking = async (token: string, bookingData: BookingData) => {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/bookings`;
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(bookingData),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Failed to create booking.');
+  }
+  return response.json();
+};

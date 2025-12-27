@@ -361,3 +361,12 @@ h1, h2, h3, h4, h5, h6 {
 .smooth-scale-button:hover {
   transform: scale(1.05);
 }
+
+/* Modal open: lock background scroll */
+.modal-open {
+  overflow: hidden;
+}
+
+.modal-container {
+  filter: none;
+}

@@ -21,7 +21,7 @@ const Header = ({ onLoginClick }: HeaderProps) => {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full bg-cream/95 backdrop-blur-md border-b border-black/10 shadow-sm">
+      <header className="sticky top-0 z-40 w-full bg-cream/95 backdrop-blur-md border-b border-black/10 shadow-sm">
         <div className="container mx-auto flex items-center justify-between py-2 px-4">
           
           <div className="flex-1 flex justify-start">
