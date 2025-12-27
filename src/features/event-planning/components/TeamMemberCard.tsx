@@ -16,7 +16,8 @@ const TeamMemberCard = ({ organizer }: { organizer: Organizer }) => {
   };
 
   const getPermissionIcon = (level: string) => {
-    switch (level) {
+    const normalized = level === 'Edit' ? 'Editor' : level === 'View' ? 'Viewer' : level;
+    switch (normalized) {
       case 'Owner':
         return <Shield size={14} className="text-yellow-500" />;
       case 'Editor':
@@ -26,6 +27,12 @@ const TeamMemberCard = ({ organizer }: { organizer: Organizer }) => {
       default:
         return null;
     }
+  };
+
+  const displayPermission = (level: string) => {
+    if (level === 'Edit') return 'Editor';
+    if (level === 'View') return 'Viewer';
+    return level;
   };
 
   return (
@@ -39,9 +46,9 @@ const TeamMemberCard = ({ organizer }: { organizer: Organizer }) => {
         </p>
         <p className="text-xs text-gray-500 truncate">{organizer.email}</p>
       </div>
-      <div className="flex-shrink-0 flex items-center gap-1.5" title={organizer.permissionLevel}>
+      <div className="flex-shrink-0 flex items-center gap-1.5" title={displayPermission(organizer.permissionLevel)}>
         {getPermissionIcon(organizer.permissionLevel)}
-        <span className="text-xs font-medium text-gray-600 hidden sm:inline">{organizer.permissionLevel}</span>
+        <span className="text-xs font-medium text-gray-600 hidden sm:inline">{displayPermission(organizer.permissionLevel)}</span>
       </div>
     </div>
   );

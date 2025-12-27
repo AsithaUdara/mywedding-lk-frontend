@@ -9,24 +9,11 @@ import ImageGallery from '@/features/vendor-discovery/components/ImageGallery';
 import BookingPanel from '@/features/vendor-discovery/components/BookingPanel';
 import VendorHighlights from '@/features/vendor-discovery/components/VendorHighlights';
 import ReviewCard from '@/features/vendor-discovery/components/ReviewCard';
-import { MapPin, Star, Award, Check, Gem, Waves, Camera, Music, Utensils } from 'lucide-react';
+import { MapPin, Star, Award } from 'lucide-react';
 
 export async function generateStaticParams() {
   return [];
 }
-
-const getTagIcon = (tag: string) => {
-  switch (tag.toLowerCase()) {
-    case 'luxury': return <Gem size={24} />;
-    case 'beachfront': return <Waves size={24} />;
-    case '5-star': return <Star size={24} />;
-    case 'candid':
-    case 'drone': return <Camera size={24} />;
-    case 'live music': return <Music size={24} />;
-    case 'international cuisine': return <Utensils size={24} />;
-    default: return <Check size={24} />;
-  }
-};
 
 const VendorDetailPage = async ({ params }: { params: Promise<{ vendorId: string }> }) => {
   const { vendorId } = await params;
