@@ -5,32 +5,52 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Header from '@/components/layout/Header';
 import AuthModal from '@/features/authentication/AuthModal';
 import VendorCard from '@/features/vendor-discovery/components/VendorCard';
-import allVendorsData from '@/lib/data/vendors.json';
 import { Filter } from 'lucide-react';
 import FilterModal from '@/features/vendor-discovery/components/FilterModal';
+import { getVendors } from '@/lib/api/vendors';
+import { Vendor } from '@/lib/api/vendors';
 
-// Interface for our Vendor data
-interface Vendor {
-  id: number; name: string; category: string; location: string; images: string[];
-  rating: number; reviews: number; price: number; tags: string[]; description: string;
-}
-
-const VENDORS_PER_LOAD = 9; // Load 6 at a time to fill rows of 3
+const VENDORS_PER_LOAD = 9;
 
 const SearchResultsPage = () => {
   const [isAuthModalOpen, setAuthModalOpen] = useState(false);
   const [isFilterModalOpen, setFilterModalOpen] = useState(false);
   
+  // State for all vendors fetched from the API
+  const [allVendors, setAllVendors] = useState<Vendor[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   // Filtering state
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedRatings, setSelectedRatings] = useState<number[]>([]);
   const [priceRange, setPriceRange] = useState<number>(1500000);
 
   // Pagination state
-  const [displayedVendors, setDisplayedVendors] = useState<Vendor[]>([]);
+  const [displayedVendors, setDisplayedVendors] = useState<any[]>([]);
   const [hasMore, setHasMore] = useState(true);
-  
-  const allCategories = useMemo(() => Array.from(new Set(allVendorsData.map(v => v.category))), []);
+
+  // Fetch data from the API
+  useEffect(() => {
+    const fetchVendors = async () => {
+      try {
+        setIsLoading(true);
+        const vendorsData = await getVendors();
+        setAllVendors(vendorsData);
+      } catch (error) {
+        console.error("Failed to fetch vendors:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchVendors();
+  }, []);
+
+  // Get all categories from fetched vendors
+  const allCategories = useMemo(() => {
+    if (allVendors.length === 0) return [];
+    return Array.from(new Set(allVendors.map(v => v.categoryName)));
+  }, [allVendors]);
 
   // Filter handlers
   const handleCategoryChange = (category: string) => setSelectedCategories(prev => prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]);
@@ -38,13 +58,12 @@ const SearchResultsPage = () => {
 
   // Memoized filtering logic
   const filteredVendors = useMemo(() => {
-    return allVendorsData.filter(vendor => {
-      const categoryMatch = selectedCategories.length === 0 || selectedCategories.includes(vendor.category);
-      const ratingMatch = selectedRatings.length === 0 || selectedRatings.includes(Math.round(vendor.rating));
-      const priceMatch = vendor.price <= priceRange;
-      return categoryMatch && ratingMatch && priceMatch;
+    return allVendors.filter(vendor => {
+      const categoryMatch = selectedCategories.length === 0 || selectedCategories.includes(vendor.categoryName);
+      const ratingMatch = selectedRatings.length === 0 || selectedRatings.includes(Math.floor(vendor.averageRating));
+      return categoryMatch && ratingMatch;
     });
-  }, [selectedCategories, selectedRatings, priceRange]);
+  }, [allVendors, selectedCategories, selectedRatings]);
 
   // Effect to handle loading vendors when filters change
   useEffect(() => {
@@ -70,7 +89,7 @@ const SearchResultsPage = () => {
         <div className="container mx-auto px-4 py-8">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold" style={{ color: 'var(--color-charcoal)' }}>
-              {filteredVendors.length} Vendors Found
+              {isLoading ? "Searching for vendors..." : `${filteredVendors.length} Vendors Found`}
             </h1>
             <button onClick={() => setFilterModalOpen(true)} className="flex items-center gap-2 border rounded-full px-5 py-3 font-semibold hover:shadow-lg transition-shadow">
               <Filter size={18}/> Show Filters
@@ -79,13 +98,31 @@ const SearchResultsPage = () => {
 
           <div className="flex">
             <div className="w-full md:w-3/5 lg:w-7/12 md:pr-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10">
-                {displayedVendors.map(vendor => (
-                  <VendorCard key={vendor.id} vendor={vendor} />
-                ))}
-              </div>
+              {isLoading ? (
+                <p className="text-gray-600">Loading vendors...</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10">
+                  {displayedVendors.map(vendor => (
+                    <VendorCard 
+                      key={vendor.userId} 
+                      vendor={{
+                        id: vendor.userId,
+                        name: vendor.businessName,
+                        category: vendor.categoryName,
+                        location: vendor.city,
+                        images: ["https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=800&q=80"],
+                        rating: vendor.averageRating,
+                        reviews: 0,
+                        price: 0,
+                        tags: [vendor.categoryName],
+                        description: vendor.businessDescription || ""
+                      }} 
+                    />
+                  ))}
+                </div>
+              )}
               
-              {hasMore && (
+              {hasMore && !isLoading && (
                 <div className="text-center py-10 col-span-full">
                   <button onClick={loadMoreVendors} className="px-8 py-3 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-opacity-90 transition-all duration-300" style={{ backgroundColor: 'var(--color-primary)' }}>
                     Show More
