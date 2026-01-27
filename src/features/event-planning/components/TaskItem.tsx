@@ -1,72 +1,68 @@
-// File: src/features/event-planning/components/TaskItem.tsx
 "use client";
 
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Task, updateTaskStatus } from '@/lib/api/events';
-import { CheckCircle, Clock, ListChecks } from 'lucide-react';
+import { Check } from 'lucide-react';
 
 interface TaskItemProps {
   task: Task;
-  onStatusChange: () => void; // callback to refresh parent list
+  onStatusChange: () => void;
 }
-
-const statusMeta: Record<Task['status'], { label: string; icon: React.ReactNode; color: string }> = {
-  ToDo: { label: 'To Do', icon: <ListChecks size={16} />, color: 'text-gray-600' },
-  InProgress: { label: 'In Progress', icon: <Clock size={16} />, color: 'text-amber-600' },
-  Completed: { label: 'Completed', icon: <CheckCircle size={16} />, color: 'text-green-600' },
-};
 
 const TaskItem = ({ task, onStatusChange }: TaskItemProps) => {
   const { user } = useAuth();
-  const [status, setStatus] = useState<Task['status']>(task.status);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleStatusUpdate = async (newStatus: Task['status']) => {
-    if (!user || loading || newStatus === status) return;
+  const handleCheckboxChange = async () => {
+    if (!user || isUpdating) return;
+    setIsUpdating(true);
+    setErrorMessage(null);
+
     try {
-      setLoading(true);
-      setError(null);
       const token = await user.getIdToken();
+      const newStatus = task.status === 'Completed' ? 'ToDo' : 'Completed';
       await updateTaskStatus(token, task.id, newStatus);
-      setStatus(newStatus);
       onStatusChange();
-    } catch (err: unknown) {
-      const e = err as { message?: string };
-      setError(e.message || 'Failed to update task.');
+    } catch (error: any) {
+      console.error('Failed to update task status:', error);
+      setErrorMessage(error?.message || 'Unable to update task right now. Please try again.');
     } finally {
-      setLoading(false);
+      setIsUpdating(false);
     }
   };
 
-  return (
-    <div className="flex items-center justify-between p-4 rounded-lg border border-gray-200">
-      <div className="flex items-start gap-3">
-        <span className={`mt-1 ${statusMeta[status].color}`}>{statusMeta[status].icon}</span>
-        <div>
-          <p className="font-semibold text-charcoal">{task.title}</p>
-          {task.description && (
-            <p className="text-sm text-gray-600">{task.description}</p>
-          )}
-          {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
-        </div>
-      </div>
+  const isCompleted = task.status === 'Completed';
 
-      <div className="flex items-center gap-2">
-        {(['ToDo', 'InProgress', 'Completed'] as Task['status'][]).map((s) => (
-          <button
-            key={s}
-            disabled={loading}
-            onClick={() => handleStatusUpdate(s)}
-            className={`px-3 py-1 text-sm rounded-lg border transition-colors ${
-              status === s ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
-            }`}
-          >
-            {statusMeta[s].label}
-          </button>
-        ))}
+  return (
+    <div className="flex flex-col gap-2 p-4 rounded-lg border border-gray-200 bg-white shadow-sm">
+      <div className="flex items-center gap-4">
+        <button
+          onClick={handleCheckboxChange}
+          disabled={isUpdating}
+          className={`flex-shrink-0 w-6 h-6 rounded-full border-2 transition-all flex items-center justify-center cursor-pointer ${
+            isCompleted ? 'bg-primary border-primary' : 'border-gray-300 hover:border-primary'
+          } ${isUpdating ? 'opacity-60 cursor-not-allowed' : ''}`}
+        >
+          {isCompleted && <Check size={16} className="text-white" />}
+        </button>
+        
+        <div className="flex-grow">
+          <p className={`font-medium text-charcoal transition-colors ${isCompleted ? 'line-through text-gray-400' : ''}`}>
+            {task.title}
+          </p>
+        </div>
+
+        <span className={`text-xs font-bold px-2 py-1 rounded-full ${
+            isCompleted ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'
+        }`}>
+            {task.status}
+        </span>
       </div>
+      {errorMessage && (
+        <p className="text-xs text-red-600">{errorMessage}</p>
+      )}
     </div>
   );
 };

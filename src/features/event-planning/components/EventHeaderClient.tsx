@@ -1,68 +1,50 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { getEventById } from '@/lib/api/events';
-import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
+import Skeleton from '@/components/ui/Skeleton';
 import { Calendar } from 'lucide-react';
 
 interface EventHeaderClientProps {
   eventId: string;
 }
 
-interface EventDetails {
-  id: string;
-  eventName: string;
-  eventDate: string;
-}
-
-const EventHeaderClient: React.FC<EventHeaderClientProps> = ({ eventId }) => {
-  const { user, loading: authLoading } = useAuth();
-  const [event, setEvent] = useState<EventDetails | null>(null);
+const EventHeaderClient = ({ eventId }: EventHeaderClientProps) => {
+  const { user } = useAuth();
+  const [event, setEvent] = useState<{ eventName: string; eventDate: string } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const run = async () => {
-      if (!user) {
-        setError('Please sign in to view this event.');
-        setLoading(false);
-        return;
-      }
+    if (!user) return;
+
+    const fetchEventHeader = async () => {
       try {
         const token = await user.getIdToken();
-        const eventData = await getEventById(token, eventId);
-        if (eventData) {
-          setEvent(eventData);
-        } else {
-          setError("Event not found or you don't have permission to view it.");
+        const data = await getEventById(token, eventId);
+        if (data) {
+          setEvent(data);
         }
-      } catch {
-        setError('Failed to load event details.');
+      } catch (error) {
+        console.error('Failed to fetch event header', error);
       } finally {
         setLoading(false);
       }
     };
 
-    if (!authLoading && eventId) {
-      run();
-    }
-  }, [user, authLoading, eventId]);
+    fetchEventHeader();
+  }, [user, eventId]);
 
-  if (authLoading || loading) {
+  if (loading) {
     return (
       <div>
-        <LoadingSkeleton className="h-10 w-2/3 mb-4" />
-        <LoadingSkeleton className="h-5 w-1/3" />
+        <Skeleton className="h-12 w-2/3 mb-4" />
+        <Skeleton className="h-6 w-1/3" />
       </div>
     );
   }
 
-  if (error || !event) {
-    return (
-      <div className="p-6 bg-red-100 text-red-700 rounded-lg">{error ?? 'No event data found.'}</div>
-    );
-  }
+  if (!event) return null;
 
   return (
     <div>
@@ -71,10 +53,7 @@ const EventHeaderClient: React.FC<EventHeaderClientProps> = ({ eventId }) => {
         <Calendar size={18} className="mr-3" />
         <span>
           {new Date(event.eventDate).toLocaleDateString('en-US', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
           })}
         </span>
       </div>
