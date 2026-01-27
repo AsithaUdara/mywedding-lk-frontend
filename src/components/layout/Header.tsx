@@ -21,12 +21,12 @@ const Header = ({ onLoginClick }: HeaderProps) => {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full bg-cream/95 backdrop-blur-md border-b border-black/10 shadow-sm">
-        <div className="container mx-auto flex items-center justify-between py-2 px-4">
+      <header className="sticky top-0 z-40 w-full bg-cream/95 backdrop-blur-md border-b border-black/10 shadow-sm">
+        <div className="max-w-7xl mx-auto flex items-center justify-between py-1 px-4 sm:px-6 lg:px-8">
           
           <div className="flex-1 flex justify-start">
             <Link href="/" className="hover:opacity-80 transition-opacity">
-              <Image src={Logo} alt="MyWedding.lk Logo" width={110} height={28} priority />
+              <Image src={Logo} alt="MyWedding.lk Logo" width={90} height={23} priority />
             </Link>
           </div>
           
