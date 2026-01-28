@@ -198,6 +198,13 @@ export const getBudgetOverview = async (token: string, eventId: string): Promise
 // 2. Set the total budget for an event
 export const setTotalBudget = async (token: string, eventId: string, totalBudget: number) => {
   const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/events/${eventId}/budget`;
+  console.log('🌐 API Call:', {
+    method: 'PUT',
+    url: apiUrl,
+    body: { totalBudget },
+    eventId
+  });
+  
   const response = await fetch(apiUrl, {
     method: 'PUT',
     headers: {
@@ -206,8 +213,16 @@ export const setTotalBudget = async (token: string, eventId: string, totalBudget
     },
     body: JSON.stringify({ totalBudget }),
   });
+  
+  console.log('📡 API Response:', {
+    status: response.status,
+    statusText: response.statusText,
+    ok: response.ok
+  });
+  
   if (!response.ok) {
     const errorData = await response.json();
+    console.error('❌ API Error:', errorData);
     throw new Error(errorData.message || 'Failed to set total budget.');
   }
   return response;
@@ -251,4 +266,25 @@ export const getExpenses = async (token: string, eventId: string): Promise<Expen
   });
   if (!response.ok) throw new Error('Failed to fetch expenses.');
   return response.json();
+};
+
+// --- NEW FUNCTION: Set the style preferences for an event ---
+export const setEventPreferences = async (token: string, eventId: string, preferences: Record<string, string>) => {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/events/${eventId}/preferences`;
+  
+  const response = await fetch(apiUrl, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(preferences),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Failed to save preferences.');
+  }
+  // A PUT request that returns 204 No Content will not have a body to parse
+  return response;
 };

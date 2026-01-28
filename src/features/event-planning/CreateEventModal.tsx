@@ -3,18 +3,18 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
 import { createEvent } from '@/lib/api/events';
 import { X } from 'lucide-react';
 
 interface CreateEventModalProps {
   isOpen: boolean;
   onClose: () => void;
+  // NEW: Callback function to run after event is created
+  onEventCreated: (newEvent: { eventId: string; eventName: string }) => void;
 }
 
-const CreateEventModal = ({ isOpen, onClose }: CreateEventModalProps) => {
+const CreateEventModal = ({ isOpen, onClose, onEventCreated }: CreateEventModalProps) => {
   const { user } = useAuth();
-  const router = useRouter();
   const [eventName, setEventName] = useState('');
   const [eventDate, setEventDate] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -24,23 +24,28 @@ const CreateEventModal = ({ isOpen, onClose }: CreateEventModalProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) {
-      setError("You must be logged in to create an event.");
-      return;
-    }
+    if (!user) { setError("You must be logged in."); return; }
     setLoading(true);
     setError(null);
 
     try {
       const token = await user.getIdToken();
-      const newEvent = await createEvent(token, { eventName, eventDate });
+      console.log('📝 Creating event:', eventName, eventDate);
       
-      onClose(); // Close the modal
-      router.push(`/events/${newEvent.eventId}`); // Redirect to the new event's page
+      const newEvent = await createEvent(token, { eventName, eventDate });
+      console.log('✅ Event created:', newEvent);
+      
+      // Reset form fields
+      setEventName('');
+      setEventDate('');
+      
+      // Call the callback function instead of redirecting
+      onEventCreated({ eventId: newEvent.eventId, eventName });
+      onClose();
 
-    } catch (err: unknown) {
-      const error = err as { message?: string };
-      setError(error.message || "An unexpected error occurred.");
+    } catch (err: any) {
+      console.error('❌ Failed to create event:', err);
+      setError(err.message || "An unexpected error occurred.");
     } finally {
       setLoading(false);
     }
