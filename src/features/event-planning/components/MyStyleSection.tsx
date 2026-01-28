@@ -45,7 +45,10 @@ const MyStyleSection = ({ preferences, onRefresh, onOpenQuiz }: { preferences: R
           <Sparkles className="text-primary" size={24} />
           <h2 className="text-2xl font-semibold text-charcoal">My Wedding Style</h2>
         </div>
-        <button className="flex items-center gap-2 text-sm font-semibold text-primary hover:underline">
+        <button 
+          onClick={onOpenQuiz}
+          className="flex items-center gap-2 text-sm font-semibold text-primary hover:underline hover:scale-105 transition-transform"
+        >
           <Edit size={14} />
           <span>Edit</span>
         </button>
