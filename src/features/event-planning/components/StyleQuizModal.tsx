@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { setEventPreferences } from '@/lib/api/events';
 import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
+import { CheckCircle } from 'lucide-react';
 
 interface StyleQuizModalProps {
   isOpen: boolean;
@@ -46,6 +47,7 @@ const StyleQuizModal = ({ isOpen, onClose, eventId }: StyleQuizModalProps) => {
   const [preferences, setPreferences] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isComplete, setIsComplete] = useState(false);
 
   if (!isOpen) return null;
 
@@ -56,17 +58,16 @@ const StyleQuizModal = ({ isOpen, onClose, eventId }: StyleQuizModalProps) => {
     if (currentStep < quizQuestions.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      // This is the final step, submit the preferences
+      // Final step: submit the preferences
       setLoading(true);
       setError(null);
       try {
         if (!user) throw new Error("User not found");
         const token = await user.getIdToken();
         await setEventPreferences(token, eventId, newPreferences);
-        onClose(); // Close modal on success
+        setIsComplete(true);
       } catch (err: any) {
         setError(err.message || "Failed to save preferences.");
-      } finally {
         setLoading(false);
       }
     }
@@ -78,44 +79,66 @@ const StyleQuizModal = ({ isOpen, onClose, eventId }: StyleQuizModalProps) => {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm modal-container">
       <div className="relative w-full max-w-3xl p-8 rounded-xl shadow-2xl bg-cream">
-        {/* Progress Bar */}
-        <div className="w-full bg-gray-200 rounded-full h-1.5 mb-6">
-          <div className="bg-primary h-1.5 rounded-full" style={{ width: `${progressPercentage}%`, transition: 'width 0.5s ease-in-out' }}></div>
-        </div>
-
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentStep}
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -50 }}
-            transition={{ duration: 0.3 }}
-          >
-            <h2 className="text-3xl font-bold font-playfair text-charcoal text-center mb-8">{currentQuestion.question}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {currentQuestion.options.map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => handleSelectOption(currentQuestion.key, option.value)}
-                  disabled={loading}
-                  className="group relative h-64 rounded-lg overflow-hidden border-4 border-transparent hover:border-primary focus:border-primary focus:outline-none transition-all duration-300"
-                >
-                  <Image 
-                    src={option.imageUrl} 
-                    alt={option.label} 
-                    fill
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    className="object-cover group-hover:scale-105 transition-transform duration-300" 
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-                  <h3 className="absolute bottom-4 left-4 text-2xl font-bold text-white">{option.label}</h3>
-                </button>
-              ))}
+        
+        {isComplete ? (
+          <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}>
+            <div className="text-center">
+              <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
+              <h2 className="mt-4 text-3xl font-bold font-playfair text-charcoal">Preferences Saved!</h2>
+              <p className="mt-2 text-gray-600">
+                We've tailored your experience. You can always change your style preferences on your event dashboard.
+              </p>
+              <button
+                onClick={onClose}
+                className="mt-8 w-full max-w-xs mx-auto py-3 rounded-lg text-white font-semibold shadow-lg transition-transform hover:scale-105"
+                style={{ backgroundColor: 'var(--color-primary)' }}
+              >
+                Go to My Event
+              </button>
             </div>
           </motion.div>
-        </AnimatePresence>
+        ) : (
+          <>
+            {/* Progress Bar */}
+            <div className="w-full bg-gray-200 rounded-full h-1.5 mb-6">
+              <div className="bg-primary h-1.5 rounded-full" style={{ width: `${progressPercentage}%`, transition: 'width 0.5s ease-in-out' }}></div>
+            </div>
 
-        {error && <p className="text-red-500 text-center mt-6 text-sm">{error}</p>}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentStep}
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -50 }}
+                transition={{ duration: 0.3 }}
+              >
+                <h2 className="text-3xl font-bold font-playfair text-charcoal text-center mb-8">{currentQuestion.question}</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {currentQuestion.options.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => handleSelectOption(currentQuestion.key, option.value)}
+                      disabled={loading}
+                      className="group relative h-64 rounded-lg overflow-hidden border-4 border-transparent hover:border-primary focus:border-primary focus:outline-none transition-all duration-300"
+                    >
+                      <Image 
+                        src={option.imageUrl} 
+                        alt={option.label} 
+                        fill
+                        sizes="(max-width: 768px) 100vw, 50vw"
+                        className="object-cover group-hover:scale-105 transition-transform duration-300" 
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+                      <h3 className="absolute bottom-4 left-4 text-2xl font-bold text-white">{option.label}</h3>
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            </AnimatePresence>
+
+            {error && <p className="text-red-500 text-center mt-6 text-sm">{error}</p>}
+          </>
+        )}
       </div>
     </div>
   );
