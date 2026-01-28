@@ -43,7 +43,9 @@ const BudgetOverviewDisplay = ({ overview }: { overview: BudgetOverview }) => {
         </div>
         <div className="p-4 rounded-lg bg-cream/60">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Remaining</p>
-          <p className="text-2xl font-bold text-green-700 mt-1">{formatCurrency(overview.remainingBudget)}</p>
+          <p className={`text-2xl font-bold mt-1 ${overview.remainingBudget < 0 ? 'text-red-600' : 'text-green-700'}`}>
+            {formatCurrency(overview.remainingBudget)}
+          </p>
         </div>
       </div>
     </div>
