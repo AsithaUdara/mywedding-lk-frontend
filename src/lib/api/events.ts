@@ -71,6 +71,22 @@ export interface ActivityFeedItem {
   userLastName: string;
 }
 
+// --- NEW TYPES FOR COLLABORATION HUB ---
+export interface Conversation {
+  id: string;
+  name: string;
+}
+
+export interface Message {
+  id: string;
+  content: string;
+  createdAt: string;
+  senderId: string;
+  senderFirstName: string;
+  senderLastName: string;
+  attachment: any | null; // Placeholder
+}
+
 
 // --- API Functions for Events & Organizers (Existing) ---
 
@@ -328,5 +344,35 @@ export const postComment = async (token: string, eventId: string, content: strin
     const errorData = await response.json();
     throw new Error(errorData.message || 'Failed to post comment.');
   }
+  return response.json();
+};
+
+// --- NEW FUNCTIONS FOR COLLABORATION HUB ---
+
+// 1. Get all conversations for an event
+export const getConversations = async (token: string, eventId: string): Promise<Conversation[]> => {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/events/${eventId}/conversations`;
+  const response = await fetch(apiUrl, { headers: { 'Authorization': `Bearer ${token}` } });
+  if (!response.ok) throw new Error('Failed to fetch conversations.');
+  return response.json();
+};
+
+// 2. Get all messages for a conversation
+export const getMessages = async (token: string, conversationId: string): Promise<Message[]> => {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/conversations/${conversationId}/messages`;
+  const response = await fetch(apiUrl, { headers: { 'Authorization': `Bearer ${token}` } });
+  if (!response.ok) throw new Error('Failed to fetch messages.');
+  return response.json();
+};
+
+// 3. Post a new message
+export const postMessage = async (token: string, conversationId: string, content: string) => {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/conversations/${conversationId}/messages`;
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content }),
+  });
+  if (!response.ok) throw new Error('Failed to post message.');
   return response.json();
 };
