@@ -9,6 +9,7 @@ import BudgetSection from '@/features/event-planning/components/BudgetSection';
 import MyStyleSection from '@/features/event-planning/components/MyStyleSection';
 import StyleQuizModal from '@/features/event-planning/components/StyleQuizModal';
 import EventHeaderClient from '@/features/event-planning/components/EventHeaderClient';
+import ActivityHub from '@/features/event-planning/components/ActivityHub';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { getEventById } from '@/lib/api/events';
@@ -87,17 +88,18 @@ const EventDetailPage = ({ params }: { params: Promise<{ eventId: string }> }) =
         </div>
 
         {/* Main content grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start max-w-7xl mx-auto">
           
-          {/* Main content column */}
-          <div className="lg:col-span-3 space-y-8">
+          {/* Main content column - Spans 2 columns */}
+          <div className="lg:col-span-2 space-y-8">
+            <ActivityHub eventId={eventId} />
             <MyStyleSection preferences={stylePreferences} onRefresh={handleRefreshPreferences} onOpenQuiz={() => setQuizOpen(true)} />
             <TeamSection eventId={eventId} />
             <BudgetSection eventId={eventId} />
           </div>
 
-          {/* Sidebar column */}
-          <div className="lg:col-span-2">
+          {/* Sidebar column - Spans 1 column */}
+          <div className="lg:col-span-1">
             <div className="sticky top-24">
                <ChecklistSection eventId={eventId} />
             </div>
