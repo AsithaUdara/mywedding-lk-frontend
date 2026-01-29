@@ -9,6 +9,9 @@ interface UIContextType {
   closeChat: () => void;
   chatEventId: string | null;
   setChatEventId: (eventId: string | null) => void;
+  isHubOpen: boolean;
+  openHub: () => void;
+  closeHub: () => void;
 }
 
 const UIContext = createContext<UIContextType | undefined>(undefined);
@@ -16,11 +19,14 @@ const UIContext = createContext<UIContextType | undefined>(undefined);
 export const UIProvider = ({ children }: { children: ReactNode }) => {
   const [isChatOpen, setChatOpen] = useState(false);
   const [chatEventId, setChatEventId] = useState<string | null>(null);
+  const [isHubOpen, setHubOpen] = useState(false);
 
   const openChat = () => setChatOpen(true);
   const closeChat = () => setChatOpen(false);
+  const openHub = () => setHubOpen(true);
+  const closeHub = () => setHubOpen(false);
 
-  const value = { isChatOpen, openChat, closeChat, chatEventId, setChatEventId };
+  const value = { isChatOpen, openChat, closeChat, chatEventId, setChatEventId, isHubOpen, openHub, closeHub };
 
   return (
     <UIContext.Provider value={value}>

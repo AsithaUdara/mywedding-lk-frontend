@@ -10,6 +10,8 @@ import MyStyleSection from '@/features/event-planning/components/MyStyleSection'
 import StyleQuizModal from '@/features/event-planning/components/StyleQuizModal';
 import EventHeaderClient from '@/features/event-planning/components/EventHeaderClient';
 import ActivityHub from '@/features/event-planning/components/ActivityHub';
+import EventPageNav from '@/features/event-planning/components/EventPageNav';
+import CollaborationHubSidebar from '@/features/event-planning/components/CollaborationHubSidebar';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { getEventById } from '@/lib/api/events';
@@ -87,6 +89,11 @@ const EventDetailPage = ({ params }: { params: Promise<{ eventId: string }> }) =
           <EventHeaderClient eventId={eventId} />
         </div>
 
+        {/* Navigation Tabs */}
+        <div className="max-w-7xl mx-auto">
+          <EventPageNav />
+        </div>
+
         {/* Main content grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start max-w-7xl mx-auto">
           
@@ -114,6 +121,9 @@ const EventDetailPage = ({ params }: { params: Promise<{ eventId: string }> }) =
         onClose={handleQuizClosed}
         eventId={eventId}
       />
+
+      {/* Collaboration Hub Sidebar */}
+      <CollaborationHubSidebar eventId={eventId} />
     </div>
   );
 };
