@@ -1,9 +1,8 @@
-// File: src/features/event-planning/components/CreateTaskForm.tsx
 "use client";
 
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { createTask } from '@/lib/api/events';
+import { createTask } from '@/lib/api/tasks';
 
 interface CreateTaskFormProps {
   eventId: string;

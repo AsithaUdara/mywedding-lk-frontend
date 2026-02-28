@@ -1,11 +1,11 @@
 import React from 'react';
-import { BudgetOverview } from '@/lib/api/events';
+import { type BudgetOverview } from '@/lib/api/budget';
 import { motion } from 'framer-motion';
 
 const BudgetOverviewDisplay = ({ overview }: { overview: BudgetOverview }) => {
   // Calculate spent percentage, ensuring it doesn't exceed 100% for the progress bar
-  const spentPercentage = overview.totalBudget > 0 
-    ? Math.min((overview.totalSpent / overview.totalBudget) * 100, 100) 
+  const spentPercentage = overview.totalBudget > 0
+    ? Math.min((overview.totalSpent / overview.totalBudget) * 100, 100)
     : 0;
 
   // Function to format numbers as currency

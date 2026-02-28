@@ -1,7 +1,5 @@
-// File: src/features/event-planning/components/TeamMemberCard.tsx
-
 import React from 'react';
-import { Organizer } from '@/lib/api/events';
+import { type Organizer } from '@/lib/api/events';
 import { Shield, Edit3, Eye } from 'lucide-react';
 
 const TeamMemberCard = ({ organizer }: { organizer: Organizer }) => {
