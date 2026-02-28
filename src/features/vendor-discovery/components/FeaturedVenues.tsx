@@ -49,11 +49,12 @@ const FeaturedVenues = () => {
           {venues.map((venue) => (
             <div key={venue.name} className="group cursor-pointer bg-white rounded-lg shadow-lg overflow-hidden transform hover:-translate-y-2 transition-transform duration-300">
               <div className="relative w-full h-56">
-                <Image 
-                  src={venue.imageUrl} 
-                  alt={venue.name} 
-                  layout="fill" 
-                  objectFit="cover" 
+                <Image
+                  src={venue.imageUrl}
+                  alt={venue.name}
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                  style={{ objectFit: 'cover' }}
                   className="group-hover:scale-110 transition-transform duration-500"
                 />
               </div>

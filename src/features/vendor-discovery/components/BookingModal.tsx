@@ -28,7 +28,7 @@ const BookingModal = ({ isOpen, onClose, vendorName, serviceId, price }: Booking
   const [events, setEvents] = useState<Event[]>([]);
   const [selectedEventId, setSelectedEventId] = useState('');
   const [serviceDate, setServiceDate] = useState('');
-  
+
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -54,7 +54,7 @@ const BookingModal = ({ isOpen, onClose, vendorName, serviceId, price }: Booking
           if (userEvents.length > 0) {
             setSelectedEventId(userEvents[0].id);
           }
-        } catch (err) {
+        } catch {
           setError("Could not load your events.");
         }
       };
@@ -83,8 +83,9 @@ const BookingModal = ({ isOpen, onClose, vendorName, serviceId, price }: Booking
       });
       onClose();
       router.push('/dashboard');
-    } catch (err: any) {
-      setError(err?.message || "An unexpected error occurred during booking.");
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred during booking.";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -114,17 +115,17 @@ const BookingModal = ({ isOpen, onClose, vendorName, serviceId, price }: Booking
                       <option key={event.id} value={event.id}>{event.eventName}</option>
                     ))}
                   </select>
-                  <ChevronDown size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"/>
+                  <ChevronDown size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                 </>
               ) : (
-                <p className="text-sm text-gray-500 p-3 bg-white border rounded-lg">You don't have any events. Please create one from your dashboard first.</p>
+                <p className="text-sm text-gray-500 p-3 bg-white border rounded-lg">You don&apos;t have any events. Please create one from your dashboard first.</p>
               )}
             </div>
           </div>
           <div>
             <label htmlFor="serviceDate" className="block text-sm font-medium text-charcoal mb-2">Service Date</label>
             <div className="relative">
-              <Calendar size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"/>
+              <Calendar size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 id="serviceDate"
                 type="date"
@@ -136,8 +137,8 @@ const BookingModal = ({ isOpen, onClose, vendorName, serviceId, price }: Booking
             </div>
           </div>
           <div className="pt-4 border-t border-gray-300/70 text-center">
-             <p className="text-sm text-gray-600">Total Amount</p>
-             <p className="text-3xl font-bold text-charcoal">LKR {price.toLocaleString()}</p>
+            <p className="text-sm text-gray-600">Total Amount</p>
+            <p className="text-3xl font-bold text-charcoal">LKR {price.toLocaleString()}</p>
           </div>
           <button type="submit" disabled={loading || events.length === 0} className="w-full py-3 rounded-lg text-white font-semibold shadow-lg transition-transform hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed" style={{ backgroundColor: 'var(--color-primary)' }}>
             {loading ? 'Confirming...' : 'Confirm & Book'}

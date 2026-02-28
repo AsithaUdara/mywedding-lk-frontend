@@ -84,7 +84,7 @@ export interface Message {
   senderId: string;
   senderFirstName: string;
   senderLastName: string;
-  attachment: any | null; // Placeholder
+  attachment: unknown | null; // Placeholder
 }
 
 
@@ -218,8 +218,20 @@ export const getBudgetOverview = async (token: string, eventId: string): Promise
     method: 'GET',
     headers: { 'Authorization': `Bearer ${token}` },
   });
-  if (!response.ok) throw new Error('Failed to fetch budget overview.');
-  return response.json();
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error('Event or budget details not found.');
+    }
+    throw new Error('Failed to fetch budget overview.');
+  }
+
+  const contentType = response.headers.get("content-type");
+  if (contentType && contentType.indexOf("application/json") !== -1) {
+    return response.json();
+  } else {
+    throw new Error('Server returned invalid data format.');
+  }
 };
 
 // 2. Set the total budget for an event
@@ -231,7 +243,7 @@ export const setTotalBudget = async (token: string, eventId: string, totalBudget
     body: { totalBudget },
     eventId
   });
-  
+
   const response = await fetch(apiUrl, {
     method: 'PUT',
     headers: {
@@ -240,13 +252,13 @@ export const setTotalBudget = async (token: string, eventId: string, totalBudget
     },
     body: JSON.stringify({ totalBudget }),
   });
-  
+
   console.log('📡 API Response:', {
     status: response.status,
     statusText: response.statusText,
     ok: response.ok
   });
-  
+
   if (!response.ok) {
     const errorData = await response.json();
     console.error('❌ API Error:', errorData);
@@ -298,7 +310,7 @@ export const getExpenses = async (token: string, eventId: string): Promise<Expen
 // --- NEW FUNCTION: Set the style preferences for an event ---
 export const setEventPreferences = async (token: string, eventId: string, preferences: Record<string, string>) => {
   const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/events/${eventId}/preferences`;
-  
+
   const response = await fetch(apiUrl, {
     method: 'PUT',
     headers: {
@@ -373,6 +385,98 @@ export const postMessage = async (token: string, conversationId: string, content
     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ content }),
   });
-  if (!response.ok) throw new Error('Failed to post message.');
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || 'Failed to post message.');
+  }
+  // 201 Created response - try to parse JSON if available
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    return response.json();
+  }
+  return { success: true };
+};
+
+// --- NEW FUNCTIONS FOR POLLS ---
+
+export const getPollsForEvent = async (token: string, eventId: string) => {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/polls/event/${eventId}`;
+  const response = await fetch(apiUrl, { headers: { 'Authorization': `Bearer ${token}` } });
+  if (!response.ok) throw new Error('Failed to fetch polls.');
   return response.json();
 };
+
+export const createPoll = async (token: string, pollData: { eventId: string; title: string; options: string[] }) => {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/polls`;
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(pollData),
+  });
+  if (!response.ok) throw new Error('Failed to create poll.');
+  return response.json();
+};
+
+export const voteInPoll = async (token: string, pollId: string, optionId: string) => {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/polls/${pollId}/vote`;
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ optionId }),
+  });
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || 'Failed to vote.');
+  }
+  return response;
+};
+
+// --- NEW FUNCTIONS FOR INVITATIONS ---
+
+export const sendInvitation = async (token: string, inviteData: { eventId: string; email: string }) => {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/invitations/invite`;
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(inviteData),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Failed to send invitation.');
+  }
+  return response.json();
+};
+
+export const acceptInvitation = async (token: string, acceptData: { token: string }) => {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/invitations/accept`;
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(acceptData),
+  });
+
+  const contentType = response.headers.get("content-type");
+  const isJson = contentType && contentType.indexOf("application/json") !== -1;
+
+  if (!response.ok) {
+    if (isJson) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to accept invitation.');
+    } else {
+      const errorText = await response.text();
+      throw new Error(errorText || 'Failed to accept invitation.');
+    }
+  }
+
+  if (isJson) {
+    return response.json();
+  }
+  return response;
+};
+

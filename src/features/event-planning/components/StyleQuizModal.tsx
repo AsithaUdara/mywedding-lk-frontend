@@ -20,7 +20,7 @@ const quizQuestions = [
     question: 'Which style best represents your dream wedding?',
     options: [
       { value: 'traditional', label: 'Classic & Traditional', imageUrl: 'https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=800&q=80' },
-      { value: 'modern', label: 'Modern & Minimalist', imageUrl: 'https://images.unsplash.com/photo-1522159344217-133b8a531b26?auto=format&fit=crop&w=800&q=80' },
+      { value: 'modern', label: 'Modern & Minimalist', imageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80' },
     ],
   },
   {
@@ -28,7 +28,7 @@ const quizQuestions = [
     question: 'Which photo style do you prefer?',
     options: [
       { value: 'candid', label: 'Candid & Natural', imageUrl: 'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=800&q=80' },
-      { value: 'posed', label: 'Posed & Editorial', imageUrl: 'https://images.unsplash.com/photo-1597861405922-24d85a5d0a6c?auto=format&fit=crop&w=800&q=80' },
+      { value: 'posed', label: 'Posed & Editorial', imageUrl: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80' },
     ],
   },
   {
@@ -66,8 +66,9 @@ const StyleQuizModal = ({ isOpen, onClose, eventId }: StyleQuizModalProps) => {
         const token = await user.getIdToken();
         await setEventPreferences(token, eventId, newPreferences);
         setIsComplete(true);
-      } catch (err: any) {
-        setError(err.message || "Failed to save preferences.");
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to save preferences.";
+        setError(errorMessage);
         setLoading(false);
       }
     }
@@ -79,14 +80,14 @@ const StyleQuizModal = ({ isOpen, onClose, eventId }: StyleQuizModalProps) => {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm modal-container">
       <div className="relative w-full max-w-3xl p-8 rounded-xl shadow-2xl bg-cream">
-        
+
         {isComplete ? (
           <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}>
             <div className="text-center">
               <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
               <h2 className="mt-4 text-3xl font-bold font-playfair text-charcoal">Preferences Saved!</h2>
               <p className="mt-2 text-gray-600">
-                We've tailored your experience. You can always change your style preferences on your event dashboard.
+                We&apos;ve tailored your experience. You can always change your style preferences on your event dashboard.
               </p>
               <button
                 onClick={onClose}
@@ -121,12 +122,12 @@ const StyleQuizModal = ({ isOpen, onClose, eventId }: StyleQuizModalProps) => {
                       disabled={loading}
                       className="group relative h-64 rounded-lg overflow-hidden border-4 border-transparent hover:border-primary focus:border-primary focus:outline-none transition-all duration-300"
                     >
-                      <Image 
-                        src={option.imageUrl} 
-                        alt={option.label} 
+                      <Image
+                        src={option.imageUrl}
+                        alt={option.label}
                         fill
                         sizes="(max-width: 768px) 100vw, 50vw"
-                        className="object-cover group-hover:scale-105 transition-transform duration-300" 
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
                       <h3 className="absolute bottom-4 left-4 text-2xl font-bold text-white">{option.label}</h3>

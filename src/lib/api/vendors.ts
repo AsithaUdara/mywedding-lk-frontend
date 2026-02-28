@@ -41,8 +41,8 @@ export interface VendorDetail {
 
 // Type for the filter parameters
 export interface VendorFilters {
-    category?: string;
-    location?: string;
+  category?: string;
+  location?: string;
 }
 
 // --- API Functions ---
@@ -50,7 +50,7 @@ export interface VendorFilters {
 // 1. Get a list of vendors, with optional filtering
 export const getVendors = async (filters: VendorFilters = {}): Promise<Vendor[]> => {
   const baseUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendors`;
-  
+
   // Build query string from filters
   const queryParams = new URLSearchParams();
   if (filters.category) {
@@ -59,7 +59,7 @@ export const getVendors = async (filters: VendorFilters = {}): Promise<Vendor[]>
   if (filters.location) {
     queryParams.append('location', filters.location);
   }
-  
+
   const apiUrl = `${baseUrl}?${queryParams.toString()}`;
 
   const response = await fetch(apiUrl, {
@@ -77,7 +77,7 @@ export const getVendors = async (filters: VendorFilters = {}): Promise<Vendor[]>
 // 2. Get a single vendor by their ID
 export const getVendorById = async (vendorId: string): Promise<VendorDetail | null> => {
   const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendors/${vendorId}`;
-  
+
   const response = await fetch(apiUrl, {
     method: 'GET',
     next: { revalidate: 60 } // Optional: Revalidate cache
@@ -85,7 +85,7 @@ export const getVendorById = async (vendorId: string): Promise<VendorDetail | nu
 
   if (!response.ok) {
     if (response.status === 404) {
-        return null; // Handle "Not Found" gracefully
+      return null; // Handle "Not Found" gracefully
     }
     throw new Error('Failed to fetch vendor details.');
   }
@@ -115,6 +115,31 @@ export const createBooking = async (token: string, bookingData: BookingData) => 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.message || 'Failed to create booking.');
+  }
+  return response.json();
+};
+
+export const registerVendor = async (vendorData: {
+  userId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  businessName: string;
+  category: string;
+  city: string;
+}) => {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendors/register`;
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(vendorData),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Failed to register vendor profile.');
   }
   return response.json();
 };

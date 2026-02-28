@@ -40,7 +40,7 @@ const DashboardPage = () => {
       const token = await user.getIdToken();
       const data = await getEvents(token);
       setEvents(data || []);
-    } catch (err) {
+    } catch {
       setError('Failed to load your events.');
     } finally {
       setIsLoadingEvents(false);
@@ -85,8 +85,8 @@ const DashboardPage = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-cream">
-      <Header onLoginClick={() => {}} />
-      
+      <Header onLoginClick={() => { }} />
+
       <main className="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-4xl font-bold font-playfair text-charcoal">Your Events</h1>
@@ -100,26 +100,26 @@ const DashboardPage = () => {
         </div>
 
         {error && <div className="p-6 mb-6 bg-red-100 text-red-700 rounded-lg">{error}</div>}
-        
+
         {isLoadingEvents ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="bg-white rounded-xl shadow-md p-6 space-y-4">
-                    <Skeleton className="h-6 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
-                </div>
-                ))}
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="bg-white rounded-xl shadow-md p-6 space-y-4">
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            ))}
+          </div>
         ) : (
-            <EventList events={events} />
+          <EventList events={events} isLoading={isLoadingEvents} />
         )}
       </main>
       <Footer />
 
       {/* --- RENDER ALL MODALS, CONTROLLED BY STATE --- */}
-      <CreateEventModal 
-        isOpen={isCreateOpen} 
-        onClose={() => setCreateOpen(false)} 
+      <CreateEventModal
+        isOpen={isCreateOpen}
+        onClose={() => setCreateOpen(false)}
         onEventCreated={handleEventCreated}
       />
 
@@ -131,7 +131,7 @@ const DashboardPage = () => {
           eventName={newEventInfo.eventName}
         />
       )}
-      
+
       {isQuizOpen && newEventInfo && (
         <StyleQuizModal
           isOpen={isQuizOpen}
