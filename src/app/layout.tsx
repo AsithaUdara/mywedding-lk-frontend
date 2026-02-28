@@ -1,4 +1,3 @@
-// src/app/layout.tsx
 import { Roboto, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
@@ -9,7 +8,7 @@ const roboto = Roboto({
   weight: ['400', '500', '700'],
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-roboto', 
+  variable: '--font-roboto',
 });
 
 const playfairDisplay = Playfair_Display({
@@ -30,7 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning={true}>
-      <body className={`${roboto.variable} ${playfairDisplay.variable} antialiased`}>
+      <body className={`${roboto.variable} ${playfairDisplay.variable} antialiased`} suppressHydrationWarning={true}>
         <AuthProvider>
           <UIProvider>
             {children}

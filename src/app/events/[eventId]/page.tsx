@@ -9,7 +9,7 @@ import BudgetSection from '@/features/event-planning/components/BudgetSection';
 import MyStyleSection from '@/features/event-planning/components/MyStyleSection';
 import StyleQuizModal from '@/features/event-planning/components/StyleQuizModal';
 import EventHeaderClient from '@/features/event-planning/components/EventHeaderClient';
-import ActivityHub from '@/features/event-planning/components/ActivityHub';
+import RecentActivitiesHub from '@/features/event-planning/components/RecentActivitiesHub';
 import EventPageNav from '@/features/event-planning/components/EventPageNav';
 import CollaborationHubSidebar from '@/features/event-planning/components/CollaborationHubSidebar';
 import { useAuth } from '@/context/AuthContext';
@@ -29,22 +29,18 @@ const EventDetailPage = ({ params }: { params: Promise<{ eventId: string }> }) =
   const { user, loading } = useAuth();
   const router = useRouter();
   const [event, setEvent] = useState<EventDetails | null>(null);
-  const [loadingEvent, setLoadingEvent] = useState(true);
   const [isQuizOpen, setQuizOpen] = useState(false);
-  
+
   // Define fetchEvent outside useEffect using useCallback so it can be reused
   const fetchEvent = useCallback(async () => {
     if (!user) return;
     try {
-      setLoadingEvent(true);
       const token = await user.getIdToken();
       const data = await getEventById(token, eventId);
       setEvent(data);
       console.log('✅ Event data refreshed:', data);
     } catch (err) {
       console.error('Failed to fetch event:', err);
-    } finally {
-      setLoadingEvent(false);
     }
   }, [user, eventId]);
 
@@ -81,8 +77,8 @@ const EventDetailPage = ({ params }: { params: Promise<{ eventId: string }> }) =
 
   return (
     <div className="flex flex-col min-h-screen bg-cream">
-      <Header onLoginClick={() => {}}/>
-      
+      <Header onLoginClick={() => { }} />
+
       <main className="flex-grow w-full px-4 sm:px-6 lg:px-8 py-12">
         {/* Header section */}
         <div className="max-w-7xl mx-auto mb-8">
@@ -96,10 +92,10 @@ const EventDetailPage = ({ params }: { params: Promise<{ eventId: string }> }) =
 
         {/* Main content grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start max-w-7xl mx-auto">
-          
+
           {/* Main content column - Spans 2 columns */}
           <div className="lg:col-span-2 space-y-8">
-            <ActivityHub eventId={eventId} />
+            <RecentActivitiesHub eventId={eventId} />
             <MyStyleSection preferences={stylePreferences} onRefresh={handleRefreshPreferences} onOpenQuiz={() => setQuizOpen(true)} />
             <TeamSection eventId={eventId} />
             <BudgetSection eventId={eventId} />
@@ -108,7 +104,7 @@ const EventDetailPage = ({ params }: { params: Promise<{ eventId: string }> }) =
           {/* Sidebar column - Spans 1 column */}
           <div className="lg:col-span-1">
             <div className="sticky top-24">
-               <ChecklistSection eventId={eventId} />
+              <ChecklistSection eventId={eventId} />
             </div>
           </div>
         </div>

@@ -15,16 +15,16 @@ const MyStyleSection = ({ preferences, onRefresh, onOpenQuiz }: { preferences: R
   if (!preferences) {
     return (
       <div className="p-6 bg-white rounded-lg shadow-sm text-center">
-        <p className="text-gray-500">You haven't set your style preferences yet.</p>
+        <p className="text-gray-500">You haven&apos;t set your style preferences yet.</p>
         <div className="flex gap-3 justify-center mt-4">
-          <button 
+          <button
             onClick={onOpenQuiz}
             className="font-semibold text-primary hover:underline"
           >
             Take the Style Quiz
           </button>
           {onRefresh && (
-            <button 
+            <button
               onClick={onRefresh}
               className="flex items-center gap-1 font-semibold text-gray-500 hover:text-primary transition-colors"
               title="Refresh to load saved preferences"
@@ -45,7 +45,7 @@ const MyStyleSection = ({ preferences, onRefresh, onOpenQuiz }: { preferences: R
           <Sparkles className="text-primary" size={24} />
           <h2 className="text-2xl font-semibold text-charcoal">My Wedding Style</h2>
         </div>
-        <button 
+        <button
           onClick={onOpenQuiz}
           className="flex items-center gap-2 text-sm font-semibold text-primary hover:underline hover:scale-105 transition-transform"
         >
@@ -70,7 +70,7 @@ const MyStyleSection = ({ preferences, onRefresh, onOpenQuiz }: { preferences: R
           <h3 className="font-bold">Need Vendor Recommendations?</h3>
           <p className="text-sm opacity-90">Chat with our AI Assistant to get personalized suggestions based on your style.</p>
         </div>
-        <button 
+        <button
           onClick={handleChatNowClick}
           className="bg-white text-primary font-bold px-4 py-2 rounded-lg shadow-md hover:scale-105 transition-transform whitespace-nowrap"
         >

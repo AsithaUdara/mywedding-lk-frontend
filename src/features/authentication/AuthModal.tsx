@@ -64,12 +64,12 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
           await updateProfile(userCredential.user, { displayName: fullName });
         }
         await handleBackendSync();
-        router.push('/vendors');
+        router.push('/dashboard');
         onClose();
       } else {
         await signInWithEmailAndPassword(auth, email, password);
         await handleBackendSync();
-        router.push('/vendors');
+        router.push('/dashboard');
         onClose();
       }
     } catch (err: unknown) {
@@ -92,7 +92,7 @@ const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
     try {
       await signInWithPopup(auth, provider);
       await handleBackendSync();
-      router.push('/vendors');
+      router.push('/dashboard');
       onClose();
     } catch (err: unknown) {
       const error = err as { message?: string };

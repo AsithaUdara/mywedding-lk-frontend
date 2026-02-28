@@ -101,7 +101,7 @@ const AIChatbotSidebar = () => {
                   </div>
                   <div className="bg-blue-50 p-4 rounded-lg rounded-tl-none flex-1">
                     <p className="text-charcoal text-sm leading-relaxed">
-                      Hi <span className="font-semibold">{user?.displayName?.split(' ')[0] || 'there'}</span>! 👋 I'm your AI Wedding Assistant. Based on your style preferences, I can help you find the perfect vendors, plan your budget, and create an unforgettable celebration.
+                      Hi <span className="font-semibold">{user?.displayName?.split(' ')[0] || 'there'}</span>! 👋 I&apos;m your AI Wedding Assistant. Based on your style preferences, I can help you find the perfect vendors, plan your budget, and create an unforgettable celebration.
                     </p>
                     <p className="text-charcoal text-sm leading-relaxed mt-3">
                       What would you like help with? I can suggest:
@@ -118,9 +118,8 @@ const AIChatbotSidebar = () => {
                 messages.map((message) => (
                   <div
                     key={message.id}
-                    className={`flex items-start gap-3 ${
-                      message.sender === 'user' ? 'flex-row-reverse' : ''
-                    }`}
+                    className={`flex items-start gap-3 ${message.sender === 'user' ? 'flex-row-reverse' : ''
+                      }`}
                   >
                     {message.sender === 'ai' && (
                       <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">
@@ -128,11 +127,10 @@ const AIChatbotSidebar = () => {
                       </div>
                     )}
                     <div
-                      className={`p-3 rounded-lg max-w-xs text-sm ${
-                        message.sender === 'user'
+                      className={`p-3 rounded-lg max-w-xs text-sm ${message.sender === 'user'
                           ? 'bg-primary text-white rounded-tr-none'
                           : 'bg-blue-50 text-charcoal rounded-tl-none'
-                      }`}
+                        }`}
                     >
                       {message.content}
                     </div>

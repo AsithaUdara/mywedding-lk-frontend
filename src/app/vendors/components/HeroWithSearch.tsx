@@ -16,12 +16,13 @@ const HeroWithSearch = ({ imageUrl, searchType }: HeroWithSearchProps) => {
         <div className="w-5/12" style={{ backgroundColor: 'var(--color-cream)' }}></div>
         <div className="w-7/12 relative rounded-bl-2xl overflow-hidden">
           {/* Use the imageUrl from props */}
-          <Image 
+          <Image
             src={imageUrl}
-            alt="Beautiful Wedding Venue in Sri Lanka" 
-            layout="fill" 
-            objectFit="cover" 
+            alt="Beautiful Wedding Venue in Sri Lanka"
+            fill
             priority
+            sizes="(max-width: 768px) 100vw, 60vw"
+            style={{ objectFit: 'cover' }}
           />
         </div>
       </div>

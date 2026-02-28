@@ -14,8 +14,8 @@ export async function generateStaticParams() {
   return [];
 }
 
-const VendorDetailPage = async ({ params }: { params: { vendorId: string } }) => {
-  const { vendorId } = params;
+const VendorDetailPage = async ({ params }: { params: Promise<{ vendorId: string }> }) => {
+  const { vendorId } = await params;
   const vendor = await getVendorById(vendorId);
 
   if (!vendor) {

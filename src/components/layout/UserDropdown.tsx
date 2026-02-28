@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
 import { LayoutDashboard, Settings, LogOut, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -27,9 +28,9 @@ const UserDropdown = () => {
 
   const getInitials = (displayName: string | null, email: string | null) => {
     if (displayName) {
-        const names = displayName.split(' ');
-        if (names.length > 1) return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
-        return displayName.substring(0, 1).toUpperCase();
+      const names = displayName.split(' ');
+      if (names.length > 1) return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+      return displayName.substring(0, 1).toUpperCase();
     }
     if (email) return email.substring(0, 1).toUpperCase();
     return 'U';
@@ -37,15 +38,15 @@ const UserDropdown = () => {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      
+
       {/* User Avatar Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 focus:outline-none"
       >
-        <div className="flex items-center justify-center w-9 h-9 rounded-full bg-primary/20 text-primary font-bold">
+        <div className="relative flex items-center justify-center w-9 h-9 rounded-full bg-primary/20 text-primary font-bold overflow-hidden">
           {user.photoURL ? (
-            <img src={user.photoURL} alt="User Avatar" className="w-full h-full rounded-full object-cover" />
+            <Image src={user.photoURL} alt="User Avatar" fill className="object-cover" />
           ) : (
             <span>{getInitials(user.displayName, user.email)}</span>
           )}
@@ -75,7 +76,7 @@ const UserDropdown = () => {
                 <div className="text-primary"><Settings size={20} /></div>
                 <span className="font-semibold text-charcoal">Account Settings</span>
               </Link>
-              <hr className="my-1"/>
+              <hr className="my-1" />
               <button onClick={logOut} className="flex items-center w-full text-left space-x-3 p-3 rounded-lg hover:bg-cream transition-colors">
                 <div className="text-primary"><LogOut size={20} /></div>
                 <span className="font-semibold text-charcoal">Log Out</span>
