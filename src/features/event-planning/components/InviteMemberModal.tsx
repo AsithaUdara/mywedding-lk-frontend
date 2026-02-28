@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { sendInvitation } from '@/lib/api/events';
+import { sendInvitation } from '@/lib/api/invitations';
 import { X, Mail } from 'lucide-react';
 
 interface InviteMemberModalProps {

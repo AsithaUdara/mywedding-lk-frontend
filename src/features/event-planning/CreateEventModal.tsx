@@ -1,4 +1,3 @@
-// File: src/features/event-planning/CreateEventModal.tsx
 "use client";
 
 import React, { useState } from 'react';
@@ -30,10 +29,8 @@ const CreateEventModal = ({ isOpen, onClose, onEventCreated }: CreateEventModalP
 
     try {
       const token = await user.getIdToken();
-      console.log('📝 Creating event:', eventName, eventDate);
 
       const newEvent = await createEvent(token, { eventName, eventDate });
-      console.log('✅ Event created:', newEvent);
 
       // Reset form fields
       setEventName('');

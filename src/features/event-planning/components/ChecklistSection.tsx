@@ -1,10 +1,8 @@
-// File: src/features/event-planning/components/ChecklistSection.tsx
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { getTasksForEvent } from '@/lib/api/events';
-import { Task } from '@/lib/api/events'; // Import the type
+import { getTasksForEvent, type Task } from '@/lib/api/tasks';
 import { CheckSquare, PlusCircle } from 'lucide-react';
 import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
 import TaskItem from './TaskItem'; // We will create this next
@@ -64,9 +62,9 @@ const ChecklistSection = ({ eventId }: ChecklistSectionProps) => {
       </div>
 
       {showCreateForm && (
-        <CreateTaskForm 
-          eventId={eventId} 
-          onTaskCreated={handleTaskCreated} 
+        <CreateTaskForm
+          eventId={eventId}
+          onTaskCreated={handleTaskCreated}
           onCancel={() => setShowCreateForm(false)}
         />
       )}

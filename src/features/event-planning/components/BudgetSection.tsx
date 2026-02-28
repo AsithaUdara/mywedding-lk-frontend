@@ -1,9 +1,8 @@
-// File: src/features/event-planning/components/BudgetSection.tsx
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { getBudgetOverview, getExpenses, BudgetOverview, Expense } from '@/lib/api/events';
+import { getBudgetOverview, getExpenses, type BudgetOverview, type Expense } from '@/lib/api/budget';
 import { Wallet, PlusCircle } from 'lucide-react';
 import BudgetOverviewDisplay from './BudgetOverviewDisplay';
 import ExpenseList from './ExpenseList';

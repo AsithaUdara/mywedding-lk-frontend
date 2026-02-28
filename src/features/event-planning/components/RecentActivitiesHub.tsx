@@ -1,9 +1,8 @@
-// File: src/features/event-planning/components/ActivityHub.tsx
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { getActivityFeed, ActivityFeedItem } from '@/lib/api/events';
+import { getActivityFeed, type ActivityFeedItem } from '@/lib/api/feed';
 import { MessageSquare } from 'lucide-react';
 import ActivityItem from './ActivityItem';
 import Skeleton from '@/components/ui/Skeleton';

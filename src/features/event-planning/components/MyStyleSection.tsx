@@ -1,4 +1,3 @@
-// File: src/features/event-planning/components/MyStyleSection.tsx
 "use client";
 
 import React from 'react';
@@ -9,7 +8,6 @@ const MyStyleSection = ({ preferences, onRefresh, onOpenQuiz }: { preferences: R
   const { openChat } = useUI();
 
   const handleChatNowClick = () => {
-    console.log('🤖 Opening AI Chatbot with preferences:', preferences);
     openChat();
   };
   if (!preferences) {

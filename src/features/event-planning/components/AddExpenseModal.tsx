@@ -1,9 +1,8 @@
-// File: src/features/event-planning/components/AddExpenseModal.tsx
 "use client";
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { addExpense, getBudgetCategories, BudgetCategory } from '@/lib/api/events';
+import { addExpense, getBudgetCategories, type BudgetCategory } from '@/lib/api/budget';
 import { X, ChevronDown } from 'lucide-react';
 
 interface AddExpenseModalProps {

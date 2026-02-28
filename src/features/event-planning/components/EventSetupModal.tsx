@@ -1,10 +1,9 @@
-// File: src/features/event-planning/components/EventSetupModal.tsx
 "use client";
 
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 // FIX: Rename import to avoid conflict with setTotalBudget state setter
-import { setTotalBudget as setTotalBudgetAPI } from '@/lib/api/events';
+import { setTotalBudget as setTotalBudgetAPI } from '@/lib/api/budget';
 import { Wallet } from 'lucide-react';
 
 interface EventSetupModalProps {
@@ -19,9 +18,6 @@ const EventSetupModal = ({ isOpen, onClose, eventId, eventName }: EventSetupModa
   const [totalBudget, setTotalBudget] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
-  // Debug log
-  console.log('🎨 EventSetupModal render:', { isOpen, eventId, eventName });
 
   if (!isOpen) return null;
 

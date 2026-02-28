@@ -13,7 +13,7 @@ import {
     ChevronUp
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { getPollsForEvent, createPoll, voteInPoll } from '@/lib/api/events';
+import { getPollsForEvent, createPoll, voteInPoll } from '@/lib/api/polls';
 
 interface PollOption {
     id: string;

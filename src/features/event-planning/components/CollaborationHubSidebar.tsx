@@ -1,10 +1,9 @@
-// File: src/features/event-planning/components/CollaborationHubSidebar.tsx
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useUI } from '@/context/UIContext';
 import { useAuth } from '@/context/AuthContext';
-import { getConversations, getMessages, postMessage, Conversation, Message } from '@/lib/api/events';
+import { getConversations, getMessages, postMessage, type Conversation, type Message } from '@/lib/api/collaboration';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, Send, Hash, Vote, MessageSquare, Loader2 } from 'lucide-react';
 import PollsSection from './PollsSection';
