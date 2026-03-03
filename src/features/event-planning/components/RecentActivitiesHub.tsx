@@ -3,12 +3,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { getActivityFeed, type ActivityFeedItem } from '@/lib/api/feed';
+import { useRealTime } from '@/context/RealTimeContext';
 import { MessageSquare } from 'lucide-react';
 import ActivityItem from './ActivityItem';
 import Skeleton from '@/components/ui/Skeleton';
 
 const RecentActivitiesHub = ({ eventId }: { eventId: string }) => {
   const { user } = useAuth();
+  const { activityVersion } = useRealTime();
   const [items, setItems] = useState<ActivityFeedItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -28,7 +30,7 @@ const RecentActivitiesHub = ({ eventId }: { eventId: string }) => {
 
   useEffect(() => {
     fetchActivity();
-  }, [fetchActivity]);
+  }, [fetchActivity, activityVersion]);
 
   return (
     <div className="p-6 bg-white rounded-lg shadow-sm">

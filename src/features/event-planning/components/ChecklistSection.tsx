@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { getTasksForEvent, type Task } from '@/lib/api/tasks';
+import { useRealTime } from '@/context/RealTimeContext';
 import { CheckSquare, PlusCircle } from 'lucide-react';
 import LoadingSkeleton from '@/components/ui/LoadingSkeleton';
 import TaskItem from './TaskItem'; // We will create this next
@@ -14,6 +15,7 @@ interface ChecklistSectionProps {
 
 const ChecklistSection = ({ eventId }: ChecklistSectionProps) => {
   const { user } = useAuth();
+  const { checklistVersion } = useRealTime();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -36,11 +38,11 @@ const ChecklistSection = ({ eventId }: ChecklistSectionProps) => {
 
   useEffect(() => {
     fetchTasks();
-  }, [fetchTasks]);
+  }, [fetchTasks, checklistVersion]);
 
   const handleTaskCreated = () => {
     setShowCreateForm(false); // Close the form
-    fetchTasks();             // Re-fetch the list to show the new task
+    // fetchTasks(); // No longer needed, SignalR will trigger the refresh
   };
 
   return (

@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { getPollsForEvent, createPoll, voteInPoll } from '@/lib/api/polls';
+import { useRealTime } from '@/context/RealTimeContext';
 
 interface PollOption {
     id: string;
@@ -31,6 +32,7 @@ interface Poll {
 
 export default function PollsSection({ eventId }: { eventId: string }) {
     const { user } = useAuth();
+    const { pollsVersion } = useRealTime();
     const [polls, setPolls] = useState<Poll[]>([]);
     const [showCreate, setShowCreate] = useState(false);
     const [newPollBody, setNewPollBody] = useState({ title: '', options: ['', ''] });
@@ -52,14 +54,14 @@ export default function PollsSection({ eventId }: { eventId: string }) {
 
     useEffect(() => {
         fetchPolls();
-    }, [fetchPolls]);
+    }, [fetchPolls, pollsVersion]);
 
     const handleVote = async (pollId: string, optionId: string) => {
         if (!user) return;
         try {
             const token = await user.getIdToken();
             await voteInPoll(token, pollId, optionId);
-            await fetchPolls(); // Refresh to get updated vote counts
+            // fetchPolls(); // Handled by SignalR
         } catch (err) {
             console.error("Failed to vote", err);
         }
@@ -76,7 +78,7 @@ export default function PollsSection({ eventId }: { eventId: string }) {
             });
             setShowCreate(false);
             setNewPollBody({ title: '', options: ['', ''] });
-            fetchPolls();
+            // fetchPolls(); // Handled by SignalR
         } catch (err) {
             console.error("Failed to create poll", err);
         }

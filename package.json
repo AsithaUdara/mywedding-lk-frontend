@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@headlessui/react": "^2.2.7",
+    "@microsoft/signalr": "^10.0.0",
     "firebase": "^12.7.0",
     "framer-motion": "^12.23.12",
     "lucide-react": "^0.536.0",

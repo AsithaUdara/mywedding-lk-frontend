@@ -13,6 +13,7 @@ import RecentActivitiesHub from '@/features/event-planning/components/RecentActi
 import EventPageNav from '@/features/event-planning/components/EventPageNav';
 import CollaborationHubSidebar from '@/features/event-planning/components/CollaborationHubSidebar';
 import { useAuth } from '@/context/AuthContext';
+import { RealTimeProvider } from '@/context/RealTimeContext';
 import { useRouter } from 'next/navigation';
 import { getEventById } from '@/lib/api/events';
 
@@ -76,51 +77,53 @@ const EventDetailPage = ({ params }: { params: Promise<{ eventId: string }> }) =
   const stylePreferences = event?.stylePreferences ? JSON.parse(event.stylePreferences) : null;
 
   return (
-    <div className="flex flex-col min-h-screen bg-cream">
-      <Header onLoginClick={() => { }} />
+    <RealTimeProvider eventId={eventId}>
+      <div className="flex flex-col min-h-screen bg-cream">
+        <Header onLoginClick={() => { }} />
 
-      <main className="flex-grow w-full px-4 sm:px-6 lg:px-8 py-12">
-        {/* Header section */}
-        <div className="max-w-7xl mx-auto mb-8">
-          <EventHeaderClient eventId={eventId} />
-        </div>
-
-        {/* Navigation Tabs */}
-        <div className="max-w-7xl mx-auto">
-          <EventPageNav />
-        </div>
-
-        {/* Main content grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start max-w-7xl mx-auto">
-
-          {/* Main content column - Spans 2 columns */}
-          <div className="lg:col-span-2 space-y-8">
-            <RecentActivitiesHub eventId={eventId} />
-            <MyStyleSection preferences={stylePreferences} onRefresh={handleRefreshPreferences} onOpenQuiz={() => setQuizOpen(true)} />
-            <TeamSection eventId={eventId} />
-            <BudgetSection eventId={eventId} />
+        <main className="flex-grow w-full px-4 sm:px-6 lg:px-8 py-12">
+          {/* Header section */}
+          <div className="max-w-7xl mx-auto mb-8">
+            <EventHeaderClient eventId={eventId} />
           </div>
 
-          {/* Sidebar column - Spans 1 column */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-24">
-              <ChecklistSection eventId={eventId} />
+          {/* Navigation Tabs */}
+          <div className="max-w-7xl mx-auto">
+            <EventPageNav />
+          </div>
+
+          {/* Main content grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start max-w-7xl mx-auto">
+
+            {/* Main content column - Spans 2 columns */}
+            <div className="lg:col-span-2 space-y-8">
+              <RecentActivitiesHub eventId={eventId} />
+              <MyStyleSection preferences={stylePreferences} onRefresh={handleRefreshPreferences} onOpenQuiz={() => setQuizOpen(true)} />
+              <TeamSection eventId={eventId} />
+              <BudgetSection eventId={eventId} />
+            </div>
+
+            {/* Sidebar column - Spans 1 column */}
+            <div className="lg:col-span-1">
+              <div className="sticky top-24">
+                <ChecklistSection eventId={eventId} />
+              </div>
             </div>
           </div>
-        </div>
-      </main>
-      <Footer />
+        </main>
+        <Footer />
 
-      {/* Style Quiz Modal */}
-      <StyleQuizModal
-        isOpen={isQuizOpen}
-        onClose={handleQuizClosed}
-        eventId={eventId}
-      />
+        {/* Style Quiz Modal */}
+        <StyleQuizModal
+          isOpen={isQuizOpen}
+          onClose={handleQuizClosed}
+          eventId={eventId}
+        />
 
-      {/* Collaboration Hub Sidebar */}
-      <CollaborationHubSidebar eventId={eventId} />
-    </div>
+        {/* Collaboration Hub Sidebar */}
+        <CollaborationHubSidebar eventId={eventId} />
+      </div>
+    </RealTimeProvider>
   );
 };
 
