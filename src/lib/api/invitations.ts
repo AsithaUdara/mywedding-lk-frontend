@@ -1,4 +1,4 @@
-export const sendInvitation = async (token: string, inviteData: { eventId: string; email: string }) => {
+export const sendInvitation = async (token: string, inviteData: { eventId: string; email: string; role?: string; permissionLevel?: string }) => {
     const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/invitations/invite`;
     const response = await fetch(apiUrl, {
         method: 'POST',

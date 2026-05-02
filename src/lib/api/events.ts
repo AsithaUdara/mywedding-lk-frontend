@@ -99,3 +99,38 @@ export const setEventPreferences = async (token: string, eventId: string, prefer
   }
   return response;
 };
+export interface Invitation {
+  id: string;
+  email: string;
+  invitedAt: string;
+  isAccepted: boolean;
+  acceptedAt?: string;
+  isExpired: boolean;
+}
+
+export const getInvitations = async (token: string, eventId: string): Promise<Invitation[]> => {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/events/${eventId}/invitations`;
+  const response = await fetch(apiUrl, {
+    method: 'GET',
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error('Failed to fetch invitations.');
+  return response.json();
+};
+
+export const updateOrganizerRole = async (token: string, eventId: string, userId: string, data: { role: string; permissionLevel: string }) => {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/events/${eventId}/organizers/${userId}`;
+  const response = await fetch(apiUrl, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Failed to update member.');
+  }
+  return response.json();
+};

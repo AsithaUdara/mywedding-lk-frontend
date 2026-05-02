@@ -9,7 +9,7 @@ import HowItWorks from "@/app/(home)/components/HowItWorks";
 import FeaturedVenues from "@/features/vendor-discovery/components/FeaturedVenues";
 import Testimonials from "@/features/vendor-discovery/components/Testimonials";
 import Footer from "@/components/layout/Footer";
-import AuthModal from '@/features/authentication/AuthModal'; // We will create this next
+import AuthModal from '@/features/authentication/AuthModal'; 
 
 export default function Home() {
   // State to control the modal's visibility

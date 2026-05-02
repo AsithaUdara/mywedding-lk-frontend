@@ -1,8 +1,9 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import * as signalR from '@microsoft/signalr';
 import { useAuth } from './AuthContext';
+import { Message } from '@/lib/api/collaboration';
 
 interface RealTimeContextType {
     connection: signalR.HubConnection | null;
@@ -12,7 +13,8 @@ interface RealTimeContextType {
     budgetVersion: number;
     pollsVersion: number;
     activityVersion: number;
-    lastMessage: any | null;
+    invitationsVersion: number;
+    lastMessage: Message | null;
 }
 
 const RealTimeContext = createContext<RealTimeContextType>({
@@ -22,6 +24,7 @@ const RealTimeContext = createContext<RealTimeContextType>({
     budgetVersion: 0,
     pollsVersion: 0,
     activityVersion: 0,
+    invitationsVersion: 0,
     lastMessage: null,
 });
 
@@ -36,15 +39,33 @@ export const RealTimeProvider: React.FC<{ children: React.ReactNode; eventId: st
     const [budgetVersion, setBudgetVersion] = useState(0);
     const [pollsVersion, setPollsVersion] = useState(0);
     const [activityVersion, setActivityVersion] = useState(0);
-    const [lastMessage, setLastMessage] = useState<any | null>(null);
+    const [invitationsVersion, setInvitationsVersion] = useState(0);
+    const [lastMessage, setLastMessage] = useState<Message | null>(null);
 
     const incrementChecklist = useCallback(() => setChecklistVersion(v => v + 1), []);
     const incrementBudget = useCallback(() => setBudgetVersion(v => v + 1), []);
     const incrementPolls = useCallback(() => setPollsVersion(v => v + 1), []);
     const incrementActivity = useCallback(() => setActivityVersion(v => v + 1), []);
+    const incrementInvitations = useCallback(() => setInvitationsVersion(v => v + 1), []);
+
+    const connectionRef = useRef<signalR.HubConnection | null>(null);
 
     useEffect(() => {
         if (!user || !eventId) return;
+
+        let isMounted = true;
+
+        // Custom logger to suppress the annoying "stop() was called" error produced by React StrictMode
+        const customLogger = {
+            log: (logLevel: signalR.LogLevel, message: string) => {
+                if (message.includes("Failed to start the HttpConnection before stop() was called")) {
+                    return; // Suppress this specific harmless error
+                }
+                if (logLevel >= signalR.LogLevel.Information) {
+                    console.log(`📡 SignalR [${signalR.LogLevel[logLevel]}]: ${message}`);
+                }
+            }
+        };
 
         const newConnection = new signalR.HubConnectionBuilder()
             .withUrl(`${process.env.NEXT_PUBLIC_API_BASE_URL}/hubs/collaboration`, {
@@ -52,59 +73,64 @@ export const RealTimeProvider: React.FC<{ children: React.ReactNode; eventId: st
                 skipNegotiation: true,
                 transport: signalR.HttpTransportType.WebSockets
             })
+            .configureLogging(customLogger)
             .withAutomaticReconnect()
             .build();
 
-        setConnection(newConnection);
+        connectionRef.current = newConnection;
 
         const startConnection = async () => {
             try {
-                await newConnection.start();
-                console.log('📡 SignalR Connected to CollaborationHub');
-                setIsConnected(true);
+                if (newConnection.state === signalR.HubConnectionState.Disconnected) {
+                    await newConnection.start();
 
-                // Join the specific event group
-                await newConnection.invoke('JoinEventGroup', eventId);
-                console.log(`📡 Joined Event Group: ${eventId}`);
+                    if (isMounted) {
+                        setIsConnected(true);
+                        await newConnection.invoke('JoinEventGroup', eventId);
 
-                // Register listeners
-                newConnection.on('ReceiveMessage', (message) => {
-                    console.log('📩 Real-time Message Received:', message);
-                    setLastMessage(message);
-                });
+                        // Register listeners
+                        newConnection.on('ReceiveMessage', (message: Message) => {
+                            if (isMounted) setLastMessage(message);
+                        });
 
-                newConnection.on('ReceiveActivity', (activity) => {
-                    console.log('⚡ Real-time Activity Received:', activity);
-                    incrementActivity();
-                });
+                        newConnection.on('ReceiveActivity', (activity: any) => {
+                            if (isMounted) incrementActivity();
+                        });
 
-                newConnection.on('ChecklistUpdated', () => {
-                    console.log('✅ Real-time Checklist Update Signal');
-                    incrementChecklist();
-                });
+                        newConnection.on('ChecklistUpdated', () => {
+                            if (isMounted) incrementChecklist();
+                        });
 
-                newConnection.on('BudgetUpdated', () => {
-                    console.log('💰 Real-time Budget Update Signal');
-                    incrementBudget();
-                });
+                        newConnection.on('BudgetUpdated', () => {
+                            if (isMounted) incrementBudget();
+                        });
 
-                newConnection.on('PollsUpdated', () => {
-                    console.log('📊 Real-time Polls Update Signal');
-                    incrementPolls();
-                });
+                        newConnection.on('PollsUpdated', () => {
+                            if (isMounted) incrementPolls();
+                        });
 
-            } catch (err) {
-                console.error('❌ SignalR Connection Error:', err);
-                setIsConnected(false);
+                        newConnection.on('InvitationAccepted', () => {
+                            if (isMounted) incrementInvitations();
+                        });
+                    }
+                }
+            } catch (err: any) {
+                if (isMounted && err.name !== 'AbortError') {
+                    console.error('❌ SignalR Connection Error:', err);
+                    setIsConnected(false);
+                }
             }
         };
 
+        setConnection(newConnection);
         startConnection();
 
         return () => {
-            if (newConnection) {
-                newConnection.stop();
+            isMounted = false;
+            if (newConnection.state !== signalR.HubConnectionState.Disconnected) {
+                newConnection.stop().catch(() => { });
             }
+            connectionRef.current = null;
         };
     }, [user, eventId, incrementChecklist, incrementBudget, incrementPolls, incrementActivity]);
 
@@ -116,6 +142,7 @@ export const RealTimeProvider: React.FC<{ children: React.ReactNode; eventId: st
             budgetVersion,
             pollsVersion,
             activityVersion,
+            invitationsVersion,
             lastMessage
         }}>
             {children}
