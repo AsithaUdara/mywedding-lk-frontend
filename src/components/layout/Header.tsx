@@ -46,7 +46,6 @@ const Header = ({ onLoginClick }: HeaderProps) => {
             </div>
             <Link href="/venues" className="hover:text-accent transition-colors duration-200 py-2">Venues</Link>
             <Link href="/inspiration" className="hover:text-accent transition-colors duration-200 py-2">Inspiration</Link>
-            <Link href="/checklist" className="hover:text-accent transition-colors duration-200 py-2">Checklist</Link>
           </nav>
           
           <div className="flex-1 flex items-center justify-end space-x-2">
