@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, X, Send, User, Bot, Loader2, Maximize2, Minimize2, Minus, MessageCircle } from 'lucide-react';
+import { Sparkles, X, Send, User, Bot, Loader2, Maximize2, Minimize2, Minus } from 'lucide-react';
 
 import { useUI } from '@/context/UIContext';
 
@@ -34,6 +34,15 @@ const AIChatWidget = () => {
     }, 3000);
     return () => clearTimeout(timer);
   }, [isChatOpen]);
+
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -78,7 +87,7 @@ const AIChatWidget = () => {
   return (
     <>
       {/* Floating Action Button */}
-      <div className="fixed bottom-8 right-8 z-50 flex flex-col items-end gap-3">
+      <div className="fixed bottom-24 right-4 md:bottom-8 md:right-8 z-50 flex flex-col items-end gap-3">
         {/* Tooltip bubble */}
         <AnimatePresence>
           {showTooltip && !isChatOpen && (
@@ -99,24 +108,19 @@ const AIChatWidget = () => {
 
         <motion.button
           onClick={isChatOpen ? closeChat : openChat}
-          className="relative w-16 h-16 rounded-full bg-gradient-to-r from-primary to-[#7a1b32] text-white shadow-[0_12px_40px_rgba(139,26,55,0.4)] flex items-center justify-center transition-all hover:scale-110 active:scale-95 group"
+          className="relative w-12 h-12 rounded-full bg-gradient-to-r from-primary to-[#7a1b32] text-white shadow-[0_8px_25px_rgba(139,26,55,0.3)] flex items-center justify-center transition-all hover:scale-110 active:scale-95 group"
           whileHover={{ y: -4 }}
         >
-          {/* Pulsing ring effect */}
+          {/* Subtle pulse effect */}
           {!isChatOpen && (
-            <div className="absolute inset-0 rounded-full border-2 border-primary animate-[ping_2s_infinite] opacity-40" />
+            <div className="absolute inset-0 rounded-full border-2 border-primary animate-[ping_3s_infinite] opacity-20" />
           )}
           
           <div className="relative">
             {isChatOpen ? (
-              <X size={28} />
+              <X size={20} />
             ) : (
-              <>
-                <MessageCircle size={28} strokeWidth={2.5} />
-                <div className="absolute -top-1 -right-1 bg-white text-primary rounded-full p-0.5 shadow-sm border border-primary/10">
-                  <Sparkles size={12} fill="currentColor" />
-                </div>
-              </>
+              <Sparkles size={22} fill="currentColor" className="text-white" />
             )}
           </div>
         </motion.button>
@@ -126,23 +130,28 @@ const AIChatWidget = () => {
       <AnimatePresence>
         {isChatOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 50, scale: 0.9, originX: 1, originY: 1 }}
+            initial={{ 
+              opacity: 0, 
+              y: 50, 
+              scale: 0.9, 
+              originX: 1, 
+              originY: 1,
+              right: isMobile ? 0 : '2rem',
+              bottom: isMobile ? 0 : '7rem'
+            }}
             animate={{ 
               opacity: 1, 
               y: 0, 
               scale: 1,
-              width: isMaximized ? 'calc(100vw - 4rem)' : '380px',
-              height: isMaximized ? 'calc(100vh - 8rem)' : '600px',
-              right: isMaximized ? '2rem' : '2rem',
-              bottom: isMaximized ? '4rem' : '7rem'
+              width: isMobile ? '100vw' : (isMaximized ? 'calc(100vw - 4rem)' : '380px'),
+              height: isMobile ? '100vh' : (isMaximized ? 'calc(100vh - 8rem)' : '600px'),
+              right: isMobile ? '0px' : (isMaximized ? '2rem' : '2rem'),
+              bottom: isMobile ? '0px' : (isMaximized ? '4rem' : '7rem'),
+              borderRadius: isMobile ? '0px' : '24px'
             }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
             transition={{ type: "spring", stiffness: 500, damping: 35 }}
-            className={`fixed z-50 bg-white rounded-3xl shadow-[0_20px_60px_-15px_rgb(0,0,0,0.15)] border border-gray-100 flex flex-col overflow-hidden`}
-            style={{ 
-              right: '2rem', 
-              bottom: isMaximized ? '4rem' : '7rem'
-            }}
+            className={`fixed z-[110] bg-white shadow-[0_20px_60px_-15px_rgb(0,0,0,0.15)] border border-gray-100 flex flex-col overflow-hidden`}
           >
             {/* Header */}
             <div className="bg-gradient-to-r from-primary to-[#7a1b32] p-5 flex items-center justify-between text-white flex-shrink-0">

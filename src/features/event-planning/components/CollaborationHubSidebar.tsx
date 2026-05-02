@@ -134,7 +134,7 @@ const CollaborationHubSidebar = ({ eventId }: { eventId: string }) => {
             animate={{ x: '0%' }} 
             exit={{ x: '100%' }} 
             transition={{ type: 'spring', stiffness: 300, damping: 35 }} 
-            className="fixed top-0 right-0 h-full w-full max-w-2xl bg-white/95 backdrop-blur-xl z-[60] flex flex-col shadow-[-20px_0_60px_-15px_rgba(0,0,0,0.1)] border-l border-white/60"
+            className="fixed top-0 right-0 h-full w-full md:max-w-2xl bg-white/95 backdrop-blur-xl z-[120] flex flex-col shadow-[-20px_0_60px_-15px_rgba(0,0,0,0.1)] border-l border-white/60"
           >
             {/* Premium Header */}
             <div className="bg-gradient-to-r from-primary to-[#7a1b32] p-6 flex items-center justify-between text-white flex-shrink-0">

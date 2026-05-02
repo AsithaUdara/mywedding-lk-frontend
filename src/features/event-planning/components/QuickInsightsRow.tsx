@@ -70,9 +70,9 @@ const QuickInsightsRow = ({ eventId }: QuickInsightsRowProps) => {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+    <div className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory gap-4 mb-8 -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-3">
       {/* Budget Insight */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex items-center gap-4 transition-transform hover:-translate-y-1 duration-300">
+      <div className="flex-shrink-0 w-[280px] md:w-auto snap-center bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex items-center gap-4 transition-transform hover:-translate-y-1 duration-300">
         <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
           <Wallet size={20} className="text-green-600" />
         </div>
@@ -86,7 +86,7 @@ const QuickInsightsRow = ({ eventId }: QuickInsightsRowProps) => {
       </div>
 
       {/* Task Insight */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex items-center gap-4 transition-transform hover:-translate-y-1 duration-300">
+      <div className="flex-shrink-0 w-[280px] md:w-auto snap-center bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex items-center gap-4 transition-transform hover:-translate-y-1 duration-300">
         <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
           <CheckSquare size={20} className="text-primary" />
         </div>
@@ -100,7 +100,7 @@ const QuickInsightsRow = ({ eventId }: QuickInsightsRowProps) => {
       </div>
 
       {/* Team Insight */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex items-center gap-4 transition-transform hover:-translate-y-1 duration-300">
+      <div className="flex-shrink-0 w-[280px] md:w-auto snap-center bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex items-center gap-4 transition-transform hover:-translate-y-1 duration-300">
         <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
           <Users size={20} className="text-blue-600" />
         </div>
