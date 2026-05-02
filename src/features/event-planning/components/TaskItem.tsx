@@ -37,30 +37,36 @@ const TaskItem = ({ task, onStatusChange }: TaskItemProps) => {
   const isCompleted = task.status === 'Completed';
 
   return (
-    <div className="flex flex-col gap-2 p-4 rounded-lg border border-gray-200 bg-white shadow-sm">
+    <div className={`group flex flex-col gap-2 p-4 rounded-xl border transition-all duration-300 bg-white ${isCompleted ? 'border-gray-100 shadow-sm opacity-75' : 'border-gray-100 shadow-sm hover:shadow-md hover:border-primary/20'}`}>
       <div className="flex items-center gap-4">
         <button
           onClick={handleCheckboxChange}
           disabled={isUpdating}
-          className={`flex-shrink-0 w-6 h-6 rounded-full border-2 transition-all flex items-center justify-center cursor-pointer ${isCompleted ? 'bg-primary border-primary' : 'border-gray-300 hover:border-primary'
-            } ${isUpdating ? 'opacity-60 cursor-not-allowed' : ''}`}
+          className={`flex-shrink-0 w-6 h-6 rounded-full border-2 transition-all flex items-center justify-center cursor-pointer ${
+            isCompleted 
+              ? 'bg-primary border-primary scale-95' 
+              : 'border-gray-300 hover:border-primary bg-white group-hover:scale-105'
+          } ${isUpdating ? 'opacity-50 cursor-wait' : ''}`}
         >
-          {isCompleted && <Check size={16} className="text-white" />}
+          {isCompleted && <Check size={14} strokeWidth={3} className="text-white" />}
         </button>
 
         <div className="flex-grow">
-          <p className={`font-medium text-charcoal transition-colors ${isCompleted ? 'line-through text-gray-400' : ''}`}>
+          <p className={`text-[15px] font-medium transition-all duration-300 ${isCompleted ? 'line-through text-gray-400' : 'text-charcoal'}`}>
             {task.title}
           </p>
         </div>
 
-        <span className={`text-xs font-bold px-2 py-1 rounded-full ${isCompleted ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'
-          }`}>
+        <span className={`text-[11px] uppercase tracking-wider font-bold px-3 py-1.5 rounded-full transition-colors ${
+          isCompleted 
+            ? 'bg-gray-100 text-gray-500' 
+            : 'bg-primary/5 text-primary'
+        }`}>
           {task.status}
         </span>
       </div>
       {errorMessage && (
-        <p className="text-xs text-red-600">{errorMessage}</p>
+        <p className="text-xs text-red-500 font-medium pl-10 mt-1">{errorMessage}</p>
       )}
     </div>
   );

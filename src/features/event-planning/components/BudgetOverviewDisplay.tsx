@@ -14,36 +14,39 @@ const BudgetOverviewDisplay = ({ overview }: { overview: BudgetOverview }) => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Progress Bar */}
-      <div>
-        <div className="flex justify-between items-end mb-1">
-          <span className="text-sm font-medium text-gray-500">Budget Usage</span>
-          <span className="text-sm font-bold text-charcoal">{spentPercentage.toFixed(0)}%</span>
+    <div className="space-y-8">
+      {/* Premium Progress Bar */}
+      <div className="bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
+        <div className="flex justify-between items-end mb-3">
+          <span className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Budget Usage</span>
+          <span className="text-2xl font-bold font-playfair text-charcoal">{spentPercentage.toFixed(0)}%</span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2.5">
+        <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden shadow-inner">
           <motion.div
-            className="bg-primary h-2.5 rounded-full"
+            className="bg-primary h-full rounded-full relative"
             initial={{ width: 0 }}
             animate={{ width: `${spentPercentage}%` }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-          ></motion.div>
+            transition={{ duration: 1, ease: "easeOut" }}
+          >
+            {/* Shimmer effect on progress bar */}
+            <div className="absolute inset-0 bg-white/20 w-1/2 -skew-x-12 translate-x-full animate-[shimmer_2s_infinite]" />
+          </motion.div>
         </div>
       </div>
 
       {/* Financial Numbers */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-4 rounded-lg bg-cream/60">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Budget</p>
-          <p className="text-2xl font-bold text-charcoal mt-1">{formatCurrency(overview.totalBudget)}</p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="p-6 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Total Budget</p>
+          <p className="text-2xl font-bold text-charcoal">{formatCurrency(overview.totalBudget)}</p>
         </div>
-        <div className="p-4 rounded-lg bg-cream/60">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Spent</p>
-          <p className="text-2xl font-bold text-red-600 mt-1">{formatCurrency(overview.totalSpent)}</p>
+        <div className="p-6 rounded-2xl bg-white border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Total Spent</p>
+          <p className="text-2xl font-bold text-red-600/90">{formatCurrency(overview.totalSpent)}</p>
         </div>
-        <div className="p-4 rounded-lg bg-cream/60">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Remaining</p>
-          <p className={`text-2xl font-bold mt-1 ${overview.remainingBudget < 0 ? 'text-red-600' : 'text-green-700'}`}>
+        <div className={`p-6 rounded-2xl border shadow-sm hover:shadow-md transition-shadow ${overview.remainingBudget < 0 ? 'bg-red-50/50 border-red-100' : 'bg-green-50/50 border-green-100'}`}>
+          <p className={`text-[11px] font-bold uppercase tracking-widest mb-2 ${overview.remainingBudget < 0 ? 'text-red-400' : 'text-green-600/70'}`}>Remaining</p>
+          <p className={`text-2xl font-bold ${overview.remainingBudget < 0 ? 'text-red-700' : 'text-green-700'}`}>
             {formatCurrency(overview.remainingBudget)}
           </p>
         </div>
