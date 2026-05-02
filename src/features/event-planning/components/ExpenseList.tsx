@@ -1,6 +1,5 @@
-// File: src/features/event-planning/components/ExpenseList.tsx
 import React from 'react';
-import { Expense } from '@/lib/api/events';
+import { type Expense } from '@/lib/api/budget';
 
 const ExpenseList = ({ expenses }: { expenses: Expense[] }) => {
   const formatCurrency = (amount: number) => {

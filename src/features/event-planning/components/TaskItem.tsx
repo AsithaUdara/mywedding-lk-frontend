@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { Task, updateTaskStatus } from '@/lib/api/events';
+import { type Task, updateTaskStatus } from '@/lib/api/tasks';
 import { Check } from 'lucide-react';
 
 interface TaskItemProps {

@@ -1,9 +1,9 @@
-// File: src/features/event-planning/components/BudgetSection.tsx
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { getBudgetOverview, getExpenses, BudgetOverview, Expense } from '@/lib/api/events';
+import { getBudgetOverview, getExpenses, type BudgetOverview, type Expense } from '@/lib/api/budget';
+import { useRealTime } from '@/context/RealTimeContext';
 import { Wallet, PlusCircle } from 'lucide-react';
 import BudgetOverviewDisplay from './BudgetOverviewDisplay';
 import ExpenseList from './ExpenseList';
@@ -15,6 +15,7 @@ interface BudgetSectionProps {
 
 const BudgetSection = ({ eventId }: BudgetSectionProps) => {
   const { user } = useAuth();
+  const { budgetVersion } = useRealTime();
   const [overview, setOverview] = useState<BudgetOverview | null>(null);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,11 +42,11 @@ const BudgetSection = ({ eventId }: BudgetSectionProps) => {
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+  }, [fetchData, budgetVersion]);
 
   const handleExpenseAdded = () => {
     setModalOpen(false); // Close modal
-    fetchData();         // Re-fetch all data to update UI
+    // fetchData(); // No longer needed, SignalR will trigger the refresh
   };
 
   return (

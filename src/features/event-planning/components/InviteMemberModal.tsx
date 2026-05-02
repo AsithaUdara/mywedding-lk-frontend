@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { sendInvitation } from '@/lib/api/events';
-import { X, Mail } from 'lucide-react';
+import { sendInvitation } from '@/lib/api/invitations';
+import { X, Mail, ChevronDown } from 'lucide-react';
 
 interface InviteMemberModalProps {
   isOpen: boolean;
@@ -15,6 +15,7 @@ interface InviteMemberModalProps {
 const InviteMemberModal = ({ isOpen, onClose, eventId, onInviteSuccess }: InviteMemberModalProps) => {
   const { user } = useAuth();
   const [email, setEmail] = useState('');
+  const [permissionLevel, setPermissionLevel] = useState('Viewer');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -35,6 +36,7 @@ const InviteMemberModal = ({ isOpen, onClose, eventId, onInviteSuccess }: Invite
       await sendInvitation(token, {
         eventId,
         email,
+        permissionLevel
       });
 
       onInviteSuccess(); // This calls the function from the parent to refresh the list
@@ -73,6 +75,22 @@ const InviteMemberModal = ({ isOpen, onClose, eventId, onInviteSuccess }: Invite
             <p className="mt-2 text-xs text-slate-500">
               We will send an invitation email with a link for them to join this event.
             </p>
+          </div>
+
+          <div>
+            <label htmlFor="invitePermission" className="block text-sm font-medium text-charcoal mb-2">Permission</label>
+            <div className="relative">
+              <select
+                id="invitePermission"
+                value={permissionLevel}
+                onChange={(e) => setPermissionLevel(e.target.value)}
+                className="w-full appearance-none py-3 px-4 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
+              >
+                <option value="Viewer">Viewer</option>
+                <option value="Editor">Editor</option>
+              </select>
+              <ChevronDown size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            </div>
           </div>
 
           <button

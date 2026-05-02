@@ -3,7 +3,7 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { acceptInvitation } from '@/lib/api/events';
+import { acceptInvitation } from '@/lib/api/invitations';
 import { motion } from 'framer-motion';
 import { CheckCircle2, XCircle, Loader2, Sparkles } from 'lucide-react';
 import Link from 'next/link';
@@ -14,18 +14,24 @@ function AcceptInvitationContent() {
     const { user, loading: authLoading } = useAuth();
     const [status, setStatus] = useState<'loading' | 'success' | 'already_member' | 'error'>('loading');
     const [message, setMessage] = useState('Verifying your invitation...');
+    const hasAttempted = React.useRef(false);
 
     const token = searchParams.get('token');
 
     useEffect(() => {
         const handleAccept = async () => {
             if (authLoading) return;
+            if (hasAttempted.current) return;
 
+            // Note: If user is not immediately available, we should give it a tiny bit of time
+            // to resolve auth state, but if they are definitely not logged in:
             if (!user) {
                 // If not logged in, redirect to login but keep the token
                 router.push(`/login?redirect=/invite/accept?token=${token}`);
                 return;
             }
+
+            hasAttempted.current = true;
 
             if (!token) {
                 setStatus('error');

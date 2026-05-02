@@ -1,10 +1,10 @@
-// File: src/features/event-planning/components/CollaborationHubSidebar.tsx
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useUI } from '@/context/UIContext';
 import { useAuth } from '@/context/AuthContext';
-import { getConversations, getMessages, postMessage, Conversation, Message } from '@/lib/api/events';
+import { getConversations, getMessages, postMessage, type Conversation, type Message } from '@/lib/api/collaboration';
+import { useRealTime } from '@/context/RealTimeContext';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, Send, Hash, Vote, MessageSquare, Loader2 } from 'lucide-react';
 import PollsSection from './PollsSection';
@@ -12,6 +12,7 @@ import PollsSection from './PollsSection';
 const CollaborationHubSidebar = ({ eventId }: { eventId: string }) => {
   const { isHubOpen, closeHub } = useUI();
   const { user } = useAuth();
+  const { lastMessage } = useRealTime();
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -78,6 +79,17 @@ const CollaborationHubSidebar = ({ eventId }: { eventId: string }) => {
     }
   }, [user, selectedConversation, activeTab]);
 
+  // Real-time message listener
+  useEffect(() => {
+    if (lastMessage && selectedConversation && lastMessage.conversationId === selectedConversation.id) {
+      setMessages(prev => {
+        // Prevent duplicates
+        if (prev.some(m => m.id === lastMessage.id)) return prev;
+        return [...prev, lastMessage];
+      });
+    }
+  }, [lastMessage, selectedConversation]);
+
   const handlePostMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !selectedConversation || !newMessage.trim() || sendingMessage) return;
@@ -89,9 +101,8 @@ const CollaborationHubSidebar = ({ eventId }: { eventId: string }) => {
     try {
       const token = await user.getIdToken();
       await postMessage(token, selectedConversation.id, messageContent);
-      // Re-fetch messages after sending
-      const data = await getMessages(token, selectedConversation.id);
-      setMessages(data);
+      // We don't need to manually re-fetch messages anymore! 
+      // The SignalR broadcast will add it to the list via the useEffect above.
     } catch (err) {
       console.error('Failed to send message:', err);
       setNewMessage(messageContent); // Restore message on failure

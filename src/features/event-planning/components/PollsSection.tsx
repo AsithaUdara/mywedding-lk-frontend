@@ -13,13 +13,19 @@ import {
     ChevronUp
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { getPollsForEvent, createPoll, voteInPoll } from '@/lib/api/events';
+import { getPollsForEvent, createPoll, voteInPoll } from '@/lib/api/polls';
+import { useRealTime } from '@/context/RealTimeContext';
+
+interface VoterInfo {
+    id: string;
+    name: string;
+}
 
 interface PollOption {
     id: string;
     optionText: string;
     voteCount: number;
-    voters: string[];
+    voters: VoterInfo[];
 }
 
 interface Poll {
@@ -31,6 +37,7 @@ interface Poll {
 
 export default function PollsSection({ eventId }: { eventId: string }) {
     const { user } = useAuth();
+    const { pollsVersion } = useRealTime();
     const [polls, setPolls] = useState<Poll[]>([]);
     const [showCreate, setShowCreate] = useState(false);
     const [newPollBody, setNewPollBody] = useState({ title: '', options: ['', ''] });
@@ -52,14 +59,14 @@ export default function PollsSection({ eventId }: { eventId: string }) {
 
     useEffect(() => {
         fetchPolls();
-    }, [fetchPolls]);
+    }, [fetchPolls, pollsVersion]);
 
     const handleVote = async (pollId: string, optionId: string) => {
         if (!user) return;
         try {
             const token = await user.getIdToken();
             await voteInPoll(token, pollId, optionId);
-            await fetchPolls(); // Refresh to get updated vote counts
+            // fetchPolls(); // Handled by SignalR
         } catch (err) {
             console.error("Failed to vote", err);
         }
@@ -76,7 +83,7 @@ export default function PollsSection({ eventId }: { eventId: string }) {
             });
             setShowCreate(false);
             setNewPollBody({ title: '', options: ['', ''] });
-            fetchPolls();
+            // fetchPolls(); // Handled by SignalR
         } catch (err) {
             console.error("Failed to create poll", err);
         }
@@ -175,7 +182,7 @@ export default function PollsSection({ eventId }: { eventId: string }) {
                 )}
                 {polls.map((poll) => {
                     const totalVotes = poll.options.reduce((acc, curr) => acc + curr.voteCount, 0);
-                    const myVotedOptionId = poll.options.find(o => o.voters.includes(user?.uid || ''))?.id;
+                    const myVotedOptionId = poll.options.find(o => o.voters.some(v => v.id === user?.uid))?.id;
 
                     return (
                         <motion.div
@@ -246,12 +253,12 @@ export default function PollsSection({ eventId }: { eventId: string }) {
                                                                 className="overflow-hidden"
                                                             >
                                                                 <div className="flex flex-wrap gap-1 mt-1">
-                                                                    {option.voters.map((voterId) => (
+                                                                    {option.voters.map((voter) => (
                                                                         <span
-                                                                            key={voterId}
-                                                                            className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${voterId === user?.uid ? 'bg-primary/10 text-primary' : 'bg-slate-100 text-slate-500'}`}
+                                                                            key={voter.id}
+                                                                            className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${voter.id === user?.uid ? 'bg-primary/10 text-primary' : 'bg-slate-100 text-slate-500'}`}
                                                                         >
-                                                                            {voterId === user?.uid ? 'You' : voterId.slice(0, 8) + '...'}
+                                                                            {voter.id === user?.uid ? 'You' : voter.name}
                                                                         </span>
                                                                     ))}
                                                                 </div>

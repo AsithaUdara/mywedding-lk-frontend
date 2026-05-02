@@ -1,6 +1,5 @@
-// File: src/features/event-planning/components/ActivityItem.tsx
 import React from 'react';
-import { ActivityFeedItem } from '@/lib/api/events';
+import { type ActivityFeedItem } from '@/lib/api/feed';
 import { MessageSquare, CheckCircle, UserPlus, Wallet } from 'lucide-react';
 
 const ActivityItem = ({ item }: { item: ActivityFeedItem }) => {
@@ -45,7 +44,7 @@ const ActivityItem = ({ item }: { item: ActivityFeedItem }) => {
     if (interval > 1) return Math.floor(interval) + " minutes ago";
     return "just now";
   };
-  
+
   return (
     <div className="flex items-start gap-4">
       {renderIcon()}
