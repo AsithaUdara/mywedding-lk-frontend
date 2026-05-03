@@ -3,8 +3,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Organizer, getOrganizers, getInvitations, type Invitation, updateOrganizerRole } from '@/lib/api/events';
-import { UserPlus, Users, Mail, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
+import { UserPlus, Users, Mail, Clock, CheckCircle2, AlertCircle, MessageSquare } from 'lucide-react';
 import { useRealTime } from '@/context/RealTimeContext';
+import { useUI } from '@/context/UIContext';
 import InviteMemberModal from './InviteMemberModal';
 import TeamMemberCard from './TeamMemberCard';
 
@@ -14,6 +15,7 @@ interface TeamSectionProps {
 
 const TeamSection: React.FC<TeamSectionProps> = ({ eventId }) => {
   const { user } = useAuth();
+  const { openHub } = useUI();
   const { invitationsVersion } = useRealTime();
   const [organizers, setOrganizers] = useState<Organizer[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
@@ -97,20 +99,32 @@ const TeamSection: React.FC<TeamSectionProps> = ({ eventId }) => {
   };
 
   return (
-    <section className="p-6 bg-white rounded-lg shadow-sm">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Users size={20} className="text-charcoal" />
-          <h2 className="text-2xl font-bold text-charcoal">Team & Collaborators</h2>
+    <section className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 border border-white/60 transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5 pb-4 border-b border-gray-100 gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <Users size={16} strokeWidth={2} className="text-primary" />
+          </div>
+          <h2 className="text-lg font-bold font-playfair text-charcoal tracking-tight">Team</h2>
         </div>
-        <button
-          type="button"
-          onClick={() => setIsInviteOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors"
-        >
-          <UserPlus size={18} />
-          Invite member
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={openHub}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-charcoal text-white text-xs font-bold uppercase tracking-wider hover:bg-black transition-all"
+          >
+            <MessageSquare size={14} strokeWidth={2.5} />
+            Chat Hub
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsInviteOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary text-white text-xs font-bold uppercase tracking-wider hover:bg-primary/90 hover:shadow-md hover:shadow-primary/20 hover:-translate-y-0.5 transition-all"
+          >
+            <UserPlus size={14} strokeWidth={2.5} />
+            Invite
+          </button>
+        </div>
       </div>
 
       {inviteSuccess && <p className="text-green-600 text-sm mb-2">{inviteSuccess}</p>}

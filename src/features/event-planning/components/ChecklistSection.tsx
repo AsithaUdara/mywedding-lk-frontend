@@ -41,52 +41,81 @@ const ChecklistSection = ({ eventId }: ChecklistSectionProps) => {
   }, [fetchTasks, checklistVersion]);
 
   const handleTaskCreated = () => {
-    setShowCreateForm(false); // Close the form
-    // fetchTasks(); // No longer needed, SignalR will trigger the refresh
+    setShowCreateForm(false);
   };
 
+  const completedCount = tasks.filter(t => t.status === 'Completed').length;
+  const progressPercentage = tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0;
+
   return (
-    <div className="p-6 bg-white rounded-lg shadow-sm">
-      <div className="flex justify-between items-center mb-6 border-b pb-4">
-        <div className="flex items-center gap-3">
-          <CheckSquare className="text-primary" size={24} />
-          <h2 className="text-2xl font-semibold text-charcoal">Event Checklist</h2>
+    <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 md:p-8 border border-white/60 transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 pb-6 border-b border-gray-100 gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <CheckSquare className="text-primary" size={24} strokeWidth={1.5} />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold font-playfair text-charcoal tracking-tight">Event Checklist</h2>
+            <div className="text-sm text-gray-500 mt-1 font-medium flex items-center gap-2">
+              <span>{completedCount} of {tasks.length} tasks completed</span>
+              {tasks.length > 0 && (
+                <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-bold">
+                  {progressPercentage}%
+                </span>
+              )}
+            </div>
+          </div>
         </div>
         {!showCreateForm && (
           <button
             onClick={() => setShowCreateForm(true)}
-            className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-primary transition-colors duration-200 hover:bg-cream"
+            className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white bg-primary transition-all duration-300 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5"
           >
-            <PlusCircle size={16} />
+            <PlusCircle size={18} />
             <span>Add Task</span>
           </button>
         )}
       </div>
 
       {showCreateForm && (
-        <CreateTaskForm
-          eventId={eventId}
-          onTaskCreated={handleTaskCreated}
-          onCancel={() => setShowCreateForm(false)}
-        />
+        <div className="mb-8">
+          <CreateTaskForm
+            eventId={eventId}
+            onTaskCreated={handleTaskCreated}
+            onCancel={() => setShowCreateForm(false)}
+          />
+        </div>
       )}
 
       {isLoading ? (
-        <div className="space-y-3 mt-4">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-4 p-4 rounded-lg bg-white">
-              <LoadingSkeleton className="h-5 w-5 rounded" />
+        <div className="space-y-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-4 p-4 rounded-xl bg-gray-50/50">
+              <LoadingSkeleton className="h-6 w-6 rounded-full flex-shrink-0" />
               <div className="flex-grow">
-                <LoadingSkeleton className="h-4 w-1/2 mb-2" />
-                <LoadingSkeleton className="h-3 w-1/3" />
+                <LoadingSkeleton className="h-4 w-1/3 mb-2" />
+                <LoadingSkeleton className="h-3 w-1/4" />
               </div>
             </div>
           ))}
         </div>
       ) : tasks.length === 0 && !showCreateForm ? (
-        <p className="text-center text-gray-500 py-8">Your checklist is empty. Click &quot;Add Task&quot; to get started!</p>
+        <div className="text-center py-12 px-4 rounded-xl border border-dashed border-gray-200 bg-gray-50/50">
+          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+            <CheckSquare className="text-gray-400" size={24} />
+          </div>
+          <h3 className="text-lg font-medium text-charcoal mb-2">No tasks yet</h3>
+          <p className="text-gray-500 max-w-sm mx-auto mb-6">Create your first task to start organizing your perfect wedding.</p>
+          <button
+            onClick={() => setShowCreateForm(true)}
+            className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-primary bg-primary/10 transition-colors duration-200 hover:bg-primary/20"
+          >
+            <PlusCircle size={18} />
+            <span>Add your first task</span>
+          </button>
+        </div>
       ) : (
-        <div className="space-y-3 mt-4">
+        <div className="space-y-3">
           {tasks.map((task) => (
             <TaskItem key={task.id} task={task} onStatusChange={fetchTasks} />
           ))}

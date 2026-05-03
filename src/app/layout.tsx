@@ -2,7 +2,7 @@ import { Roboto, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { UIProvider } from "@/context/UIContext";
-import AIChatbotSidebar from "@/features/ai/AIChatbotSidebar";
+
 
 const roboto = Roboto({
   weight: ['400', '500', '700'],
@@ -33,7 +33,7 @@ export default function RootLayout({
         <AuthProvider>
           <UIProvider>
             {children}
-            <AIChatbotSidebar />
+
           </UIProvider>
         </AuthProvider>
       </body>

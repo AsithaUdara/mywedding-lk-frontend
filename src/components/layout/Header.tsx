@@ -1,77 +1,118 @@
-// src/components/layout/Header.tsx
 "use client";
 
 import React, { useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
-import { Heart, Search, User, ChevronDown } from 'lucide-react';
+import Image from 'next/image';
+import { useAuth } from '@/context/AuthContext';
+import { ShoppingCart, Heart, Search, Menu, X, ChevronDown } from 'lucide-react';
 import Logo from '@/assets/MyWedding.png';
 import HeaderDropdown from './HeaderDropdown';
 import UserDropdown from './UserDropdown';
-import AuthModal from '@/features/authentication/AuthModal';
-import { useAuth } from '@/context/AuthContext';
 import { AnimatePresence } from 'framer-motion';
 
-type HeaderProps = { onLoginClick?: () => void };
+interface HeaderProps {
+    onLoginClick?: () => void;
+}
 
-const Header = ({ onLoginClick }: HeaderProps) => {
-  const [isModalOpen, setModalOpen] = useState(false);
-  const [isVendorDropdownOpen, setVendorDropdownOpen] = useState(false);
-  const { user } = useAuth();
+const Header: React.FC<HeaderProps> = ({ onLoginClick }) => {
+    const { user } = useAuth();
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isModalOpen, setModalOpen] = useState(false);
+    const [isVendorDropdownOpen, setVendorDropdownOpen] = useState(false);
 
-  return (
-    <>
-      <header className="sticky top-0 z-40 w-full bg-cream/95 backdrop-blur-md border-b border-black/10 shadow-sm">
-        <div className="max-w-7xl mx-auto flex items-center justify-between py-1 px-4 sm:px-6 lg:px-8">
-          
-          <div className="flex-1 flex justify-start">
-            <Link href="/" className="hover:opacity-80 transition-opacity">
-              <Image src={Logo} alt="MyWedding.lk Logo" width={90} height={23} priority />
-            </Link>
-          </div>
-          
-          <nav className="hidden md:flex justify-center items-center space-x-8 text-charcoal font-medium">
-            <div 
-              className="relative"
-              onMouseEnter={() => setVendorDropdownOpen(true)}
-              onMouseLeave={() => setVendorDropdownOpen(false)}
-            >
-              <Link href="/vendors" className="flex items-center gap-1 hover:text-accent transition-colors duration-200 py-2">
-                Vendors
-                <ChevronDown size={16} className={`transition-transform duration-300 ${isVendorDropdownOpen ? 'rotate-180' : ''}`} />
-              </Link>
-              <AnimatePresence>
-                {isVendorDropdownOpen && <HeaderDropdown />}
-              </AnimatePresence>
-            </div>
-            <Link href="/venues" className="hover:text-accent transition-colors duration-200 py-2">Venues</Link>
-            <Link href="/inspiration" className="hover:text-accent transition-colors duration-200 py-2">Inspiration</Link>
-            <Link href="/checklist" className="hover:text-accent transition-colors duration-200 py-2">Checklist</Link>
-          </nav>
-          
-          <div className="flex-1 flex items-center justify-end space-x-2">
-            <button className="p-2 rounded-full hover:bg-black/5 transition-colors duration-200"><Search size={18} /></button>
-            <button className="p-2 rounded-full hover:bg-black/5 transition-colors duration-200"><Heart size={18} /></button>
-            
-            {user ? (
-              <UserDropdown />
-            ) : (
-              <button 
-                onClick={() => (onLoginClick ? onLoginClick() : setModalOpen(true))} 
-                className="flex items-center space-x-2 rounded-full px-5 py-1.5 text-sm font-semibold text-white hover:bg-opacity-90 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105" 
-                style={{ backgroundColor: 'var(--color-primary)' }}
-              >
-                <User size={18}/>
-                <span>Log In</span>
-              </button>
-            )}
-          </div>
-        </div>
-      </header>
+    const handleLoginClick = () => {
+        if (onLoginClick) {
+            onLoginClick();
+        } else {
+            setModalOpen(true);
+        }
+    };
 
-      {!user && <AuthModal isOpen={isModalOpen} onClose={() => setModalOpen(false)} />}
-    </>
-  );
+    return (
+        <>
+            <header className="sticky top-0 z-40 w-full bg-cream/95 backdrop-blur-md border-b border-black/10 shadow-sm">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+                    {/* Logo Section */}
+                    {/* Logo Section */}
+                    <Link href="/" className="flex items-center gap-2 group hover:opacity-80 transition-opacity">
+                        <div className="w-[120px] md:w-[160px] h-auto">
+                            <Image 
+                                src={Logo} 
+                                alt="MyWedding.lk Logo" 
+                                width={160} 
+                                height={40} 
+                                className="w-full h-auto"
+                                priority 
+                            />
+                        </div>
+                    </Link>
+
+                    {/* Desktop Navigation */}
+                    <nav className="hidden md:flex items-center space-x-8 text-charcoal font-medium">
+                        <div 
+                            className="relative"
+                            onMouseEnter={() => setVendorDropdownOpen(true)}
+                            onMouseLeave={() => setVendorDropdownOpen(false)}
+                        >
+                            <Link href="/vendors" className="flex items-center gap-1 hover:text-accent transition-colors duration-200 py-2">
+                                Vendors
+                                <ChevronDown size={16} className={`transition-transform duration-300 ${isVendorDropdownOpen ? 'rotate-180' : ''}`} />
+                            </Link>
+                            <AnimatePresence>
+                                {isVendorDropdownOpen && <HeaderDropdown />}
+                            </AnimatePresence>
+                        </div>
+                        <Link href="/venues" className="hover:text-accent transition-colors duration-200 py-2">Venues</Link>
+                        <Link href="/inspiration" className="hover:text-accent transition-colors duration-200 py-2">Inspiration</Link>
+                    </nav>
+
+                    {/* Right Side Icons */}
+                    <div className="flex items-center gap-2 sm:gap-4">
+                        <button className="p-2 text-charcoal hover:bg-black/5 rounded-full transition-colors hidden sm:block">
+                            <Search size={20} />
+                        </button>
+                        <button className="p-2 text-charcoal hover:bg-black/5 rounded-full transition-colors">
+                            <Heart size={20} />
+                        </button>
+
+                        {user ? (
+                            <UserDropdown />
+                        ) : (
+                            <button
+                                onClick={handleLoginClick}
+                                className="px-6 py-2.5 bg-primary text-white rounded-full text-sm font-bold uppercase tracking-widest hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-95"
+                            >
+                                Login
+                            </button>
+                        )}
+
+                        {/* Mobile Menu Toggle */}
+                        <button 
+                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                            className="md:hidden p-2 text-charcoal hover:bg-black/5 rounded-lg transition-colors"
+                        >
+                            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Mobile Navigation Drawer */}
+                {isMobileMenuOpen && (
+                    <div className="md:hidden bg-white border-t border-gray-100 animate-in slide-in-from-top duration-300">
+                        <nav className="flex flex-col p-4 space-y-4">
+                            <Link href="/vendors" className="text-lg font-bold font-playfair text-charcoal p-2">Vendors</Link>
+                            <Link href="/venues" className="text-lg font-bold font-playfair text-charcoal p-2">Venues</Link>
+                            <Link href="/inspiration" className="text-lg font-bold font-playfair text-charcoal p-2">Inspiration</Link>
+                            <Link href="/search" className="flex items-center gap-2 text-lg font-bold font-playfair text-charcoal p-2">
+                                <Search size={20} /> Search
+                            </Link>
+                        </nav>
+                    </div>
+                )}
+            </header>
+            {!user && <AuthModal isOpen={isModalOpen} onClose={() => setModalOpen(false)} />}
+        </>
+    );
 };
 
 export default Header;

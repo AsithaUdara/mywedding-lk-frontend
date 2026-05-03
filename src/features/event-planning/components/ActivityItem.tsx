@@ -46,14 +46,18 @@ const ActivityItem = ({ item }: { item: ActivityFeedItem }) => {
   };
 
   return (
-    <div className="flex items-start gap-4">
-      {renderIcon()}
-      <div className="flex-grow">
-        <p className="text-charcoal">
+    <div className="flex items-start gap-4 group">
+      <div className="relative">
+        {renderIcon()}
+        {/* Subtle connecting line for the feed effect (hidden on last item ideally, but handled simply here) */}
+        <div className="absolute top-10 left-1/2 -ml-[1px] w-[2px] h-full bg-gray-100 group-last:hidden" />
+      </div>
+      <div className="flex-grow pt-1 pb-4">
+        <p className="text-sm text-charcoal leading-snug">
           <span className="font-bold">{item.userFirstName} {item.userLastName}</span>
-          {item.itemType === 'SystemLog' ? ` ${item.content}` : `: ${item.content}`}
+          {item.itemType === 'SystemLog' ? <span className="text-gray-600"> {item.content}</span> : <span className="text-gray-600">: {item.content}</span>}
         </p>
-        <p className="text-xs text-gray-500 mt-1">{formatTimeAgo(item.createdAt)}</p>
+        <p className="text-[11px] font-semibold tracking-wider uppercase text-gray-400 mt-1.5">{formatTimeAgo(item.createdAt)}</p>
       </div>
     </div>
   );

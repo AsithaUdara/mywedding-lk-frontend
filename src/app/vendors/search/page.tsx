@@ -80,7 +80,8 @@ const SearchResultsPage = () => {
   };
 
   // URL for the map on this page
-  const mapUrl = `https://www.google.com/maps/embed/v1/search?key=AIzaSyAZXfMfsfRyCaPwkugdAlXNobgPHIQsH30&q=wedding+vendors+in+Colombo+Sri+Lanka`;
+  const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const mapUrl = `https://www.google.com/maps/embed/v1/search?key=${googleMapsApiKey}&q=wedding+vendors+in+Colombo+Sri+Lanka`;
 
   return (
     <>

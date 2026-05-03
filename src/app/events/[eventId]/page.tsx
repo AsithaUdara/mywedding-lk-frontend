@@ -1,130 +1,28 @@
-"use client";
-
-import React, { use, useState, useEffect, useCallback } from 'react';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
-import TeamSection from '@/features/event-planning/components/TeamSection';
-import ChecklistSection from '@/features/event-planning/components/ChecklistSection';
-import BudgetSection from '@/features/event-planning/components/BudgetSection';
-import MyStyleSection from '@/features/event-planning/components/MyStyleSection';
-import StyleQuizModal from '@/features/event-planning/components/StyleQuizModal';
-import EventHeaderClient from '@/features/event-planning/components/EventHeaderClient';
+import React from 'react';
+import MiniChecklist from '@/features/event-planning/components/MiniChecklist';
+import MiniBudget from '@/features/event-planning/components/MiniBudget';
 import RecentActivitiesHub from '@/features/event-planning/components/RecentActivitiesHub';
-import EventPageNav from '@/features/event-planning/components/EventPageNav';
-import CollaborationHubSidebar from '@/features/event-planning/components/CollaborationHubSidebar';
-import { useAuth } from '@/context/AuthContext';
-import { RealTimeProvider } from '@/context/RealTimeContext';
-import { useRouter } from 'next/navigation';
-import { getEventById } from '@/lib/api/events';
 
-interface EventDetails {
-  id: string;
-  eventName: string;
-  eventDate: string;
-  totalBudget: number;
-  stylePreferences: string | null;
-}
-
-const EventDetailPage = ({ params }: { params: Promise<{ eventId: string }> }) => {
-  const { eventId } = use(params);
-  const { user, loading } = useAuth();
-  const router = useRouter();
-  const [event, setEvent] = useState<EventDetails | null>(null);
-  const [isQuizOpen, setQuizOpen] = useState(false);
-
-  // Define fetchEvent outside useEffect using useCallback so it can be reused
-  const fetchEvent = useCallback(async () => {
-    if (!user) return;
-    try {
-      const token = await user.getIdToken();
-      const data = await getEventById(token, eventId);
-      setEvent(data);
-      console.log('✅ Event data refreshed:', data);
-    } catch (err) {
-      console.error('Failed to fetch event:', err);
-    }
-  }, [user, eventId]);
-
-  useEffect(() => {
-    if (loading) return;
-    if (!user) {
-      router.push('/');
-      return;
-    }
-
-    fetchEvent();
-  }, [user, eventId, router, loading, fetchEvent]);
-
-  const handleRefreshPreferences = () => {
-    console.log('🔄 Refreshing event preferences...');
-    fetchEvent();
-  };
-
-  const handleQuizClosed = () => {
-    console.log('🎨 Quiz closed, refreshing event data...');
-    setQuizOpen(false);
-    fetchEvent(); // Refetch to get updated preferences
-  };
-
-  if (loading) {
-    return <div className="h-screen w-full bg-cream" />;
-  }
-  if (!user) {
-    return null;
-  }
-
-  // Parse the preferences JSON string safely
-  const stylePreferences = event?.stylePreferences ? JSON.parse(event.stylePreferences) : null;
+export default async function EventOverviewPage({
+  params,
+}: {
+  params: Promise<{ eventId: string }>;
+}) {
+  const { eventId } = await params;
 
   return (
-    <RealTimeProvider eventId={eventId}>
-      <div className="flex flex-col min-h-screen bg-cream">
-        <Header onLoginClick={() => { }} />
-
-        <main className="flex-grow w-full px-4 sm:px-6 lg:px-8 py-12">
-          {/* Header section */}
-          <div className="max-w-7xl mx-auto mb-8">
-            <EventHeaderClient eventId={eventId} />
-          </div>
-
-          {/* Navigation Tabs */}
-          <div className="max-w-7xl mx-auto">
-            <EventPageNav />
-          </div>
-
-          {/* Main content grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start max-w-7xl mx-auto">
-
-            {/* Main content column - Spans 2 columns */}
-            <div className="lg:col-span-2 space-y-8">
-              <RecentActivitiesHub eventId={eventId} />
-              <MyStyleSection preferences={stylePreferences} onRefresh={handleRefreshPreferences} onOpenQuiz={() => setQuizOpen(true)} />
-              <TeamSection eventId={eventId} />
-              <BudgetSection eventId={eventId} />
-            </div>
-
-            {/* Sidebar column - Spans 1 column */}
-            <div className="lg:col-span-1">
-              <div className="sticky top-24">
-                <ChecklistSection eventId={eventId} />
-              </div>
-            </div>
-          </div>
-        </main>
-        <Footer />
-
-        {/* Style Quiz Modal */}
-        <StyleQuizModal
-          isOpen={isQuizOpen}
-          onClose={handleQuizClosed}
-          eventId={eventId}
-        />
-
-        {/* Collaboration Hub Sidebar */}
-        <CollaborationHubSidebar eventId={eventId} />
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:items-stretch">
+      {/* Primary Column - 8/12 span */}
+      <div className="lg:col-span-8 space-y-6">
+        <MiniChecklist eventId={eventId} />
+        <MiniBudget eventId={eventId} />
       </div>
-    </RealTimeProvider>
-  );
-};
 
-export default EventDetailPage;
+      {/* Sidebar Column - 4/12 span */}
+      <div className="lg:col-span-4 h-full min-h-0">
+        {/* We keep Recent Activities on the dashboard to make it feel alive */}
+        <RecentActivitiesHub eventId={eventId} />
+      </div>
+    </div>
+  );
+}
