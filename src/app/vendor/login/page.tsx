@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { Briefcase, Mail, Lock, ChevronRight, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
-import { auth } from '@/lib/firebase';
+import { auth } from '@/shared/lib/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 
@@ -137,3 +137,4 @@ export default function VendorLoginPage() {
         </div>
     );
 }
+

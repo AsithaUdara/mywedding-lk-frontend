@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/shared/context/AuthContext';
 import {
     Eye,
     CalendarCheck,
@@ -143,3 +143,4 @@ export default function VendorDashboardOverview() {
         </div>
     );
 }
+

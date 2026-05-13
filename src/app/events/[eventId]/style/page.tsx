@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import MyStyleSection from '@/features/event-planning/components/MyStyleSection';
+import MyStyleSection from '@/modules/events/MyStyleSection';
 
 export default function StylePage() {
   return (

@@ -16,7 +16,7 @@ import {
     Briefcase,
     Bell
 } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/shared/context/AuthContext';
 
 export default function VendorDashboardLayout({
     children,
@@ -110,3 +110,4 @@ export default function VendorDashboardLayout({
         </div>
     );
 }
+

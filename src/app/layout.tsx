@@ -1,7 +1,7 @@
 import { Roboto, Playfair_Display } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "@/context/AuthContext";
-import { UIProvider } from "@/context/UIContext";
+import { AuthProvider } from "@/shared/context/AuthContext";
+import { UIProvider } from "@/shared/context/UIContext";
 
 
 const roboto = Roboto({

@@ -1,7 +1,7 @@
 import React from 'react';
-import MiniChecklist from '@/features/event-planning/components/MiniChecklist';
-import MiniBudget from '@/features/event-planning/components/MiniBudget';
-import RecentActivitiesHub from '@/features/event-planning/components/RecentActivitiesHub';
+import MiniChecklist from '@/modules/tasks/MiniChecklist';
+import MiniBudget from '@/modules/budget/MiniBudget';
+import RecentActivitiesHub from '@/modules/collaboration/RecentActivitiesHub';
 
 export default async function EventOverviewPage({
   params,

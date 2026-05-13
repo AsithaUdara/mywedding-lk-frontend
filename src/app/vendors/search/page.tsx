@@ -2,13 +2,13 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import Header from '@/components/layout/Header';
-import AuthModal from '@/features/authentication/AuthModal';
-import VendorCard from '@/features/vendor-discovery/components/VendorCard';
+import Header from '@/shared/components/layout/Header';
+import AuthModal from '@/modules/identity/AuthModal';
+import VendorCard from '@/modules/vendors/components/VendorCard';
 import { Filter } from 'lucide-react';
-import FilterModal from '@/features/vendor-discovery/components/FilterModal';
-import { getVendors } from '@/lib/api/vendors';
-import { Vendor } from '@/lib/api/vendors';
+import FilterModal from '@/modules/vendors/components/FilterModal';
+import { getVendors } from '@/shared/lib/api/vendors';
+import { Vendor } from '@/shared/lib/api/vendors';
 
 const VENDORS_PER_LOAD = 9;
 

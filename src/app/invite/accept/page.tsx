@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
-import { acceptInvitation } from '@/lib/api/invitations';
+import { useAuth } from '@/shared/context/AuthContext';
+import { acceptInvitation } from '@/shared/lib/api/invitations';
 import { motion } from 'framer-motion';
 import { CheckCircle2, XCircle, Loader2, Sparkles } from 'lucide-react';
 import Link from 'next/link';
@@ -172,3 +172,4 @@ export default function AcceptInvitationPage() {
         </Suspense>
     );
 }
+

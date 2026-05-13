@@ -1,5 +1,5 @@
 import React from 'react';
-import TeamSection from '@/features/event-planning/components/TeamSection';
+import TeamSection from '@/modules/collaboration/TeamSection';
 
 export default async function TeamPage({
   params,

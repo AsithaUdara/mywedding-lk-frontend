@@ -1,13 +1,13 @@
 // File: src/app/vendor/[vendorId]/page.tsx
 import React from 'react';
 import { notFound } from 'next/navigation';
-import { getVendorById } from '@/lib/api/vendors';
+import { getVendorById } from '@/shared/lib/api/vendors';
 
-import VendorDetailClientWrapper from '@/features/vendor-discovery/components/VendorDetailClientWrapper';
-import ImageGallery from '@/features/vendor-discovery/components/ImageGallery';
-import BookingPanel from '@/features/vendor-discovery/components/BookingPanel';
-import VendorHighlights from '@/features/vendor-discovery/components/VendorHighlights';
-import ReviewCard from '@/features/vendor-discovery/components/ReviewCard';
+import VendorDetailClientWrapper from '@/modules/vendors/components/VendorDetailClientWrapper';
+import ImageGallery from '@/modules/vendors/components/ImageGallery';
+import BookingPanel from '@/modules/vendors/components/BookingPanel';
+import VendorHighlights from '@/modules/vendors/components/VendorHighlights';
+import ReviewCard from '@/modules/vendors/components/ReviewCard';
 import { MapPin, Star, Award } from 'lucide-react';
 
 export async function generateStaticParams() {

@@ -1,15 +1,15 @@
 "use client";
 
 import React, { use } from 'react';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
-import EventHeaderClient from '@/features/event-planning/components/EventHeaderClient';
-import QuickInsightsRow from '@/features/event-planning/components/QuickInsightsRow';
-import EventNavigation from '@/features/event-planning/components/EventNavigation';
-import CollaborationHubSidebar from '@/features/event-planning/components/CollaborationHubSidebar';
-import AIChatWidget from '@/features/event-planning/components/AIChatWidget';
-import { RealTimeProvider } from '@/context/RealTimeContext';
-import { useAuth } from '@/context/AuthContext';
+import Header from '@/shared/components/layout/Header';
+import Footer from '@/shared/components/layout/Footer';
+import EventHeaderClient from '@/modules/events/EventHeaderClient';
+import QuickInsightsRow from '@/modules/events/QuickInsightsRow';
+import EventNavigation from '@/modules/events/EventNavigation';
+import CollaborationHubSidebar from '@/modules/collaboration/CollaborationHubSidebar';
+import AIChatWidget from '@/modules/ai/AIChatWidget';
+import { RealTimeProvider } from '@/shared/context/RealTimeContext';
+import { useAuth } from '@/shared/context/AuthContext';
 import { useRouter } from 'next/navigation';
 
 export default function EventLayout({

@@ -2,14 +2,14 @@
 "use client"; // This directive MUST be at the very top
 
 import React, { useState } from 'react'; // Import useState
-import Header from "@/components/layout/Header";
+import Header from "@/shared/components/layout/Header";
 import Hero from "@/app/(home)/components/Hero";
 import BrowseByCategory from "@/app/(home)/components/BrowseByCategory";
 import HowItWorks from "@/app/(home)/components/HowItWorks";
-import FeaturedVenues from "@/features/vendor-discovery/components/FeaturedVenues";
-import Testimonials from "@/features/vendor-discovery/components/Testimonials";
-import Footer from "@/components/layout/Footer";
-import AuthModal from '@/features/authentication/AuthModal'; 
+import FeaturedVenues from "@/modules/vendors/components/FeaturedVenues";
+import Testimonials from "@/modules/vendors/components/Testimonials";
+import Footer from "@/shared/components/layout/Footer";
+import AuthModal from '@/modules/identity/AuthModal'; 
 
 export default function Home() {
   // State to control the modal's visibility

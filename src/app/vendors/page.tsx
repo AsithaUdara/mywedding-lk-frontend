@@ -5,21 +5,21 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 
 // Layout & UI Components
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
-import HorizontalScrollSection from '@/components/ui/HorizontalScrollSection';
-import AuthModal from '@/features/authentication/AuthModal';
+import Header from '@/shared/components/layout/Header';
+import Footer from '@/shared/components/layout/Footer';
+import HorizontalScrollSection from '@/shared/components/ui/HorizontalScrollSection';
+import AuthModal from '@/modules/identity/AuthModal';
 
 // Feature-Specific Components
-import VendorCard from '@/features/vendor-discovery/components/VendorCard';
-import StyleCard from '@/features/vendor-discovery/components/StyleCard';
-import AmenityCard from '@/features/vendor-discovery/components/AmenityCard';
+import VendorCard from '@/modules/vendors/components/VendorCard';
+import StyleCard from '@/modules/vendors/components/StyleCard';
+import AmenityCard from '@/modules/vendors/components/AmenityCard';
 
 // Page-Specific Components (Co-located)
 import HeroWithSearch from './components/HeroWithSearch';
 
 // Data & Icons
-import allVendorsData from '@/lib/data/vendors.json';
+import allVendorsData from '@/shared/lib/data/vendors.json';
 import { Star, Camera, Music } from 'lucide-react';
 
 const VendorsHubPage = () => {

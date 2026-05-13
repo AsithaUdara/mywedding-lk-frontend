@@ -11,7 +11,7 @@ import {
     Camera,
     Plus
 } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/shared/context/AuthContext';
 
 export default function VendorProfilePage() {
     const { user } = useAuth();
@@ -128,3 +128,4 @@ export default function VendorProfilePage() {
         </div>
     );
 }
+

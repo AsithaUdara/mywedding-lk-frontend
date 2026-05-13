@@ -1,5 +1,5 @@
 import React from 'react';
-import BudgetSection from '@/features/event-planning/components/BudgetSection';
+import BudgetSection from '@/modules/budget/BudgetSection';
 
 export default async function BudgetPage({
   params,

@@ -1,16 +1,16 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/shared/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
-import EventList from '@/components/dashboard/EventList';
-import CreateEventModal from '@/features/event-planning/CreateEventModal';
-import EventSetupModal from '@/features/event-planning/components/EventSetupModal';
-import StyleQuizModal from '@/features/event-planning/components/StyleQuizModal';
-import { getEvents } from '@/lib/api/events';
-import Skeleton from '@/components/ui/Skeleton';
+import Header from '@/shared/components/layout/Header';
+import Footer from '@/shared/components/layout/Footer';
+import EventList from '@/modules/events/EventList';
+import CreateEventModal from '@/modules/events/CreateEventModal';
+import EventSetupModal from '@/modules/events/EventSetupModal';
+import StyleQuizModal from '@/modules/events/StyleQuizModal';
+import { getEvents } from '@/shared/lib/api/events';
+import Skeleton from '@/shared/components/ui/Skeleton';
 import { Plus } from 'lucide-react';
 
 interface EventSummary {

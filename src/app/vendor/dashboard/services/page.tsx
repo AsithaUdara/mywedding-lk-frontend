@@ -13,7 +13,7 @@ import {
 
 import ServiceModal from './ServiceModal';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/shared/context/AuthContext';
 
 export interface VendorService {
     id: string;
@@ -267,3 +267,4 @@ export default function VendorServicesPage() {
         </div>
     );
 }
+

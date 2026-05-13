@@ -1,5 +1,5 @@
 import React from 'react';
-import ChecklistSection from '@/features/event-planning/components/ChecklistSection';
+import ChecklistSection from '@/modules/tasks/ChecklistSection';
 
 export default async function ChecklistPage({
   params,

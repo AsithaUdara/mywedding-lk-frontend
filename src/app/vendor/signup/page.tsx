@@ -28,9 +28,9 @@ const VENDOR_CATEGORIES = [
     { id: 'other', name: 'Other', icon: <PlusCircle className="w-5 h-5" />, description: 'Planning, Cakes, Rentals etc' },
 ];
 
-import { auth } from '@/lib/firebase';
+import { auth } from '@/shared/lib/firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { registerVendor } from '@/lib/api/vendors';
+import { registerVendor } from '@/shared/lib/api/vendors';
 import { useRouter } from 'next/navigation';
 
 export default function VendorSignupPage() {
@@ -348,3 +348,4 @@ export default function VendorSignupPage() {
         </div>
     );
 }
+

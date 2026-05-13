@@ -1,7 +1,7 @@
 // src/app/vendors/components/HeroWithSearch.tsx
 import React from 'react';
 import Image from 'next/image';
-import SearchForm from '@/features/vendor-discovery/components/SearchForm';
+import SearchForm from '@/modules/vendors/components/SearchForm';
 
 // Define the props this component will receive
 interface HeroWithSearchProps {
