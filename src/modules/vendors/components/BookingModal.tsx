@@ -5,6 +5,7 @@ import { useAuth } from '@/shared/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { getEvents } from '@/shared/lib/api/events';
 import { createBooking } from '@/shared/lib/api/vendors';
+import { postComment } from '@/shared/lib/api/feed';
 import { X, ChevronDown, Calendar } from 'lucide-react';
 
 interface Event {
@@ -81,6 +82,14 @@ const BookingModal = ({ isOpen, onClose, vendorName, serviceId, price }: Booking
         finalAmount: price,
         serviceDate,
       });
+      
+      // Auto-trigger activity feed
+      try {
+        await postComment(token, selectedEventId, `Booked vendor service: "${vendorName}" for LKR ${price}`);
+      } catch (feedError) {
+        console.error("Failed to post to activity feed", feedError);
+      }
+      
       onClose();
       router.push('/dashboard');
     } catch (err) {

@@ -117,7 +117,7 @@ const ChecklistSection = ({ eventId }: ChecklistSectionProps) => {
       ) : (
         <div className="space-y-3">
           {tasks.map((task) => (
-            <TaskItem key={task.id} task={task} onStatusChange={fetchTasks} />
+            <TaskItem key={task.id} task={task} eventId={eventId} onStatusChange={fetchTasks} />
           ))}
         </div>
       )}

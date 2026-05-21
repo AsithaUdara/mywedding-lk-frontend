@@ -30,6 +30,7 @@ export default function VendorDashboardLayout({
     const navItems = [
         { label: 'Overview', icon: <BarChart3 size={20} />, href: '/vendor/dashboard' },
         { label: 'My Services', icon: <Package size={20} />, href: '/vendor/dashboard/services' },
+        { label: 'Bookings', icon: <Briefcase size={20} />, href: '/vendor/dashboard/bookings' },
         { label: 'Inquiries', icon: <MessageSquare size={20} />, href: '/vendor/dashboard/inquiries' },
         { label: 'Profile', icon: <User size={20} />, href: '/vendor/dashboard/profile' },
         { label: 'Settings', icon: <Settings size={20} />, href: '/vendor/dashboard/settings' },

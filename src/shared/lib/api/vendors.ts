@@ -144,3 +144,77 @@ export const registerVendor = async (vendorData: {
   return response.json();
 };
 
+export const getVendorBookings = async (token: string) => {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/bookings/vendor`;
+  const response = await fetch(apiUrl, {
+    method: 'GET',
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Failed to fetch bookings.');
+  }
+  return response.json();
+};
+
+export const updateBookingStatus = async (token: string, bookingId: string, status: string) => {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/bookings/${bookingId}/status`;
+  const response = await fetch(apiUrl, {
+    method: 'PATCH',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ status }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Failed to update booking status.');
+  }
+  return response;
+};
+
+// --- NEW FUNCTIONS FOR INQUIRIES ---
+export const sendInquiry = async (token: string, vendorId: string, message: string) => {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendors/${vendorId}/inquiries`;
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ message }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Failed to send inquiry.');
+  }
+  return response.json();
+};
+
+export const getVendorInquiries = async (token: string) => {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/dashboard/inquiries`;
+  const response = await fetch(apiUrl, {
+    method: 'GET',
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Failed to fetch inquiries.');
+  }
+  return response.json();
+};
+
+export const markInquiryAsRead = async (token: string, inquiryId: string) => {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/dashboard/inquiries/${inquiryId}/read`;
+  const response = await fetch(apiUrl, {
+    method: 'PATCH',
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Failed to mark inquiry as read.');
+  }
+  return response;
+};
+

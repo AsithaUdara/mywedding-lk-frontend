@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/shared/context/AuthContext';
 import { createTask } from '@/shared/lib/api/tasks';
+import { postComment } from '@/shared/lib/api/feed';
 
 interface CreateTaskFormProps {
   eventId: string;
@@ -27,6 +28,14 @@ const CreateTaskForm = ({ eventId, onTaskCreated, onCancel }: CreateTaskFormProp
     try {
       const token = await user.getIdToken();
       await createTask(token, eventId, { title });
+      
+      // Auto-trigger activity feed
+      try {
+        await postComment(token, eventId, `Added a new task: "${title}"`);
+      } catch (feedError) {
+        console.error("Failed to post to activity feed", feedError);
+      }
+      
       onTaskCreated(); // Notify parent to refresh
     } catch (err: unknown) {
       const error = err as { message?: string };

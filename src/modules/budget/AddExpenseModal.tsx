@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/shared/context/AuthContext';
 import { addExpense, getBudgetCategories, type BudgetCategory } from '@/shared/lib/api/budget';
+import { postComment } from '@/shared/lib/api/feed';
 import { X, ChevronDown } from 'lucide-react';
 
 interface AddExpenseModalProps {
@@ -69,6 +70,14 @@ const AddExpenseModal = ({ isOpen, onClose, eventId, onExpenseAdded }: AddExpens
         expenseDate,
         budgetCategoryId: categoryId,
       });
+      
+      // Auto-trigger activity feed
+      try {
+        await postComment(token, eventId, `Added a new expense: "${title}" for LKR ${amount}`);
+      } catch (feedError) {
+        console.error("Failed to post to activity feed", feedError);
+      }
+      
       onExpenseAdded();
       onClose(); // Proactively added: close on success
     } catch (err) {

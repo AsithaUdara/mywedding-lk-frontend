@@ -8,6 +8,7 @@ import ImageGallery from '@/modules/vendors/components/ImageGallery';
 import BookingPanel from '@/modules/vendors/components/BookingPanel';
 import VendorHighlights from '@/modules/vendors/components/VendorHighlights';
 import ReviewCard from '@/modules/vendors/components/ReviewCard';
+import ServiceList from '@/modules/vendors/components/ServiceList';
 import { MapPin, Star, Award } from 'lucide-react';
 
 export async function generateStaticParams() {
@@ -68,15 +69,7 @@ const VendorDetailPage = async ({ params }: { params: Promise<{ vendorId: string
 
               <div className="py-8 border-b">
                 <h3 className="text-2xl font-bold mb-6">Services Offered</h3>
-                <div className="space-y-4">
-                  {vendor.services.map(service => (
-                    <div key={service.id} className="p-4 border rounded-lg">
-                      <h4 className="font-bold text-lg">{service.serviceName}</h4>
-                      <p className="text-sm text-gray-600">{service.description}</p>
-                      <p className="text-right font-semibold text-primary mt-2">Starts from LKR {service.basePrice.toLocaleString()}</p>
-                    </div>
-                  ))}
-                </div>
+                <ServiceList services={vendor.services} vendorName={vendor.businessName} />
               </div>
 
               <div className="py-8">
@@ -108,6 +101,7 @@ const VendorDetailPage = async ({ params }: { params: Promise<{ vendorId: string
                   rating={vendor.averageRating}
                   reviews={vendor.reviews.length}
                   vendorName={vendor.businessName}
+                  vendorId={vendor.userId}
                   serviceId={firstServiceId}
                 />
               </div>

@@ -3,14 +3,16 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/shared/context/AuthContext';
 import { type Task, updateTaskStatus } from '@/shared/lib/api/tasks';
+import { postComment } from '@/shared/lib/api/feed';
 import { Check } from 'lucide-react';
 
 interface TaskItemProps {
   task: Task;
+  eventId: string;
   onStatusChange: () => void;
 }
 
-const TaskItem = ({ task, onStatusChange }: TaskItemProps) => {
+const TaskItem = ({ task, eventId, onStatusChange }: TaskItemProps) => {
   const { user } = useAuth();
   const [isUpdating, setIsUpdating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -24,6 +26,14 @@ const TaskItem = ({ task, onStatusChange }: TaskItemProps) => {
       const token = await user.getIdToken();
       const newStatus = task.status === 'Completed' ? 'ToDo' : 'Completed';
       await updateTaskStatus(token, task.id, newStatus);
+      
+      // Auto-trigger activity feed
+      try {
+        await postComment(token, eventId, `Marked task "${task.title}" as ${newStatus}`);
+      } catch (feedError) {
+        console.error("Failed to post to activity feed", feedError);
+      }
+      
       onStatusChange();
     } catch (error) {
       console.error('Failed to update task status:', error);

@@ -4,18 +4,21 @@ import React, { useState } from 'react';
 import { Star } from 'lucide-react';
 import { useAuth } from '@/shared/context/AuthContext';
 import BookingModal from './BookingModal';
+import InquiryModal from './InquiryModal';
 
 interface BookingPanelProps {
   price: number;
   rating: number;
   reviews: number;
   vendorName: string;
+  vendorId: string;
   serviceId?: string;
 }
 
-const BookingPanel = ({ price, rating, reviews, vendorName, serviceId }: BookingPanelProps) => {
+const BookingPanel = ({ price, rating, reviews, vendorName, vendorId, serviceId }: BookingPanelProps) => {
   const { user } = useAuth();
   const [isModalOpen, setModalOpen] = useState(false);
+  const [isInquiryModalOpen, setInquiryModalOpen] = useState(false);
 
   const handleBookingClick = () => {
     if (!user) {
@@ -25,6 +28,14 @@ const BookingPanel = ({ price, rating, reviews, vendorName, serviceId }: Booking
     if (serviceId) {
       setModalOpen(true);
     }
+  };
+
+  const handleContactClick = () => {
+    if (!user) {
+      alert("Please log in to contact this vendor.");
+      return;
+    }
+    setInquiryModalOpen(true);
   };
 
   return (
@@ -55,6 +66,16 @@ const BookingPanel = ({ price, rating, reviews, vendorName, serviceId }: Booking
           {serviceId ? "Request to Book" : "No Services Available"}
         </button>
         <p className="text-center text-xs text-gray-400 mt-3">You won&apos;t be charged yet</p>
+
+        <div className="mt-4 pt-4 border-t text-center">
+          <button 
+            onClick={handleContactClick}
+            className="text-sm font-semibold hover:underline"
+            style={{ color: 'var(--color-primary)' }}
+          >
+            Contact Vendor
+          </button>
+        </div>
       </div>
 
       {serviceId && (
@@ -64,6 +85,16 @@ const BookingPanel = ({ price, rating, reviews, vendorName, serviceId }: Booking
           vendorName={vendorName}
           serviceId={serviceId}
           price={price}
+        />
+      )}
+
+      {/* Inquiry Modal */}
+      {isInquiryModalOpen && (
+        <InquiryModal
+          isOpen={isInquiryModalOpen}
+          onClose={() => setInquiryModalOpen(false)}
+          vendorId={vendorId} 
+          vendorName={vendorName}
         />
       )}
     </>
