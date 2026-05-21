@@ -1,23 +1,24 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, use, useCallback } from 'react';
 import MyStyleSection from '@/modules/events/MyStyleSection';
 import StyleQuizModal from '@/modules/events/StyleQuizModal';
 import { useAuth } from '@/shared/context/AuthContext';
 import { getEventById } from '@/shared/lib/api/events';
 
-export default function StylePage({ params }: { params: { eventId: string } }) {
+export default function StylePage({ params }: { params: Promise<{ eventId: string }> }) {
+  const { eventId } = use(params);
   const { user } = useAuth();
   const [preferences, setPreferences] = useState<Record<string, string> | null>(null);
   const [isQuizOpen, setIsQuizOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const fetchPreferences = async () => {
-    if (!user || !params.eventId) return;
+  const fetchPreferences = useCallback(async () => {
+    if (!user || !eventId) return;
     try {
       setLoading(true);
       const token = await user.getIdToken();
-      const event = await getEventById(token, params.eventId);
+      const event = await getEventById(token, eventId);
       
       if (event?.stylePreferences) {
         try {
@@ -35,11 +36,11 @@ export default function StylePage({ params }: { params: { eventId: string } }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, eventId]);
 
   useEffect(() => {
     fetchPreferences();
-  }, [user, params.eventId]);
+  }, [fetchPreferences]);
 
   const handleQuizClose = () => {
     setIsQuizOpen(false);

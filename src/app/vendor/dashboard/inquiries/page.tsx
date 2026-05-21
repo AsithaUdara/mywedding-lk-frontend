@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/shared/context/AuthContext';
 import { getVendorInquiries, markInquiryAsRead } from '@/shared/lib/api/vendors';
 import { MessageSquare, Mail, CheckCircle } from 'lucide-react';
@@ -19,11 +19,7 @@ const VendorInquiriesPage = () => {
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchInquiries();
-  }, [user]);
-
-  const fetchInquiries = async () => {
+  const fetchInquiries = useCallback(async () => {
     if (!user) return;
     try {
       const token = await user.getIdToken();
@@ -34,7 +30,11 @@ const VendorInquiriesPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    fetchInquiries();
+  }, [fetchInquiries]);
 
   const handleMarkAsRead = async (id: string, currentStatus: boolean) => {
     if (!user || currentStatus) return;
