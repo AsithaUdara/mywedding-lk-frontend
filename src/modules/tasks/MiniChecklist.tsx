@@ -63,7 +63,7 @@ const MiniChecklist = ({ eventId }: { eventId: string }) => {
           </div>
         ) : (
           tasks.map(task => (
-            <TaskItem key={task.id} task={task} onStatusChange={fetchTasks} />
+            <TaskItem key={task.id} task={task} eventId={eventId} onStatusChange={fetchTasks} />
           ))
         )}
       </div>

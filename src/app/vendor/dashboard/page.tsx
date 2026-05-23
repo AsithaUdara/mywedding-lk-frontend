@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/shared/context/AuthContext';
 import {
@@ -258,12 +259,12 @@ export default function VendorDashboardOverview() {
                                 <div className="relative z-10">
                                     <h3 className="font-bold text-lg mb-2">Grow Your Business</h3>
                                     <p className="text-sm opacity-90 mb-6">Complete your profile to increase visibility by up to 40%.</p>
-                                    <a
+                                    <Link
                                         href="/vendor/dashboard/profile"
                                         className="block w-full py-3 bg-white text-primary font-bold rounded-xl shadow-lg text-center transition-transform hover:scale-[1.02]"
                                     >
                                         Update My Profile
-                                    </a>
+                                    </Link>
                                 </div>
                                 <TrendingUp className="absolute -bottom-4 -right-4 w-32 h-32 opacity-10 rotate-12" />
                             </div>

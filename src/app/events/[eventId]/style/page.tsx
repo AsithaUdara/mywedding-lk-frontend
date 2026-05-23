@@ -65,7 +65,7 @@ export default function StylePage({ params }: { params: Promise<{ eventId: strin
       <StyleQuizModal
         isOpen={isQuizOpen}
         onClose={handleQuizClose}
-        eventId={params.eventId}
+        eventId={eventId}
       />
     </div>
   );
