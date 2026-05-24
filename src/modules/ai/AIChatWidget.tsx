@@ -5,6 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, X, Send, User, Bot, Loader2, Maximize2, Minimize2, Minus } from 'lucide-react';
 
 import { useUI } from '@/shared/context/UIContext';
+import { useAuth } from '@/shared/context/AuthContext';
+import { getEvents } from '@/shared/lib/api/events';
+import { sendAiChat } from '@/shared/lib/api/ai';
 
 interface Message {
   id: string;
@@ -14,6 +17,7 @@ interface Message {
 
 const AIChatWidget = () => {
   const { isChatOpen, openChat, closeChat } = useUI();
+  const { user } = useAuth();
   const [isMaximized, setIsMaximized] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
@@ -25,6 +29,7 @@ const AIChatWidget = () => {
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [activeEventId, setActiveEventId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Show tooltip after a small delay
@@ -44,6 +49,22 @@ const AIChatWidget = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  useEffect(() => {
+    const loadEvent = async () => {
+      if (!user) return;
+      try {
+        const token = await user.getIdToken();
+        const events = await getEvents(token);
+        if (events && events.length > 0) {
+          setActiveEventId(events[0].id);
+        }
+      } catch {
+        // ignore; widget gracefully falls back
+      }
+    };
+    loadEvent();
+  }, [user]);
+
   // Auto-scroll to bottom
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -51,7 +72,7 @@ const AIChatWidget = () => {
     }
   }, [messages, isTyping, isChatOpen]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!inputValue.trim()) return;
 
     // Add user message
@@ -60,16 +81,29 @@ const AIChatWidget = () => {
     setInputValue("");
     setIsTyping(true);
 
-    // Mock AI Response after a delay
-    setTimeout(() => {
+    try {
+      if (!user || !activeEventId) {
+        throw new Error("No active event found. Create an event to use AI planning.");
+      }
+
+      const token = await user.getIdToken();
+      const ai = await sendAiChat(token, activeEventId, inputValue);
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
         sender: 'ai',
-        text: "That's a great question! Since your priority is Food, I'd highly recommend looking into 'Royal Catering' or 'The Grand Banquet'. Would you like me to add a task to your checklist to contact them?"
+        text: ai.reply || "I could not generate a response right now."
       };
       setMessages(prev => [...prev, aiResponse]);
+    } catch (err) {
+      const fallback: Message = {
+        id: (Date.now() + 1).toString(),
+        sender: 'ai',
+        text: err instanceof Error ? err.message : "AI service is temporarily unavailable."
+      };
+      setMessages(prev => [...prev, fallback]);
+    } finally {
       setIsTyping(false);
-    }, 2000);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {

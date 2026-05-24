@@ -1,131 +1,149 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from "react";
+import { Building2, Globe, Info, Mail, MapPin, Phone, User2 } from "lucide-react";
+import { useAuth } from "@/shared/context/AuthContext";
+import { getVendorById, VendorDetail } from "@/shared/lib/api/vendors";
 import {
-    Building2,
-    MapPin,
-    Globe,
-    Info,
-    Save,
-    Image as ImageIcon,
-    Camera,
-    Plus
-} from 'lucide-react';
-import { useAuth } from '@/shared/context/AuthContext';
+  EmptyState,
+  ErrorBanner,
+  IconCircle,
+  LoadingState,
+  PageHeader,
+  SectionCard,
+} from "@/modules/vendor/dashboard/ui";
 
 export default function VendorProfilePage() {
-    const { user } = useAuth();
-    const [formData, setFormData] = useState({
-        businessName: 'Majestic Ballroom',
-        description: 'We offer the most luxurious wedding hall experience in the heart of Colombo.',
-        city: 'Colombo',
-        website: 'https://majesticballroom.lk',
-    });
+  const { user } = useAuth();
+  const [profile, setProfile] = useState<VendorDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (!user?.uid) return;
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await getVendorById(user.uid);
+        setProfile(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load vendor profile.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadProfile();
+  }, [user?.uid]);
+
+  if (loading) return <LoadingState label="Loading profile..." />;
+
+  if (!profile) {
     return (
-        <div className="max-w-4xl space-y-8">
-            <div>
-                <h1 className="text-3xl font-bold font-playfair text-charcoal">Business Profile</h1>
-                <p className="text-slate-500">Update how couples see your business on the platform.</p>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Left Column: Avatar & Basic */}
-                <div className="space-y-6">
-                    <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm text-center">
-                        <div className="relative w-32 h-32 mx-auto mb-6">
-                            <div className="w-full h-full bg-gradient-to-tr from-primary to-accent rounded-2xl shadow-lg shadow-primary/20" />
-                            <button className="absolute -bottom-2 -right-2 p-2 bg-white rounded-xl shadow-md border border-slate-100 text-primary hover:scale-110 transition-transform">
-                                <Camera size={18} />
-                            </button>
-                        </div>
-                        <h3 className="font-bold text-charcoal text-lg">{formData.businessName}</h3>
-                        <p className="text-sm text-slate-400">ID: {user?.uid.substring(0, 8)}...</p>
-                    </div>
-
-                    <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-                        <h4 className="font-bold text-charcoal text-sm mb-4 uppercase tracking-wider">Verification Status</h4>
-                        <div className="flex items-center gap-2 text-green-600 font-bold bg-green-50 p-3 rounded-xl">
-                            <div className="w-2 h-2 bg-green-600 rounded-full animate-pulse" />
-                            <span className="text-xs uppercase">Verified Partner</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Right Column: Detailed Form */}
-                <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label className="block text-sm font-bold text-charcoal mb-2 flex items-center gap-2">
-                                    <Building2 size={16} className="text-primary" /> Business Name
-                                </label>
-                                <input
-                                    type="text"
-                                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none font-medium"
-                                    value={formData.businessName}
-                                    onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-bold text-charcoal mb-2 flex items-center gap-2">
-                                    <Globe size={16} className="text-primary" /> Website
-                                </label>
-                                <input
-                                    type="text"
-                                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none font-medium"
-                                    value={formData.website}
-                                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                                />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-charcoal mb-2 flex items-center gap-2">
-                                <MapPin size={16} className="text-primary" /> City
-                            </label>
-                            <input
-                                type="text"
-                                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none font-medium"
-                                value={formData.city}
-                                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-charcoal mb-2 flex items-center gap-2">
-                                <Info size={16} className="text-primary" /> Business Description
-                            </label>
-                            <textarea
-                                rows={4}
-                                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none font-medium"
-                                value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            />
-                        </div>
-
-                        <div className="pt-4 flex justify-end">
-                            <button className="flex items-center gap-2 px-8 py-4 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:bg-opacity-90 transition-all">
-                                <Save size={20} /> Save Changes
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm">
-                        <h3 className="font-bold text-charcoal text-lg mb-6 flex items-center gap-2">
-                            <ImageIcon size={20} className="text-primary" /> Business Portfolio
-                        </h3>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            {[1, 2, 3].map(i => (
-                                <div key={i} className="aspect-square bg-slate-100 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 hover:border-primary hover:text-primary transition-all cursor-pointer">
-                                    <Plus size={24} />
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+      <div className="space-y-6">
+        <PageHeader title="Business Profile" description="How couples view your business listing." />
+        {error ? <ErrorBanner message={error} /> : null}
+        <EmptyState
+          title="Profile unavailable"
+          description="Your public profile could not be loaded right now."
+        />
+      </div>
     );
+  }
+
+  const initial = profile.businessName.charAt(0).toUpperCase();
+  const isVerified = profile.verificationStatus === "Verified";
+
+  return (
+    <div className="space-y-8">
+      <PageHeader
+        title="Business Profile"
+        description="Review your public-facing vendor information and listing readiness."
+        badge={isVerified ? "Verified" : "Pending verification"}
+      />
+      {error ? <ErrorBanner message={error} /> : null}
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <SectionCard title="Identity" subtitle="Public account snapshot">
+          <div className="text-center">
+            <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-primary/10 text-3xl font-bold text-primary shadow-sm ring-4 ring-white">
+              {initial}
+            </div>
+            <p className="text-lg font-bold text-charcoal">{profile.businessName}</p>
+            <p className="text-sm text-slate-400">ID: {profile.userId.slice(0, 10)}...</p>
+            <div
+              className={`mt-4 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold ${
+                isVerified ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
+              }`}
+            >
+              <span className={`h-2 w-2 rounded-full ${isVerified ? "bg-emerald-500" : "bg-amber-500"}`} />
+              {isVerified ? "Verified partner" : "Verification pending"}
+            </div>
+          </div>
+        </SectionCard>
+
+        <div className="space-y-6 lg:col-span-2">
+          <SectionCard title="Business details" subtitle="Current values shown to couples">
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <div className="flex items-start gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+                <IconCircle icon={Building2} theme="primary" size={18} className="h-10 w-10" />
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Business name</p>
+                  <p className="mt-0.5 font-semibold text-charcoal">{profile.businessName}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+                <IconCircle icon={MapPin} theme="blue" size={18} className="h-10 w-10" />
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">City</p>
+                  <p className="mt-0.5 font-semibold text-charcoal">{profile.city || "Not set"}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+                <IconCircle icon={Phone} theme="green" size={18} className="h-10 w-10" />
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Contact phone</p>
+                  <p className="mt-0.5 font-semibold text-charcoal">{profile.contactPhone || "Not set"}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+                <IconCircle icon={Globe} theme="amber" size={18} className="h-10 w-10" />
+                <div>
+                  <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Website</p>
+                  <p className="mt-0.5 break-all font-semibold text-charcoal">{profile.websiteUrl || "Not set"}</p>
+                </div>
+              </div>
+            </div>
+            <div className="mt-5 flex items-start gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+              <IconCircle icon={Info} theme="slate" size={18} className="h-10 w-10" />
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Description</p>
+                <p className="mt-0.5 text-sm leading-relaxed text-charcoal">
+                  {profile.businessDescription || "No business description added yet."}
+                </p>
+              </div>
+            </div>
+          </SectionCard>
+
+          <SectionCard title="Next best actions" subtitle="Improve discoverability and conversion">
+            <div className="space-y-3 text-sm">
+              <div className="flex items-start gap-3 rounded-xl border border-gray-100 bg-white p-3 shadow-sm">
+                <IconCircle icon={Mail} theme="rose" size={18} className="h-10 w-10" />
+                <p className="text-sm text-slate-600">
+                  Keep inquiries active and respond within 24 hours to improve ranking signals.
+                </p>
+              </div>
+              <div className="flex items-start gap-3 rounded-xl border border-gray-100 bg-white p-3 shadow-sm">
+                <IconCircle icon={User2} theme="blue" size={18} className="h-10 w-10" />
+                <p className="text-sm text-slate-600">
+                  Add multiple services and transparent pricing to increase booking conversions.
+                </p>
+              </div>
+            </div>
+          </SectionCard>
+        </div>
+      </div>
+    </div>
+  );
 }
 

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/shared/context/AuthContext';
-import { getPlatformStats, PlatformStats } from '@/shared/lib/api/admin';
+import { getPlatformStats, PlatformStats, getPayoutDue, markPayoutSettled, PayoutDueItem } from '@/shared/lib/api/admin';
 import { Users, Store, CalendarHeart, CalendarCheck, Loader2 } from 'lucide-react';
 
 const STAT_CONFIG = [
@@ -16,6 +16,7 @@ const STAT_CONFIG = [
 export default function AdminDashboardPage() {
   const { user } = useAuth();
   const [stats, setStats]   = useState<PlatformStats | null>(null);
+  const [payoutDue, setPayoutDue] = useState<PayoutDueItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]   = useState<string | null>(null);
 
@@ -25,6 +26,7 @@ export default function AdminDashboardPage() {
       try {
         const token = await user.getIdToken();
         setStats(await getPlatformStats(token));
+        setPayoutDue(await getPayoutDue(token));
       } catch {
         setError('Failed to load platform stats.');
       } finally {
@@ -68,6 +70,41 @@ export default function AdminDashboardPage() {
             </motion.div>
           ))}
         </div>
+      )}
+
+      {!loading && !error && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5">
+          <h2 className="text-xl font-bold text-charcoal">Vendor Payout Queue</h2>
+          <p className="mt-1 text-sm text-slate-500">Manual payout settlement list (commission already deducted).</p>
+
+          {payoutDue.length === 0 ? (
+            <p className="mt-4 text-sm text-slate-500">No pending settlements.</p>
+          ) : (
+            <div className="mt-4 space-y-3">
+              {payoutDue.map((item) => (
+                <div key={item.id} className="flex flex-col gap-3 rounded-xl border border-slate-200 p-4 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="font-semibold text-charcoal">Booking {item.bookingId}</p>
+                    <p className="text-sm text-slate-600">
+                      Gross LKR {item.grossAmount.toLocaleString()} | Commission LKR {item.commissionAmount.toLocaleString()} | Vendor Net LKR {item.vendorNetAmount.toLocaleString()}
+                    </p>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      if (!user) return;
+                      const token = await user.getIdToken();
+                      await markPayoutSettled(token, item.id);
+                      setPayoutDue((prev) => prev.filter((x) => x.id !== item.id));
+                    }}
+                    className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white"
+                  >
+                    Mark Settled
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       )}
     </div>
   );

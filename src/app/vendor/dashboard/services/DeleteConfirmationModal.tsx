@@ -24,8 +24,8 @@ export default function DeleteConfirmationModal({
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
                 <div className="p-6 text-center">
-                    <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <AlertTriangle size={32} />
+                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-rose-50 text-rose-600">
+                        <AlertTriangle size={32} strokeWidth={2} />
                     </div>
                     <h3 className="text-xl font-bold text-charcoal mb-2">{title}</h3>
                     <p className="text-slate-500 text-sm leading-relaxed mb-8">

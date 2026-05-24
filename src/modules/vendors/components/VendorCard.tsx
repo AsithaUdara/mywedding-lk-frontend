@@ -15,6 +15,9 @@ interface VendorCardProps {
     images: string[];
     rating: number;
     price: number;
+    totalReviews?: number;
+    verificationStatus?: string;
+    premiumTier?: string;
   }
 }
 
@@ -61,13 +64,28 @@ const VendorCard = ({ vendor }: VendorCardProps) => {
           </div>
         </div>
         <div className="flex justify-between items-start mt-1">
-          <h3 className="font-semibold text-md">{vendor.name}</h3>
+          <div>
+            <h3 className="font-semibold text-md">{vendor.name}</h3>
+            {vendor.verificationStatus === 'Verified' && (
+              <span className="mt-1 mr-2 inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
+                Verified
+              </span>
+            )}
+            {vendor.premiumTier && vendor.premiumTier !== 'Free' && (
+              <span className="mt-1 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary">
+                {vendor.premiumTier}
+              </span>
+            )}
+          </div>
           <div className="flex items-center space-x-1 flex-shrink-0">
             <Star size={14} fill="black" strokeWidth={0}/>
             <span className="text-sm">{vendor.rating.toFixed(1)}</span>
           </div>
         </div>
         <p className="text-gray-500 text-sm">{vendor.category} in {vendor.location}</p>
+        {typeof vendor.totalReviews === 'number' && (
+          <p className="text-gray-400 text-xs">{vendor.totalReviews} review{vendor.totalReviews === 1 ? '' : 's'}</p>
+        )}
         <p className="mt-1">
           <span className="font-semibold">LKR {vendor.price.toLocaleString()}</span> / event
         </p>

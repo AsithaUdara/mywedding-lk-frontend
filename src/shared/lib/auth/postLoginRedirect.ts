@@ -1,11 +1,11 @@
 import { User } from 'firebase/auth';
 
-export type AppRole = 'admin' | 'vendor' | 'user';
+export type AppRole = 'admin' | 'vendor' | 'planner' | 'user';
 
 /** Reads Firebase custom claim `role` (defaults to couple/user). */
 export function getRoleFromClaims(claims: Record<string, unknown>): AppRole {
   const role = claims.role;
-  if (role === 'admin' || role === 'vendor') return role;
+  if (role === 'admin' || role === 'vendor' || role === 'planner') return role;
   return 'user';
 }
 
@@ -16,6 +16,8 @@ export function getDashboardPathForRole(role: AppRole): string {
       return '/admin/dashboard';
     case 'vendor':
       return '/vendor/dashboard';
+    case 'planner':
+      return '/planner/overview';
     default:
       return '/dashboard';
   }

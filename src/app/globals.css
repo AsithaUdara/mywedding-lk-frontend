@@ -387,3 +387,110 @@ h1, h2, h3, h4, h5, h6 {
     transform: translateX(-100%);
   }
 }
+
+/* === Vendor service listing editor (matches venues hub warmth) === */
+.listing-editor-page {
+  min-height: 100vh;
+  background: linear-gradient(
+    165deg,
+    var(--color-cream) 0%,
+    var(--color-royal-cream) 35%,
+    #f3ebe0 70%,
+    #efe6d8 100%
+  );
+  color: var(--color-charcoal);
+}
+
+.listing-editor-header {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 250, 240, 0.98) 0%,
+    rgba(250, 240, 230, 0.98) 50%,
+    rgba(244, 228, 188, 0.25) 100%
+  );
+  border-bottom: 1px solid rgba(106, 4, 15, 0.1);
+  box-shadow: 0 4px 24px rgba(106, 4, 15, 0.04);
+}
+
+.listing-editor-header::after {
+  content: "";
+  display: block;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-accent) 20%,
+    var(--color-primary) 50%,
+    var(--color-accent) 80%,
+    transparent
+  );
+  opacity: 0.35;
+}
+
+.listing-editor-card {
+  background: linear-gradient(180deg, #ffffff 0%, #fffdf9 100%);
+  border: 1px solid rgba(218, 165, 32, 0.22);
+  border-radius: 1rem;
+  box-shadow:
+    0 4px 6px rgba(106, 4, 15, 0.03),
+    0 16px 40px rgba(106, 4, 15, 0.06);
+}
+
+.listing-editor-preview-card {
+  background: #ffffff;
+  border: 1px solid rgba(218, 165, 32, 0.2);
+  border-radius: 1rem;
+  box-shadow:
+    0 8px 30px rgba(106, 4, 15, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+}
+
+.listing-editor-input {
+  background-color: var(--color-cream);
+  border: 1px solid rgba(106, 4, 15, 0.12);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.listing-editor-input:focus {
+  border-color: rgba(106, 4, 15, 0.35);
+  box-shadow: 0 0 0 4px rgba(106, 4, 15, 0.08);
+  outline: none;
+}
+
+.listing-editor-upload-zone {
+  background: linear-gradient(145deg, var(--color-cream), #f7edd8);
+  border: 2px dashed rgba(218, 165, 32, 0.45);
+  color: var(--color-charcoal);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.listing-editor-upload-zone:hover {
+  border-color: var(--color-primary);
+  background: linear-gradient(145deg, #fffef8, rgba(244, 228, 188, 0.5));
+}
+
+.listing-editor-chip-inactive {
+  background: rgba(255, 250, 240, 0.9);
+  border: 1px solid rgba(218, 165, 32, 0.25);
+  color: var(--color-charcoal);
+}
+
+.listing-editor-chip-inactive:hover {
+  border-color: var(--color-primary);
+  background: rgba(106, 4, 15, 0.04);
+}
+
+.listing-editor-surface-muted {
+  background: rgba(244, 228, 188, 0.25);
+  border: 1px solid rgba(218, 165, 32, 0.15);
+}
+
+.listing-editor-step-done {
+  background: rgba(106, 4, 15, 0.08);
+  color: var(--color-primary);
+}
+
+.listing-editor-step-pending {
+  background: rgba(244, 228, 188, 0.5);
+  color: rgba(52, 58, 64, 0.55);
+}

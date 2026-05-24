@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/shared/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { getEvents } from '@/shared/lib/api/events';
-import { createBooking } from '@/shared/lib/api/vendors';
+import { createBooking, createDepositCheckout } from '@/shared/lib/api/vendors';
 import { postComment } from '@/shared/lib/api/feed';
 import { X, ChevronDown, Calendar } from 'lucide-react';
 
@@ -76,16 +76,31 @@ const BookingModal = ({ isOpen, onClose, vendorName, serviceId, price }: Booking
 
     try {
       const token = await user.getIdToken();
-      await createBooking(token, {
+      const bookingResponse = await createBooking(token, {
         eventId: selectedEventId,
         serviceId,
         finalAmount: price,
         serviceDate,
       });
+
+      const bookingId = (bookingResponse as { bookingId?: string; BookingId?: string }).bookingId
+        || (bookingResponse as { bookingId?: string; BookingId?: string }).BookingId;
+      if (!bookingId) {
+        throw new Error('Booking created but booking ID was not returned by API.');
+      }
+
+      const checkout = await createDepositCheckout(token, bookingId);
+      if (checkout?.checkout?.checkoutUrl) {
+        const checkoutUrl = new URL(checkout.checkout.checkoutUrl);
+        checkoutUrl.searchParams.set('order_id', String(checkout.checkout.order_id));
+        checkoutUrl.searchParams.set('amount', String(checkout.checkout.amount));
+        checkoutUrl.searchParams.set('currency', String(checkout.checkout.currency));
+        window.open(checkoutUrl.toString(), '_blank', 'noopener,noreferrer');
+      }
       
       // Auto-trigger activity feed
       try {
-        await postComment(token, selectedEventId, `Booked vendor service: "${vendorName}" for LKR ${price}`);
+        await postComment(token, selectedEventId, `Requested vendor service and started deposit checkout: "${vendorName}" for LKR ${price}`);
       } catch (feedError) {
         console.error("Failed to post to activity feed", feedError);
       }
@@ -150,7 +165,7 @@ const BookingModal = ({ isOpen, onClose, vendorName, serviceId, price }: Booking
             <p className="text-3xl font-bold text-charcoal">LKR {price.toLocaleString()}</p>
           </div>
           <button type="submit" disabled={loading || events.length === 0} className="w-full py-3 rounded-lg text-white font-semibold shadow-lg transition-transform hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed" style={{ backgroundColor: 'var(--color-primary)' }}>
-            {loading ? 'Confirming...' : 'Confirm & Book'}
+            {loading ? 'Creating Request...' : 'Request & Pay Deposit'}
           </button>
         </form>
       </div>

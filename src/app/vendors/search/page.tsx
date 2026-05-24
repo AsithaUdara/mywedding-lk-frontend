@@ -7,12 +7,14 @@ import AuthModal from '@/modules/identity/AuthModal';
 import VendorCard from '@/modules/vendors/components/VendorCard';
 import { Filter } from 'lucide-react';
 import FilterModal from '@/modules/vendors/components/FilterModal';
-import { getVendors } from '@/shared/lib/api/vendors';
-import { Vendor } from '@/shared/lib/api/vendors';
+import { getVendors, Vendor } from '@/shared/lib/api/vendors';
+import { mapVendorToCardProps } from '@/shared/lib/vendorMedia';
+import { useSearchParams } from 'next/navigation';
 
 const VENDORS_PER_LOAD = 9;
 
 const SearchResultsPage = () => {
+  const searchParams = useSearchParams();
   const [isAuthModalOpen, setAuthModalOpen] = useState(false);
   const [isFilterModalOpen, setFilterModalOpen] = useState(false);
   
@@ -45,6 +47,18 @@ const SearchResultsPage = () => {
 
     fetchVendors();
   }, []);
+
+  useEffect(() => {
+    const rawCategory = searchParams.get("category");
+    if (!rawCategory) return;
+    const normalized = rawCategory.trim().toLowerCase();
+    if (normalized === "venues" || normalized === "venue") {
+      setSelectedCategories(["Venue"]);
+      return;
+    }
+    const titleCategory = rawCategory.charAt(0).toUpperCase() + rawCategory.slice(1);
+    setSelectedCategories([titleCategory]);
+  }, [searchParams]);
 
   // Get all categories from fetched vendors
   const allCategories = useMemo(() => {
@@ -104,17 +118,9 @@ const SearchResultsPage = () => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10">
                   {displayedVendors.map(vendor => (
-                    <VendorCard 
-                      key={vendor.userId} 
-                      vendor={{
-                        id: vendor.userId,
-                        name: vendor.businessName,
-                        category: vendor.categoryName,
-                        location: vendor.city,
-                        images: ["https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=800&q=80"],
-                        rating: vendor.averageRating,
-                        price: 0,
-                      }} 
+                    <VendorCard
+                      key={vendor.userId}
+                      vendor={mapVendorToCardProps(vendor)}
                     />
                   ))}
                 </div>

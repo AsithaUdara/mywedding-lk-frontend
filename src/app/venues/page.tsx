@@ -67,7 +67,7 @@ const VenuesHubPage = () => {
               ))}
             </div>
             <div className="text-center mt-12">
-              <Link href="/vendors/search?category=Venues">
+              <Link href="/vendors/search?category=Venue">
                 <button className="px-8 py-4 border-2 border-charcoal rounded-lg font-bold text-charcoal hover:bg-cream transition-colors">
                   Show all {allVenues.length} venues
                 </button>

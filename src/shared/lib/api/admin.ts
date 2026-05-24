@@ -18,6 +18,17 @@ export interface PlatformStats {
   totalBookings: number;
 }
 
+export interface PayoutDueItem {
+  id: string;
+  bookingId: string;
+  grossAmount: number;
+  commissionAmount: number;
+  vendorNetAmount: number;
+  createdAt: string;
+  serviceId: string;
+  eventId: string;
+}
+
 function authHeaders(token: string) {
   return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 }
@@ -48,4 +59,18 @@ export async function getPlatformStats(token: string): Promise<PlatformStats> {
   const res = await fetch(`${BASE}/api/admin/stats`, { headers: authHeaders(token) });
   if (!res.ok) throw new Error('Failed to fetch platform stats');
   return res.json();
+}
+
+export async function getPayoutDue(token: string): Promise<PayoutDueItem[]> {
+  const res = await fetch(`${BASE}/api/admin/commissions/payout-due`, { headers: authHeaders(token) });
+  if (!res.ok) throw new Error('Failed to fetch payout due items');
+  return res.json();
+}
+
+export async function markPayoutSettled(token: string, settlementId: string): Promise<void> {
+  const res = await fetch(`${BASE}/api/admin/commissions/${settlementId}/mark-settled`, {
+    method: 'PATCH',
+    headers: authHeaders(token),
+  });
+  if (!res.ok) throw new Error('Failed to mark payout as settled');
 }
