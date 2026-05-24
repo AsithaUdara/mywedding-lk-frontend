@@ -1,34 +1,58 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { useAuth } from '@/shared/context/AuthContext';
-import { getPlatformStats, PlatformStats, getPayoutDue, markPayoutSettled, PayoutDueItem } from '@/shared/lib/api/admin';
-import { Users, Store, CalendarHeart, CalendarCheck, Loader2 } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { useAuth } from "@/shared/context/AuthContext";
+import {
+  getPlatformStats,
+  PlatformStats,
+  getPayoutDue,
+  markPayoutSettled,
+  PayoutDueItem,
+} from "@/shared/lib/api/admin";
+import { Users, Store, CalendarHeart, CalendarCheck, ArrowRight, Banknote } from "lucide-react";
+import {
+  ErrorBanner,
+  EmptyState,
+  LoadingState,
+  PageHeader,
+  SectionCard,
+  StatCard,
+} from "@/modules/admin/dashboard/ui";
+import { PrimaryButton } from "@/modules/admin/dashboard/components";
+import {
+  DataTable,
+  TableShell,
+  Td,
+  Th,
+} from "@/modules/vendor/dashboard/components";
 
-const STAT_CONFIG = [
-  { key: 'totalUsers',    label: 'Total Users',    icon: <Users />,          color: 'bg-blue-500' },
-  { key: 'totalVendors',  label: 'Total Vendors',  icon: <Store />,          color: 'bg-emerald-500' },
-  { key: 'totalEvents',   label: 'Total Events',   icon: <CalendarHeart />,  color: 'bg-violet-500' },
-  { key: 'totalBookings', label: 'Total Bookings', icon: <CalendarCheck />,  color: 'bg-amber-500' },
-] as const;
+function formatLKR(amount: number) {
+  return `LKR ${amount.toLocaleString()}`;
+}
 
 export default function AdminDashboardPage() {
   const { user } = useAuth();
-  const [stats, setStats]   = useState<PlatformStats | null>(null);
+  const [stats, setStats] = useState<PlatformStats | null>(null);
   const [payoutDue, setPayoutDue] = useState<PayoutDueItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError]   = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [settlingId, setSettlingId] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
       if (!user) return;
       try {
+        setError(null);
         const token = await user.getIdToken();
-        setStats(await getPlatformStats(token));
-        setPayoutDue(await getPayoutDue(token));
+        const [statsData, payoutData] = await Promise.all([
+          getPlatformStats(token),
+          getPayoutDue(token),
+        ]);
+        setStats(statsData);
+        setPayoutDue(payoutData);
       } catch {
-        setError('Failed to load platform stats.');
+        setError("Failed to load platform statistics.");
       } finally {
         setLoading(false);
       }
@@ -36,75 +60,141 @@ export default function AdminDashboardPage() {
     load();
   }, [user]);
 
+  const handleSettle = async (settlementId: string) => {
+    if (!user) return;
+    try {
+      setSettlingId(settlementId);
+      const token = await user.getIdToken();
+      await markPayoutSettled(token, settlementId);
+      setPayoutDue((prev) => prev.filter((x) => x.id !== settlementId));
+    } catch {
+      setError("Failed to mark payout as settled.");
+    } finally {
+      setSettlingId(null);
+    }
+  };
+
   return (
-    <div className="space-y-8 max-w-4xl">
-      <div>
-        <h1 className="text-3xl font-bold font-playfair text-charcoal">Platform Overview</h1>
-        <p className="text-slate-500 mt-1">Live statistics across the entire MyWeddingLK platform.</p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Platform overview"
+        description="Live metrics and payout operations across MyWedding.lk."
+        action={
+          <Link
+            href="/admin/vendors"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-charcoal shadow-sm transition hover:border-primary/30 hover:text-primary"
+          >
+            Review vendors
+            <ArrowRight size={16} />
+          </Link>
+        }
+      />
+
+      {error && <ErrorBanner message={error} />}
 
       {loading ? (
-        <div className="flex items-center gap-3 text-slate-400 py-12">
-          <Loader2 className="animate-spin" size={24} />
-          <span>Loading stats…</span>
-        </div>
-      ) : error ? (
-        <div className="bg-red-50 border border-red-100 text-red-600 rounded-xl p-5 text-sm">{error}</div>
+        <LoadingState label="Loading platform data..." />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {STAT_CONFIG.map(({ key, label, icon, color }, i) => (
-            <motion.div
-              key={key}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.08 }}
-              className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6"
-            >
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white mb-4 ${color}`}>
-                {React.cloneElement(icon, { size: 24 } as React.HTMLAttributes<SVGElement>)}
-              </div>
-              <p className="text-slate-500 text-sm font-medium">{label}</p>
-              <p className="text-3xl font-bold text-charcoal mt-1">
-                {stats ? stats[key].toLocaleString() : '—'}
-              </p>
-            </motion.div>
-          ))}
-        </div>
-      )}
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <StatCard
+              index={0}
+              label="Total users"
+              value={stats?.totalUsers.toLocaleString() ?? "—"}
+              icon={Users}
+              theme="blue"
+            />
+            <StatCard
+              index={1}
+              label="Total vendors"
+              value={stats?.totalVendors.toLocaleString() ?? "—"}
+              icon={Store}
+              theme="green"
+            />
+            <StatCard
+              index={2}
+              label="Total events"
+              value={stats?.totalEvents.toLocaleString() ?? "—"}
+              icon={CalendarHeart}
+              theme="violet"
+            />
+            <StatCard
+              index={3}
+              label="Total bookings"
+              value={stats?.totalBookings.toLocaleString() ?? "—"}
+              icon={CalendarCheck}
+              theme="amber"
+            />
+          </div>
 
-      {!loading && !error && (
-        <section className="rounded-2xl border border-slate-200 bg-white p-5">
-          <h2 className="text-xl font-bold text-charcoal">Vendor Payout Queue</h2>
-          <p className="mt-1 text-sm text-slate-500">Manual payout settlement list (commission already deducted).</p>
-
-          {payoutDue.length === 0 ? (
-            <p className="mt-4 text-sm text-slate-500">No pending settlements.</p>
-          ) : (
-            <div className="mt-4 space-y-3">
-              {payoutDue.map((item) => (
-                <div key={item.id} className="flex flex-col gap-3 rounded-xl border border-slate-200 p-4 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <p className="font-semibold text-charcoal">Booking {item.bookingId}</p>
-                    <p className="text-sm text-slate-600">
-                      Gross LKR {item.grossAmount.toLocaleString()} | Commission LKR {item.commissionAmount.toLocaleString()} | Vendor Net LKR {item.vendorNetAmount.toLocaleString()}
-                    </p>
-                  </div>
-                  <button
-                    onClick={async () => {
-                      if (!user) return;
-                      const token = await user.getIdToken();
-                      await markPayoutSettled(token, item.id);
-                      setPayoutDue((prev) => prev.filter((x) => x.id !== item.id));
-                    }}
-                    className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white"
-                  >
-                    Mark Settled
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
+          <SectionCard
+            title="Vendor payout queue"
+            subtitle="Settlements ready for manual transfer (commission already deducted)"
+            action={
+              payoutDue.length > 0 ? (
+                <span className="rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">
+                  {payoutDue.length} pending
+                </span>
+              ) : null
+            }
+          >
+            {payoutDue.length === 0 ? (
+              <EmptyState
+                icon={Banknote}
+                title="No pending settlements"
+                description="Completed bookings with vendor payouts will appear here when ready to settle."
+              />
+            ) : (
+              <TableShell>
+                <DataTable>
+                  <thead>
+                    <tr>
+                      <Th>Booking</Th>
+                      <Th>Gross</Th>
+                      <Th>Commission</Th>
+                      <Th>Vendor net</Th>
+                      <Th align="right">Action</Th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {payoutDue.map((item) => (
+                      <tr key={item.id} className="hover:bg-slate-50/80">
+                        <Td>
+                          <p className="font-mono text-xs font-medium text-charcoal">
+                            {item.bookingId.slice(0, 8)}…
+                          </p>
+                          <p className="mt-0.5 text-xs text-slate-500">
+                            {new Date(item.createdAt).toLocaleDateString()}
+                          </p>
+                        </Td>
+                        <Td>
+                          <span className="font-medium text-charcoal">{formatLKR(item.grossAmount)}</span>
+                        </Td>
+                        <Td>
+                          <span className="text-slate-600">{formatLKR(item.commissionAmount)}</span>
+                        </Td>
+                        <Td>
+                          <span className="font-semibold text-emerald-700">
+                            {formatLKR(item.vendorNetAmount)}
+                          </span>
+                        </Td>
+                        <Td align="right">
+                          <PrimaryButton
+                            onClick={() => handleSettle(item.id)}
+                            loading={settlingId === item.id}
+                            disabled={settlingId !== null && settlingId !== item.id}
+                          >
+                            Mark settled
+                          </PrimaryButton>
+                        </Td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </DataTable>
+              </TableShell>
+            )}
+          </SectionCard>
+        </>
       )}
     </div>
   );
