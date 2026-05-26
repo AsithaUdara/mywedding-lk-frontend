@@ -12,11 +12,13 @@ export default function VendorLayout({
 }) {
     const pathname = usePathname();
     const isDashboard = pathname.startsWith('/vendor/dashboard');
+    const isLoginPage = pathname === '/vendor/login';
+    const isSignupPage = pathname === '/vendor/signup';
+    const hidePortalChrome = isDashboard || isLoginPage || isSignupPage;
 
     return (
         <div className="min-h-screen bg-cream flex flex-col font-roboto">
-            {/* Vendor Portal Specialized Header - Hidden on Dashboard */}
-            {!isDashboard && (
+            {!hidePortalChrome && (
                 <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
                         <div className="flex items-center gap-8">
@@ -51,8 +53,8 @@ export default function VendorLayout({
                 {children}
             </main>
 
-            {/* Vendor Portal Specialized Footer - Hidden on Dashboard */}
-            {!isDashboard && (
+            {/* Vendor Portal Specialized Footer */}
+            {!hidePortalChrome && (
                 <footer className="bg-white border-t border-slate-200 py-12">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-8">
                         <div className="flex items-center gap-2 grayscale brightness-50 opacity-50">
