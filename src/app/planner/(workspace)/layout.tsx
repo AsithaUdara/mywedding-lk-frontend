@@ -4,21 +4,25 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 import {
-  LayoutDashboard,
+  CalendarRange,
+  ChevronsLeftRightEllipsis,
+  CircleDollarSign,
+  ClipboardCheck,
+  Command,
+  FolderKanban,
+  Inbox,
   Users,
-  CalendarDays,
-  CheckSquare,
-  Briefcase,
-  Mail,
-  Wallet,
-  Sparkles,
-  CreditCard,
-  Settings,
+  LayoutDashboard,
   Menu,
   X,
-  LogOut,
-  HeartHandshake,
+  Sparkles,
+  Settings,
+  BadgeCheck,
+  Search,
   Bell,
+  Plus,
+  ArrowUpRight,
+  LogOut,
 } from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
 
@@ -29,16 +33,16 @@ type PlannerNavItem = {
 };
 
 const NAV_ITEMS: PlannerNavItem[] = [
-  { href: "/planner/overview", label: "Overview", icon: <LayoutDashboard size={20} /> },
-  { href: "/planner/clients", label: "Clients", icon: <Users size={20} /> },
-  { href: "/planner/events", label: "Events", icon: <CalendarDays size={20} /> },
-  { href: "/planner/tasks", label: "Tasks", icon: <CheckSquare size={20} /> },
-  { href: "/planner/bookings", label: "Bookings", icon: <Briefcase size={20} /> },
-  { href: "/planner/invitations", label: "Invitations", icon: <Mail size={20} /> },
-  { href: "/planner/budget", label: "Budget", icon: <Wallet size={20} /> },
-  { href: "/planner/ai", label: "AI", icon: <Sparkles size={20} /> },
-  { href: "/planner/billing", label: "Billing", icon: <CreditCard size={20} /> },
-  { href: "/planner/settings", label: "Settings", icon: <Settings size={20} /> },
+  { href: "/planner/overview", label: "Overview", icon: <LayoutDashboard size={18} /> },
+  { href: "/planner/clients", label: "Clients", icon: <FolderKanban size={18} /> },
+  { href: "/planner/tasks", label: "Timeline", icon: <CalendarRange size={18} /> },
+  { href: "/planner/events", label: "Events", icon: <Users size={18} /> },
+  { href: "/planner/bookings", label: "Bookings", icon: <ClipboardCheck size={18} /> },
+  { href: "/planner/invitations", label: "Inbox", icon: <Inbox size={18} /> },
+  { href: "/planner/budget", label: "Revenue", icon: <CircleDollarSign size={18} /> },
+  { href: "/planner/ai", label: "Copilot", icon: <Sparkles size={18} /> },
+  { href: "/planner/billing", label: "Plan", icon: <BadgeCheck size={18} /> },
+  { href: "/planner/settings", label: "Settings", icon: <Settings size={18} /> },
 ];
 
 export default function PlannerWorkspaceLayout({
@@ -63,45 +67,67 @@ export default function PlannerWorkspaceLayout({
         key={item.href}
         href={item.href}
         onClick={onNavigate}
-        className={`flex items-center gap-3 rounded-xl px-3 py-3 transition-all ${
+        className={`group flex items-center gap-3 rounded-2xl px-3 py-3 transition-all ${
           isActive
-            ? "bg-primary text-white shadow-lg shadow-primary/30"
-            : "text-slate-500 hover:bg-slate-50 hover:text-charcoal"
+            ? "bg-[#111111] text-white shadow-[0_8px_24px_rgba(0,0,0,0.18)]"
+            : "text-slate-500 hover:bg-white hover:text-slate-900 hover:shadow-[0_8px_20px_rgb(0,0,0,0.04)]"
         }`}
       >
-        <div className="flex-shrink-0">{item.icon}</div>
-        {(sidebarOpen || onNavigate) && <span className="text-sm font-medium">{item.label}</span>}
+        <div
+          className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl transition ${
+            isActive ? "bg-white/10" : "bg-slate-100 text-slate-600 group-hover:bg-slate-900 group-hover:text-white"
+          }`}
+        >
+          {item.icon}
+        </div>
+        {(sidebarOpen || onNavigate) && <span className="text-sm font-semibold tracking-tight">{item.label}</span>}
       </Link>
     );
   };
 
   return (
-    <div className="flex min-h-screen bg-cream font-roboto text-charcoal">
+    <div className="flex min-h-screen bg-slate-50 font-roboto text-slate-900">
       {/* Desktop sidebar */}
       <aside
-        className={`fixed z-40 hidden h-full flex-col border-r border-slate-200 bg-white transition-all duration-300 md:flex ${
+        className={`fixed z-40 hidden h-full flex-col border-r border-slate-200/70 bg-[#F9F9F8] transition-all duration-300 md:flex ${
           sidebarOpen ? "w-64" : "w-20"
         }`}
       >
-        <div className="flex h-20 items-center border-b border-slate-100 px-6">
+        <div className="flex h-20 items-center border-b border-slate-200/70 px-6">
           <Link href="/planner/overview" className="flex items-center gap-3 overflow-hidden">
-            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary text-white">
-              <HeartHandshake size={20} />
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-[#111111] text-white shadow-[0_8px_20px_rgb(0,0,0,0.15)]">
+              <Command size={18} />
             </div>
             {sidebarOpen && (
-              <span className="whitespace-nowrap font-playfair text-lg font-bold text-charcoal">
+              <span className="whitespace-nowrap font-playfair text-lg font-bold tracking-tight text-slate-900">
                 Planner Pro
               </span>
             )}
           </Link>
         </div>
-        <nav className="flex-grow space-y-1 overflow-y-auto px-4 py-6">
+        <div className="px-4 pt-5">
+          {sidebarOpen && <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Workspace</p>}
+        </div>
+        <nav className="flex-grow space-y-1.5 overflow-y-auto px-4 py-4">
           {NAV_ITEMS.map((item) => navLink(item))}
         </nav>
-        <div className="mt-auto border-t border-slate-100 p-4">
+        {sidebarOpen && (
+          <div className="mx-4 mb-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Automation</p>
+            <p className="mt-1 text-sm font-semibold text-slate-900">AI Copilot Active</p>
+            <p className="mt-1 text-xs text-slate-500">7 drafts generated today</p>
+            <Link
+              href="/planner/ai"
+              className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#111111] px-3 py-1.5 text-xs font-medium text-white"
+            >
+              Open copilot <ArrowUpRight size={12} />
+            </Link>
+          </div>
+        )}
+        <div className="mt-auto border-t border-slate-200/70 p-4">
           <button
             onClick={logOut}
-            className="group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-red-500 transition-all hover:bg-red-50"
+            className="group flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-red-500 transition-all hover:bg-red-50"
           >
             <LogOut size={20} className="flex-shrink-0 transition-transform group-hover:rotate-12" />
             {sidebarOpen && <span className="text-sm font-semibold">Log Out</span>}
@@ -117,11 +143,11 @@ export default function PlannerWorkspaceLayout({
             onClick={() => setMobileNavOpen(false)}
             aria-label="Close menu"
           />
-          <aside className="absolute left-0 top-0 flex h-full w-72 flex-col bg-white shadow-xl">
+          <aside className="absolute left-0 top-0 flex h-full w-72 flex-col bg-[#F9F9F8] shadow-xl">
             <div className="flex h-16 items-center justify-between border-b border-slate-100 px-4">
               <div className="flex items-center gap-2">
-                <div className="rounded-lg bg-primary p-2 text-white">
-                  <HeartHandshake size={18} />
+                <div className="rounded-xl bg-[#111111] p-2 text-white">
+                  <Command size={16} />
                 </div>
                 <p className="font-playfair font-bold">Planner Pro</p>
               </div>
@@ -132,10 +158,10 @@ export default function PlannerWorkspaceLayout({
             <nav className="flex-1 space-y-1 overflow-y-auto p-4">
               {NAV_ITEMS.map((item) => navLink(item, () => setMobileNavOpen(false)))}
             </nav>
-            <div className="border-t border-slate-100 p-4">
+            <div className="border-t border-slate-200 p-4">
               <button
                 onClick={logOut}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-50 py-3 text-sm font-semibold text-red-600"
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-red-50 py-3 text-sm font-semibold text-red-600"
               >
                 <LogOut size={16} />
                 Log out
@@ -162,10 +188,18 @@ export default function PlannerWorkspaceLayout({
               <span className="hidden md:inline">{sidebarOpen ? <X size={20} /> : <Menu size={20} />}</span>
             </button>
             <p className="font-semibold text-charcoal md:hidden">{activeItem?.label ?? "Planner"}</p>
+            <div className="hidden items-center gap-2 rounded-full bg-slate-100 px-3 py-2 md:flex">
+              <Search size={14} className="text-slate-400" />
+              <span className="text-xs font-medium text-slate-500">Search clients, tasks, vendors...</span>
+            </div>
           </div>
 
           <div className="flex items-center gap-4 md:gap-6">
-            <button className="relative p-2 text-slate-400 transition-colors hover:text-primary">
+            <button className="hidden items-center gap-1 rounded-full bg-[#111111] px-4 py-2 text-xs font-medium text-white md:inline-flex">
+              <Plus size={14} />
+              New Client
+            </button>
+            <button className="relative rounded-full bg-slate-100 p-2 text-slate-400 transition-colors hover:text-slate-900">
               <Bell size={22} />
               <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full border-2 border-white bg-red-500" />
             </button>
@@ -173,9 +207,11 @@ export default function PlannerWorkspaceLayout({
             <div className="flex items-center gap-3">
               <div className="hidden text-right sm:block">
                 <p className="text-sm font-bold text-charcoal">{user?.displayName || "Wedding Planner"}</p>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Planner Account</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Planner Account</p>
               </div>
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-primary to-accent shadow-inner shadow-black/10" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-[0_8px_24px_rgba(0,0,0,0.2)]">
+                <ChevronsLeftRightEllipsis size={16} />
+              </div>
             </div>
             <button
               onClick={logOut}
@@ -186,7 +222,7 @@ export default function PlannerWorkspaceLayout({
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-7xl flex-1 p-4 md:p-8">{children}</main>
+        <main className="mx-auto w-full max-w-[1500px] flex-1 p-4 md:p-8">{children}</main>
       </div>
     </div>
   );
