@@ -1,3 +1,12 @@
+export interface WeddingEventSummary {
+  id: string;
+  eventName: string;
+  eventDate: string;
+  createdById?: string;
+  totalBudget?: number;
+  /** True when the current user may book vendors (owner or editor, not viewer). */
+  canBook?: boolean;
+}
 
 export interface Organizer {
   userId: string;
@@ -81,24 +90,6 @@ export const inviteOrganizer = async (token: string, eventId: string, inviteData
   return response.json();
 };
 
-export const setEventPreferences = async (token: string, eventId: string, preferences: Record<string, string>) => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/events/${eventId}/preferences`;
-
-  const response = await fetch(apiUrl, {
-    method: 'PUT',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(preferences),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || 'Failed to save preferences.');
-  }
-  return response;
-};
 export interface Invitation {
   id: string;
   email: string;

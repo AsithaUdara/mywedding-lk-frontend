@@ -6,8 +6,7 @@ import { useAuth } from '@/shared/context/AuthContext';
 import { getConversations, getMessages, postMessage, type Conversation, type Message } from '@/shared/lib/api/collaboration';
 import { useRealTime } from '@/shared/context/RealTimeContext';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, Send, Hash, Vote, MessageSquare, Loader2 } from 'lucide-react';
-import PollsSection from './PollsSection';
+import { X, Send, Hash, MessageSquare, Loader2 } from 'lucide-react';
 
 const CollaborationHubSidebar = ({ eventId }: { eventId: string }) => {
   const { isHubOpen, closeHub } = useUI();
@@ -21,9 +20,8 @@ const CollaborationHubSidebar = ({ eventId }: { eventId: string }) => {
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [sendingMessage, setSendingMessage] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
 
-  const [activeTab, setActiveTab] = useState<'messages' | 'polls'>('messages');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -74,10 +72,10 @@ const CollaborationHubSidebar = ({ eventId }: { eventId: string }) => {
         setLoadingMessages(false);
       }
     };
-    if (activeTab === 'messages' && selectedConversation) {
+    if (selectedConversation) {
       fetchMessages();
     }
-  }, [user, selectedConversation, activeTab]);
+  }, [user, selectedConversation]);
 
   // Real-time message listener
   useEffect(() => {
@@ -155,24 +153,8 @@ const CollaborationHubSidebar = ({ eventId }: { eventId: string }) => {
               </button>
             </div>
 
-            {/* Glass Tab Switcher */}
-            <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
-              <div className="flex gap-2 p-1 bg-white rounded-xl shadow-sm border border-gray-100">
-                <button
-                  onClick={() => setActiveTab('messages')}
-                  className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${activeTab === 'messages' ? 'bg-primary text-white shadow-md shadow-primary/20' : 'text-gray-400 hover:text-gray-600'}`}
-                >
-                  Messages
-                </button>
-                <button
-                  onClick={() => setActiveTab('polls')}
-                  className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${activeTab === 'polls' ? 'bg-primary text-white shadow-md shadow-primary/20' : 'text-gray-400 hover:text-gray-600'}`}
-                >
-                  Polls
-                </button>
-              </div>
-              
-              {activeTab === 'messages' && selectedConversation && (
+            <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-end">
+              {selectedConversation && (
                 <div className="flex items-center gap-2 text-primary font-bold text-sm bg-primary/5 px-3 py-1.5 rounded-lg border border-primary/10">
                   <Hash size={14} />
                   {selectedConversation.name}
@@ -182,35 +164,32 @@ const CollaborationHubSidebar = ({ eventId }: { eventId: string }) => {
 
             <div className="flex-grow flex min-h-0 overflow-hidden">
               {/* Channel List (Sidebar within drawer) */}
-              {activeTab === 'messages' && (
-                <div className="w-[200px] border-r border-gray-100 flex flex-col bg-gray-50/30">
-                  <div className="p-4 pt-6">
-                    <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4 ml-1">Channels</h3>
-                    <div className="space-y-1">
-                      {loadingConversations ? (
-                        <div className="py-4 text-center"><Loader2 size={16} className="animate-spin inline text-primary/30" /></div>
-                      ) : (
-                        conversations.map(convo => (
-                          <button
-                            key={convo.id}
-                            onClick={() => setSelectedConversation(convo)}
-                            className={`w-full flex items-center gap-2 px-4 py-3 rounded-xl text-left text-sm font-bold transition-all ${selectedConversation?.id === convo.id ? 'bg-white text-primary shadow-sm border border-gray-100' : 'text-gray-500 hover:bg-white/50'}`}
-                          >
-                            <Hash size={14} className={selectedConversation?.id === convo.id ? 'text-primary' : 'text-gray-300'} />
-                            <span className="truncate">{convo.name}</span>
-                          </button>
-                        ))
-                      )}
-                    </div>
+              <div className="w-[200px] border-r border-gray-100 flex flex-col bg-gray-50/30">
+                <div className="p-4 pt-6">
+                  <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4 ml-1">Channels</h3>
+                  <div className="space-y-1">
+                    {loadingConversations ? (
+                      <div className="py-4 text-center"><Loader2 size={16} className="animate-spin inline text-primary/30" /></div>
+                    ) : (
+                      conversations.map(convo => (
+                        <button
+                          key={convo.id}
+                          onClick={() => setSelectedConversation(convo)}
+                          className={`w-full flex items-center gap-2 px-4 py-3 rounded-xl text-left text-sm font-bold transition-all ${selectedConversation?.id === convo.id ? 'bg-white text-primary shadow-sm border border-gray-100' : 'text-gray-500 hover:bg-white/50'}`}
+                        >
+                          <Hash size={14} className={selectedConversation?.id === convo.id ? 'text-primary' : 'text-gray-300'} />
+                          <span className="truncate">{convo.name}</span>
+                        </button>
+                      ))
+                    )}
                   </div>
                 </div>
-              )}
+              </div>
 
               {/* Content Area */}
               <div className="flex-grow flex flex-col bg-white overflow-hidden">
                 <div className="flex-grow p-6 overflow-y-auto custom-scrollbar">
-                  {activeTab === 'messages' ? (
-                    <div className="space-y-6">
+                  <div className="space-y-6">
                       {loadingMessages ? (
                         <div className="flex flex-col items-center justify-center py-20 gap-3">
                           <Loader2 size={24} className="animate-spin text-primary/40" />
@@ -250,33 +229,28 @@ const CollaborationHubSidebar = ({ eventId }: { eventId: string }) => {
                       )}
                       <div ref={messagesEndRef} />
                     </div>
-                  ) : (
-                    <PollsSection eventId={eventId} />
-                  )}
                 </div>
 
-                {activeTab === 'messages' && (
-                  <form onSubmit={handlePostMessage} className="p-6 bg-white border-t border-gray-100 shadow-[0_-10px_30px_rgba(0,0,0,0.02)]">
-                    <div className="relative group">
-                      <input
-                        type="text"
-                        value={newMessage}
-                        onChange={e => setNewMessage(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder={selectedConversation ? `Message #${selectedConversation.name}...` : 'Select a channel'}
-                        disabled={!selectedConversation || sendingMessage}
-                        className="w-full py-4 pl-6 pr-14 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary/40 focus:bg-white transition-all text-sm placeholder:text-gray-400"
-                      />
-                      <button
-                        type="submit"
-                        disabled={!newMessage.trim() || !selectedConversation || sendingMessage}
-                        className="absolute top-1/2 right-2.5 -translate-y-1/2 w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-30"
-                      >
-                        {sendingMessage ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
-                      </button>
-                    </div>
-                  </form>
-                )}
+                <form onSubmit={handlePostMessage} className="p-6 bg-white border-t border-gray-100 shadow-[0_-10px_30px_rgba(0,0,0,0.02)]">
+                  <div className="relative group">
+                    <input
+                      type="text"
+                      value={newMessage}
+                      onChange={e => setNewMessage(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder={selectedConversation ? `Message #${selectedConversation.name}...` : 'Select a channel'}
+                      disabled={!selectedConversation || sendingMessage}
+                      className="w-full py-4 pl-6 pr-14 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary/40 focus:bg-white transition-all text-sm placeholder:text-gray-400"
+                    />
+                    <button
+                      type="submit"
+                      disabled={!newMessage.trim() || !selectedConversation || sendingMessage}
+                      className="absolute top-1/2 right-2.5 -translate-y-1/2 w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-30"
+                    >
+                      {sendingMessage ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
           </motion.div>

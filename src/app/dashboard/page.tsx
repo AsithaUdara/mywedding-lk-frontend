@@ -8,7 +8,6 @@ import Footer from '@/shared/components/layout/Footer';
 import EventList from '@/modules/events/EventList';
 import CreateEventModal from '@/modules/events/CreateEventModal';
 import EventSetupModal from '@/modules/events/EventSetupModal';
-import StyleQuizModal from '@/modules/events/StyleQuizModal';
 import { getEvents } from '@/shared/lib/api/events';
 import Skeleton from '@/shared/components/ui/Skeleton';
 import { Plus } from 'lucide-react';
@@ -30,7 +29,6 @@ const DashboardPage = () => {
   // --- COMPLETE MODAL FLOW STATE MANAGEMENT ---
   const [isCreateOpen, setCreateOpen] = useState(false);
   const [isSetupOpen, setSetupOpen] = useState(false);
-  const [isQuizOpen, setQuizOpen] = useState(false);
   const [newEventInfo, setNewEventInfo] = useState<{ eventId: string; eventName: string } | null>(null);
 
   const fetchEvents = useCallback(async () => {
@@ -66,15 +64,8 @@ const DashboardPage = () => {
 
   // Step 2: Budget Setup Modal closes, triggers this
   const handleSetupClosed = () => {
-    console.log('✅ Budget setup completed, opening style quiz...');
+    console.log('✅ Budget setup completed, refreshing events...');
     setSetupOpen(false);
-    setQuizOpen(true);
-  };
-
-  // Step 3: Style Quiz Modal closes, triggers this
-  const handleQuizClosed = () => {
-    console.log('🎨 Style quiz completed, refreshing events...');
-    setQuizOpen(false);
     setNewEventInfo(null);
     fetchEvents();
   };
@@ -129,14 +120,6 @@ const DashboardPage = () => {
           onClose={handleSetupClosed}
           eventId={newEventInfo.eventId}
           eventName={newEventInfo.eventName}
-        />
-      )}
-
-      {isQuizOpen && newEventInfo && (
-        <StyleQuizModal
-          isOpen={isQuizOpen}
-          onClose={handleQuizClosed}
-          eventId={newEventInfo.eventId}
         />
       )}
     </div>
