@@ -1,6 +1,5 @@
-// src/features/vendor-discovery/components/ImageGallery.tsx
-import React from 'react';
-import Image from 'next/image';
+import React from "react";
+import Image from "next/image";
 
 interface ImageGalleryProps {
   images: string[];
@@ -8,42 +7,79 @@ interface ImageGalleryProps {
 }
 
 const ImageGallery = ({ images, vendorName }: ImageGalleryProps) => {
-  const displayImages = [
-    images[0] || '', images[1] || images[0] || '', 
-    images[2] || images[1] || '', images[3] || images[0] || '',
-    images[4] || images[2] || ''
+  const unique = images.filter(Boolean);
+  const primary = unique[0] ?? "";
+  const secondary = [
+    unique[1] ?? primary,
+    unique[2] ?? unique[1] ?? primary,
+    unique[3] ?? unique[0] ?? primary,
+    unique[4] ?? unique[2] ?? primary,
   ];
 
+  if (!primary) return null;
+
   return (
-    <div className="grid grid-cols-4 grid-rows-2 gap-2 h-[550px] overflow-hidden rounded-2xl">
-      <div className="col-span-2 row-span-2 relative cursor-pointer group">
-        {/* THE FIX: Changed to modern syntax with `fill` and `sizes` props */}
-        <Image 
-          src={displayImages[0]} 
-          alt={`${vendorName} main image`} 
-          fill 
-          sizes="(max-width: 768px) 100vw, 50vw"
-          style={{ objectFit: 'cover' }} 
-          className="group-hover:opacity-90 transition-opacity" 
-          priority 
+    <>
+      {/* Mobile: single hero image */}
+      <div className="relative aspect-[4/3] overflow-hidden rounded-xl sm:hidden">
+        <Image
+          src={primary}
+          alt={`${vendorName} — cover photo`}
+          fill
+          sizes="100vw"
+          className="object-cover"
+          priority
+          unoptimized
         />
+        {unique.length > 1 && (
+          <div className="absolute bottom-3 right-3 rounded-lg bg-white/95 px-3 py-1.5 text-xs font-semibold text-charcoal shadow-sm">
+            1 / {unique.length} photos
+          </div>
+        )}
       </div>
-      <div className="relative cursor-pointer group">
-        <Image src={displayImages[1]} alt={`${vendorName} thumbnail 1`} fill sizes="25vw" style={{ objectFit: 'cover' }} className="group-hover:opacity-90 transition-opacity" />
-      </div>
-      <div className="relative cursor-pointer group">
-        <Image src={displayImages[2]} alt={`${vendorName} thumbnail 2`} fill sizes="25vw" style={{ objectFit: 'cover' }} className="group-hover:opacity-90 transition-opacity" />
-      </div>
-      <div className="relative cursor-pointer group">
-        <Image src={displayImages[3]} alt={`${vendorName} thumbnail 3`} fill sizes="25vw" style={{ objectFit: 'cover' }} className="group-hover:opacity-90 transition-opacity" />
-      </div>
-      <div className="relative cursor-pointer group">
-        <Image src={displayImages[4]} alt={`${vendorName} thumbnail 4`} fill sizes="25vw" style={{ objectFit: 'cover' }} className="group-hover:opacity-90 transition-opacity" />
-        <div className="absolute inset-0 bg-black/30 flex items-center justify-center text-white font-bold text-lg hover:bg-black/50 transition-colors">
-          Show all photos
+
+      {/* Tablet+: Airbnb-style mosaic */}
+      <div className="hidden h-[min(55vh,480px)] grid-cols-4 grid-rows-2 gap-2 overflow-hidden rounded-xl sm:grid">
+        <div className="relative col-span-2 row-span-2 cursor-pointer overflow-hidden">
+          <Image
+            src={primary}
+            alt={`${vendorName} — main photo`}
+            fill
+            sizes="(max-width: 1024px) 50vw, 40vw"
+            className="object-cover transition hover:brightness-95"
+            priority
+            unoptimized
+          />
+        </div>
+        {secondary.slice(0, 3).map((src, i) => (
+          <div key={i} className="relative cursor-pointer overflow-hidden">
+            <Image
+              src={src}
+              alt={`${vendorName} — photo ${i + 2}`}
+              fill
+              sizes="20vw"
+              className="object-cover transition hover:brightness-95"
+              unoptimized
+            />
+          </div>
+        ))}
+        <div className="relative cursor-pointer overflow-hidden">
+          <Image
+            src={secondary[3]}
+            alt={`${vendorName} — photo 5`}
+            fill
+            sizes="20vw"
+            className="object-cover transition hover:brightness-95"
+            unoptimized
+          />
+          {unique.length > 1 && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/25 text-sm font-semibold text-white transition hover:bg-black/35">
+              Show all photos
+            </div>
+          )}
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

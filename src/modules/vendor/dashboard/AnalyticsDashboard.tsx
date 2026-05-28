@@ -53,13 +53,15 @@ export function AnalyticsDashboard({ compact = false }: AnalyticsDashboardProps)
       <div className="grid grid-cols-12 gap-4 md:gap-6">
         <article className={`col-span-12 md:col-span-4 ${bento.cardCompact}`}>
           <div className="flex items-center gap-3">
-            <div className={bento.iconWrap("bg-indigo-50 text-indigo-500")}>
+            <div className={bento.iconWrap("bg-violet-100/80 text-violet-800/90")}>
               <Eye size={18} />
             </div>
             <div>
               <p className={bento.label}>Profile views</p>
-              <p className="text-2xl font-bold tracking-tight text-slate-900">4,160</p>
-              <p className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-emerald-600">
+              <p className="font-playfair text-2xl font-bold tracking-tight text-charcoal tabular-nums sm:text-3xl">
+                4,160
+              </p>
+              <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800/90">
                 <TrendingUp size={12} />
                 +18% vs last month
               </p>
@@ -69,12 +71,14 @@ export function AnalyticsDashboard({ compact = false }: AnalyticsDashboardProps)
 
         <article className={`col-span-12 md:col-span-4 ${bento.cardCompact}`}>
           <div className="flex items-center gap-3">
-            <div className={bento.iconWrap("bg-fuchsia-50 text-fuchsia-600")}>
+            <div className={bento.iconWrap("bg-rose-100/80 text-rose-800/90")}>
               <MessageSquare size={18} />
             </div>
             <div>
               <p className={bento.label}>Inquiries received</p>
-              <p className="text-2xl font-bold tracking-tight text-slate-900">86</p>
+              <p className="font-playfair text-2xl font-bold tracking-tight text-charcoal tabular-nums sm:text-3xl">
+                86
+              </p>
               <p className="mt-1 text-xs text-slate-500">22 this month (mock)</p>
             </div>
           </div>
@@ -82,12 +86,14 @@ export function AnalyticsDashboard({ compact = false }: AnalyticsDashboardProps)
 
         <article className={`col-span-12 md:col-span-4 ${bento.cardCompact}`}>
           <div className="flex items-center gap-3">
-            <div className={bento.iconWrap("bg-emerald-50 text-emerald-600")}>
+            <div className={bento.iconWrap("bg-emerald-100/80 text-emerald-800/90")}>
               <Trophy size={18} />
             </div>
             <div>
               <p className={bento.label}>Win rate</p>
-              <p className="text-2xl font-bold tracking-tight text-slate-900">{winPct}%</p>
+              <p className="font-playfair text-2xl font-bold tracking-tight text-charcoal tabular-nums sm:text-3xl">
+                {winPct}%
+              </p>
               <p className="mt-1 text-xs text-slate-500">Leads → confirmed bookings</p>
             </div>
           </div>
@@ -97,14 +103,14 @@ export function AnalyticsDashboard({ compact = false }: AnalyticsDashboardProps)
           <div className="mb-4 flex items-center justify-between">
             <div>
               <p className={bento.label}>Profile views</p>
-              <p className="text-sm font-semibold text-slate-800">Weekly trend (mock)</p>
+              <p className="text-sm font-medium text-slate-600">Weekly trend (mock)</p>
             </div>
           </div>
           <div className="flex h-40 items-end gap-2">
             {PROFILE_VIEWS.map((point) => (
               <div key={point.week} className="flex flex-1 flex-col items-center gap-2">
                 <div
-                  className="w-full rounded-t-xl bg-gradient-to-t from-slate-900 to-slate-600"
+                  className="w-full rounded-t-xl bg-gradient-to-t from-charcoal to-slate-600 transition-all duration-300 ease-in-out hover:from-violet-900 hover:to-violet-600"
                   style={{ height: `${Math.round((point.views / viewsMax) * 128)}px` }}
                 />
                 <span className="text-[10px] font-medium text-slate-400">{point.week}</span>
@@ -153,7 +159,7 @@ export function AnalyticsDashboard({ compact = false }: AnalyticsDashboardProps)
               <div key={row.month} className="flex flex-1 flex-col items-center gap-2">
                 <span className="text-xs font-bold text-slate-700">{row.count}</span>
                 <div
-                  className="w-full rounded-t-2xl bg-fuchsia-400/80"
+                  className="w-full rounded-t-2xl bg-rose-300/90 transition-all duration-300 ease-in-out hover:bg-rose-400/90"
                   style={{ height: `${Math.round((row.count / inquiriesMax) * 100)}px` }}
                 />
                 <span className="text-[10px] font-medium text-slate-400">{row.month}</span>

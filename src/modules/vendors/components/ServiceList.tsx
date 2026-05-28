@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { Check, Clock, Users } from "lucide-react";
 import BookingModal from "./BookingModal";
-import { useAuth } from "@/shared/context/AuthContext";
+import { useVendorDetailAuth } from "@/modules/vendors/context/VendorDetailAuthContext";
 import { pricingTypeLabel } from "@/shared/lib/vendorMedia";
 import { parseListingDetails } from "@/shared/lib/serviceListingDetails";
 
@@ -24,6 +24,8 @@ interface ServiceListProps {
   vendorName: string;
   selectedServiceId?: string;
   onSelectService?: (serviceId: string) => void;
+  /** When "panel", booking happens via sticky sidebar — hide per-card book buttons */
+  bookingMode?: "panel" | "inline";
 }
 
 const ServiceList = ({
@@ -31,16 +33,13 @@ const ServiceList = ({
   vendorName,
   selectedServiceId,
   onSelectService,
+  bookingMode = "inline",
 }: ServiceListProps) => {
-  const { user } = useAuth();
+  const { requireAuth } = useVendorDetailAuth();
   const [bookingService, setBookingService] = useState<Service | null>(null);
 
   const handleBookClick = (service: Service) => {
-    if (!user) {
-      alert("Please log in to book a vendor.");
-      return;
-    }
-    setBookingService(service);
+    requireAuth("book", () => setBookingService(service));
   };
 
   if (services.length === 0) {
@@ -56,9 +55,24 @@ const ServiceList = ({
         return (
           <div
             key={service.id}
-            className={`overflow-hidden rounded-2xl border transition-shadow ${
-              isSelected ? "border-primary shadow-lg ring-2 ring-primary/20" : "border-slate-200 hover:shadow-md"
-            }`}
+            role={onSelectService ? "button" : undefined}
+            tabIndex={onSelectService ? 0 : undefined}
+            onClick={onSelectService ? () => onSelectService(service.id) : undefined}
+            onKeyDown={
+              onSelectService
+                ? (e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onSelectService(service.id);
+                    }
+                  }
+                : undefined
+            }
+            className={`overflow-hidden rounded-xl border transition-all ${
+              isSelected
+                ? "border-primary ring-2 ring-primary/15"
+                : "border-slate-200 hover:border-slate-300"
+            } ${onSelectService ? "cursor-pointer" : ""}`}
           >
             <div className="flex flex-col md:flex-row">
               {service.primaryImageUrl && (
@@ -116,11 +130,19 @@ const ServiceList = ({
                       </span>
                     </p>
                     <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-                      {onSelectService && (
+                      {onSelectService && bookingMode === "panel" && isSelected && (
+                        <span className="inline-flex items-center rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary">
+                          Selected for booking
+                        </span>
+                      )}
+                      {onSelectService && bookingMode === "inline" && (
                         <button
                           type="button"
-                          onClick={() => onSelectService(service.id)}
-                          className={`whitespace-nowrap rounded-lg border px-4 py-2 text-sm font-bold transition-colors ${
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelectService(service.id);
+                          }}
+                          className={`whitespace-nowrap rounded-lg border px-4 py-2 text-sm font-semibold transition-colors ${
                             isSelected
                               ? "border-primary bg-primary text-white"
                               : "border-slate-200 text-charcoal hover:border-primary"
@@ -129,12 +151,18 @@ const ServiceList = ({
                           {isSelected ? "Selected" : "Select"}
                         </button>
                       )}
-                      <button
-                        onClick={() => handleBookClick(service)}
-                        className="w-full whitespace-nowrap rounded-lg bg-charcoal px-4 py-2 text-center text-sm font-bold text-white transition-colors hover:bg-primary sm:w-auto"
-                      >
-                        Book This Service
-                      </button>
+                      {bookingMode === "inline" && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleBookClick(service);
+                          }}
+                          className="w-full whitespace-nowrap rounded-lg bg-charcoal px-4 py-2 text-center text-sm font-semibold text-white transition-colors hover:bg-primary sm:w-auto"
+                        >
+                          Book this service
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

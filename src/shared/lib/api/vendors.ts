@@ -1,5 +1,7 @@
 // File: src/lib/api/vendors.ts
 
+import { parseApiError } from '@/shared/lib/api/parseApiError';
+
 // --- Define the data structures (Types) for our API responses ---
 
 // Type for the list of vendors on the search page
@@ -35,6 +37,7 @@ export interface VendorDetail {
   websiteUrl: string | null;
   contactPhone: string | null;
   city: string;
+  province?: string | null;
   verificationStatus: string;
   averageRating: number;
   coverImageUrl?: string | null;
@@ -181,8 +184,7 @@ export const createBooking = async (token: string, bookingData: BookingData) => 
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || 'Failed to create booking.');
+    throw new Error(await parseApiError(response, 'Failed to create booking.'));
   }
   return response.json();
 };
@@ -196,8 +198,7 @@ export const createDepositCheckout = async (token: string, bookingId: string) =>
     },
   });
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || 'Failed to start payment checkout.');
+    throw new Error(await parseApiError(response, 'Failed to start payment checkout.'));
   }
   return response.json();
 };
@@ -540,6 +541,57 @@ export const setVendorSubscription = async (
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.message || 'Failed to update subscription.');
+  }
+  return response.json();
+};
+
+export interface VendorBusinessProfile {
+  userId: string;
+  businessName: string;
+  businessDescription: string | null;
+  websiteUrl: string | null;
+  contactPhone: string | null;
+  city: string;
+  province: string | null;
+  verificationStatus: string;
+}
+
+export const getVendorBusinessProfile = async (token: string): Promise<VendorBusinessProfile> => {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/dashboard/profile`;
+  const response = await fetch(apiUrl, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to load business profile.");
+  }
+  return response.json();
+};
+
+export const updateVendorBusinessProfile = async (
+  token: string,
+  payload: {
+    businessName: string;
+    businessDescription?: string;
+    websiteUrl?: string;
+    contactPhone?: string;
+    city: string;
+    province?: string;
+  }
+) => {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/dashboard/profile`;
+  const response = await fetch(apiUrl, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to update business profile.");
   }
   return response.json();
 };

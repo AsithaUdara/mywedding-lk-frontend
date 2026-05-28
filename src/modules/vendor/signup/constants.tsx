@@ -64,6 +64,22 @@ export const SRI_LANKA_CITIES = [
   "Trincomalee",
   "Batticaloa",
   "Ratnapura",
+  "Dambulla",
+  "Badulla",
+  "Kalutara",
+  "Kurunegala",
+] as const;
+
+export const SRI_LANKA_PROVINCES = [
+  "Western",
+  "Central",
+  "Southern",
+  "Northern",
+  "Eastern",
+  "North Western",
+  "North Central",
+  "Uva",
+  "Sabaragamuwa",
 ] as const;
 
 export type VendorSignupForm = {

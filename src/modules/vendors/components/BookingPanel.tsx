@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { Star } from "lucide-react";
-import { useAuth } from "@/shared/context/AuthContext";
+import { Star, Phone } from "lucide-react";
 import BookingModal from "./BookingModal";
-import InquiryModal from "./InquiryModal";
 import { pricingTypeLabel } from "@/shared/lib/vendorMedia";
+import { phoneTelHref, formatDisplayPhone } from "@/shared/lib/phone";
+import { useVendorDetailAuth } from "@/modules/vendors/context/VendorDetailAuthContext";
 
 interface BookingPanelProps {
   price: number;
@@ -16,6 +16,8 @@ interface BookingPanelProps {
   vendorId: string;
   serviceId?: string;
   serviceName?: string;
+  contactPhone?: string | null;
+  variant?: "default" | "compact";
 }
 
 const BookingPanel = ({
@@ -27,75 +29,20 @@ const BookingPanel = ({
   vendorId,
   serviceId,
   serviceName,
+  contactPhone,
+  variant = "default",
 }: BookingPanelProps) => {
-  const { user } = useAuth();
+  const { requireAuth } = useVendorDetailAuth();
   const [isModalOpen, setModalOpen] = useState(false);
-  const [isInquiryModalOpen, setInquiryModalOpen] = useState(false);
+
+  const openBooking = () => setModalOpen(true);
 
   const handleBookingClick = () => {
-    if (!user) {
-      alert("Please log in to book a vendor.");
-      return;
-    }
-    if (serviceId) {
-      setModalOpen(true);
-    }
+    requireAuth("book", openBooking);
   };
 
-  const handleContactClick = () => {
-    if (!user) {
-      alert("Please log in to contact this vendor.");
-      return;
-    }
-    setInquiryModalOpen(true);
-  };
-
-  return (
+  const modals = (
     <>
-      <div className="sticky top-28 rounded-xl border bg-white p-6 shadow-2xl">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <span className="text-2xl font-bold">LKR {price.toLocaleString()}</span>
-            <span className="text-gray-500">{pricingTypeLabel(pricingType)}</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <Star size={16} fill="black" strokeWidth={0} />
-            <span className="font-semibold">{rating.toFixed(1)}</span>
-            <span className="text-gray-500">({reviews})</span>
-          </div>
-        </div>
-
-        {serviceName && (
-          <p className="mb-2 text-sm font-semibold text-charcoal">{serviceName}</p>
-        )}
-
-        <div className="space-y-4 border-t pt-4">
-          <p className="text-sm text-gray-600">
-            Select your event and service date to request a booking.
-          </p>
-        </div>
-
-        <button
-          onClick={handleBookingClick}
-          disabled={!serviceId}
-          className="elegant-lift-button mt-6 w-full rounded-lg py-4 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
-          style={{ backgroundColor: "var(--color-primary)" }}
-        >
-          {serviceId ? "Request to Book" : "No Services Available"}
-        </button>
-        <p className="mt-3 text-center text-xs text-gray-400">You won&apos;t be charged yet</p>
-
-        <div className="mt-4 border-t pt-4 text-center">
-          <button
-            onClick={handleContactClick}
-            className="text-sm font-semibold hover:underline"
-            style={{ color: "var(--color-primary)" }}
-          >
-            Contact Vendor
-          </button>
-        </div>
-      </div>
-
       {serviceId && (
         <BookingModal
           isOpen={isModalOpen}
@@ -105,15 +52,86 @@ const BookingPanel = ({
           price={price}
         />
       )}
+    </>
+  );
 
-      {isInquiryModalOpen && (
-        <InquiryModal
-          isOpen={isInquiryModalOpen}
-          onClose={() => setInquiryModalOpen(false)}
-          vendorId={vendorId}
-          vendorName={vendorName}
-        />
-      )}
+  if (variant === "compact") {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={handleBookingClick}
+          disabled={!serviceId}
+          className="whitespace-nowrap rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {serviceId ? "Reserve" : "Unavailable"}
+        </button>
+        {modals}
+      </>
+    );
+  }
+
+  const telHref = contactPhone ? phoneTelHref(contactPhone) : null;
+
+  return (
+    <>
+      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-lg shadow-slate-200/50">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-2xl font-bold text-charcoal">
+              LKR {price.toLocaleString()}
+              <span className="text-base font-normal text-slate-500">
+                {pricingTypeLabel(pricingType)}
+              </span>
+            </p>
+            {serviceName && (
+              <p className="mt-1 text-sm font-medium text-charcoal">{serviceName}</p>
+            )}
+          </div>
+          {reviews > 0 && (
+            <div className="flex items-center gap-1 text-sm">
+              <Star size={14} className="fill-charcoal text-charcoal" />
+              <span className="font-semibold">{rating.toFixed(1)}</span>
+              <span className="text-slate-500">({reviews})</span>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-5 border-t border-slate-100 pt-5">
+          <p className="text-sm text-slate-600">
+            Choose your event date and submit a booking request. The vendor will confirm availability.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleBookingClick}
+          disabled={!serviceId}
+          className="mt-5 w-full rounded-lg bg-primary py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {serviceId ? "Request to book" : "No services available"}
+        </button>
+        <p className="mt-2 text-center text-xs text-slate-400">You won&apos;t be charged yet</p>
+
+        <div className="mt-5 space-y-2 border-t border-slate-100 pt-5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Contact</p>
+          {telHref ? (
+            <a
+              href={telHref}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 py-2.5 text-sm font-semibold text-charcoal transition hover:bg-slate-50"
+            >
+              <Phone size={16} />
+              Call {formatDisplayPhone(contactPhone!)}
+            </a>
+          ) : (
+            <p className="text-xs text-slate-500">Phone number not provided by vendor.</p>
+          )}
+          <p className="text-center text-[11px] text-slate-400">
+            Calls go directly to the vendor.
+          </p>
+        </div>
+      </div>
+      {modals}
     </>
   );
 };

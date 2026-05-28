@@ -1,6 +1,5 @@
-// src/features/vendor-discovery/components/ReviewCard.tsx
-import React from 'react';
-import { Star } from 'lucide-react';
+import React from "react";
+import { Star } from "lucide-react";
 
 interface ReviewCardProps {
   review: {
@@ -13,26 +12,27 @@ interface ReviewCardProps {
 
 const ReviewCard = ({ review }: ReviewCardProps) => {
   return (
-    <div>
-      <div className="flex items-center space-x-4 mb-2">
-        {/* A simple initial-based avatar */}
-        <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center font-bold text-lg text-charcoal">
-          {review.name.charAt(0)}
+    <article className="rounded-xl border border-slate-100 bg-slate-50/50 p-5">
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+          {review.name.charAt(0).toUpperCase()}
         </div>
         <div>
-          <p className="font-bold text-lg">{review.name}</p>
-          <p className="text-sm text-gray-500">{review.date}</p>
+          <p className="font-semibold text-charcoal">{review.name}</p>
+          <p className="text-xs text-slate-500">{review.date}</p>
         </div>
       </div>
-      <div className="flex mb-2">
+      <div className="mt-3 flex gap-0.5">
         {[...Array(5)].map((_, i) => (
-          <Star key={i} size={16} className={i < review.rating ? 'text-accent' : 'text-gray-300'} fill="currentColor" />
+          <Star
+            key={i}
+            size={14}
+            className={i < review.rating ? "fill-amber-400 text-amber-400" : "text-slate-200"}
+          />
         ))}
       </div>
-      <p className="text-gray-700 leading-relaxed">
-        {review.text}
-      </p>
-    </div>
+      <p className="mt-3 text-sm leading-relaxed text-slate-600">{review.text}</p>
+    </article>
   );
 };
 

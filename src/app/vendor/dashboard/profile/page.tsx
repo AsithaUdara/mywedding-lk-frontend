@@ -1,149 +1,224 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Building2, Globe, Info, Mail, MapPin, Phone, User2 } from "lucide-react";
+import { Building2, Globe, Info, Loader2, MapPin, Phone, Save } from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
-import { getVendorById, VendorDetail } from "@/shared/lib/api/vendors";
 import {
-  EmptyState,
+  getVendorBusinessProfile,
+  updateVendorBusinessProfile,
+  VendorBusinessProfile,
+} from "@/shared/lib/api/vendors";
+import { SRI_LANKA_CITIES, SRI_LANKA_PROVINCES } from "@/modules/vendor/signup/constants";
+import {
   ErrorBanner,
-  IconCircle,
   LoadingState,
   PageHeader,
   SectionCard,
+  SuccessBanner,
 } from "@/modules/vendor/dashboard/ui";
+
+const inputClass =
+  "w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15";
 
 export default function VendorProfilePage() {
   const { user } = useAuth();
-  const [profile, setProfile] = useState<VendorDetail | null>(null);
+  const [profile, setProfile] = useState<VendorBusinessProfile | null>(null);
+  const [form, setForm] = useState({
+    businessName: "",
+    businessDescription: "",
+    websiteUrl: "",
+    contactPhone: "",
+    city: "",
+    province: "",
+  });
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadProfile = async () => {
-      if (!user?.uid) return;
+    const load = async () => {
+      if (!user) return;
       try {
         setLoading(true);
         setError(null);
-        const data = await getVendorById(user.uid);
+        const token = await user.getIdToken();
+        const data = await getVendorBusinessProfile(token);
         setProfile(data);
+        setForm({
+          businessName: data.businessName ?? "",
+          businessDescription: data.businessDescription ?? "",
+          websiteUrl: data.websiteUrl ?? "",
+          contactPhone: data.contactPhone ?? "",
+          city: data.city ?? "",
+          province: data.province ?? "",
+        });
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load vendor profile.");
+        setError(err instanceof Error ? err.message : "Failed to load business profile.");
       } finally {
         setLoading(false);
       }
     };
-    loadProfile();
-  }, [user?.uid]);
+    load();
+  }, [user]);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    try {
+      setSaving(true);
+      setError(null);
+      setSuccess(null);
+      const token = await user.getIdToken();
+      await updateVendorBusinessProfile(token, {
+        businessName: form.businessName.trim(),
+        businessDescription: form.businessDescription.trim(),
+        websiteUrl: form.websiteUrl.trim() || undefined,
+        contactPhone: form.contactPhone.trim() || undefined,
+        city: form.city.trim(),
+        province: form.province.trim() || undefined,
+      });
+      setSuccess("Business profile saved. Your public listing and map location are updated.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save profile.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (loading) return <LoadingState label="Loading profile..." />;
 
   if (!profile) {
     return (
       <div className="space-y-6">
-        <PageHeader title="Business Profile" description="How couples view your business listing." />
-        {error ? <ErrorBanner message={error} /> : null}
-        <EmptyState
-          title="Profile unavailable"
-          description="Your public profile could not be loaded right now."
-        />
+        <PageHeader title="Business profile" description="Manage your public listing details." />
+        {error && <ErrorBanner message={error} />}
       </div>
     );
   }
 
-  const initial = profile.businessName.charAt(0).toUpperCase();
   const isVerified = profile.verificationStatus === "Verified";
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <PageHeader
-        title="Business Profile"
-        description="Review your public-facing vendor information and listing readiness."
+        title="Business profile"
+        description="Set your location, phone, and description — couples see this on your public listing and map."
         badge={isVerified ? "Verified" : "Pending verification"}
       />
-      {error ? <ErrorBanner message={error} /> : null}
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <SectionCard title="Identity" subtitle="Public account snapshot">
-          <div className="text-center">
-            <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-primary/10 text-3xl font-bold text-primary shadow-sm ring-4 ring-white">
-              {initial}
-            </div>
-            <p className="text-lg font-bold text-charcoal">{profile.businessName}</p>
-            <p className="text-sm text-slate-400">ID: {profile.userId.slice(0, 10)}...</p>
-            <div
-              className={`mt-4 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold ${
-                isVerified ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
-              }`}
+      {error && <ErrorBanner message={error} />}
+      {success && <SuccessBanner message={success} />}
+
+      <form onSubmit={handleSave}>
+        <SectionCard
+          title="Location & contact"
+          subtitle="Used on your vendor page, search filters, and Google Maps embed"
+          action={
+            <button
+              type="submit"
+              disabled={saving}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
             >
-              <span className={`h-2 w-2 rounded-full ${isVerified ? "bg-emerald-500" : "bg-amber-500"}`} />
-              {isVerified ? "Verified partner" : "Verification pending"}
+              {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+              Save changes
+            </button>
+          }
+        >
+          <div className="grid gap-5 md:grid-cols-2">
+            <div>
+              <label className="mb-1.5 flex items-center gap-1.5 text-sm font-semibold text-charcoal">
+                <Building2 size={15} className="text-slate-400" />
+                Business name
+              </label>
+              <input
+                className={inputClass}
+                value={form.businessName}
+                onChange={(e) => setForm({ ...form, businessName: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 flex items-center gap-1.5 text-sm font-semibold text-charcoal">
+                <Phone size={15} className="text-slate-400" />
+                Contact phone
+              </label>
+              <input
+                className={inputClass}
+                value={form.contactPhone}
+                onChange={(e) => setForm({ ...form, contactPhone: e.target.value })}
+                placeholder="+94 77 123 4567"
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                Shown as a Call button on your listing. Couples can tap to dial on mobile.
+              </p>
+            </div>
+            <div>
+              <label className="mb-1.5 flex items-center gap-1.5 text-sm font-semibold text-charcoal">
+                <MapPin size={15} className="text-slate-400" />
+                City / town
+              </label>
+              <input
+                list="vendor-cities"
+                className={inputClass}
+                value={form.city}
+                onChange={(e) => setForm({ ...form, city: e.target.value })}
+                placeholder="e.g. Colombo"
+                required
+              />
+              <datalist id="vendor-cities">
+                {SRI_LANKA_CITIES.map((city) => (
+                  <option key={city} value={city} />
+                ))}
+              </datalist>
+            </div>
+            <div>
+              <label className="mb-1.5 flex items-center gap-1.5 text-sm font-semibold text-charcoal">
+                <MapPin size={15} className="text-slate-400" />
+                Province
+              </label>
+              <select
+                className={inputClass}
+                value={form.province}
+                onChange={(e) => setForm({ ...form, province: e.target.value })}
+              >
+                <option value="">Select province (optional)</option>
+                {SRI_LANKA_PROVINCES.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="md:col-span-2">
+              <label className="mb-1.5 flex items-center gap-1.5 text-sm font-semibold text-charcoal">
+                <Globe size={15} className="text-slate-400" />
+                Website
+              </label>
+              <input
+                type="url"
+                className={inputClass}
+                value={form.websiteUrl}
+                onChange={(e) => setForm({ ...form, websiteUrl: e.target.value })}
+                placeholder="https://"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="mb-1.5 flex items-center gap-1.5 text-sm font-semibold text-charcoal">
+                <Info size={15} className="text-slate-400" />
+                About your business
+              </label>
+              <textarea
+                rows={5}
+                className={inputClass}
+                value={form.businessDescription}
+                onChange={(e) => setForm({ ...form, businessDescription: e.target.value })}
+                placeholder="Tell couples about your style, experience, and what makes you unique..."
+              />
             </div>
           </div>
         </SectionCard>
-
-        <div className="space-y-6 lg:col-span-2">
-          <SectionCard title="Business details" subtitle="Current values shown to couples">
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              <div className="flex items-start gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-                <IconCircle icon={Building2} theme="primary" size={18} className="h-10 w-10" />
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Business name</p>
-                  <p className="mt-0.5 font-semibold text-charcoal">{profile.businessName}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-                <IconCircle icon={MapPin} theme="blue" size={18} className="h-10 w-10" />
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">City</p>
-                  <p className="mt-0.5 font-semibold text-charcoal">{profile.city || "Not set"}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-                <IconCircle icon={Phone} theme="green" size={18} className="h-10 w-10" />
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Contact phone</p>
-                  <p className="mt-0.5 font-semibold text-charcoal">{profile.contactPhone || "Not set"}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-                <IconCircle icon={Globe} theme="amber" size={18} className="h-10 w-10" />
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Website</p>
-                  <p className="mt-0.5 break-all font-semibold text-charcoal">{profile.websiteUrl || "Not set"}</p>
-                </div>
-              </div>
-            </div>
-            <div className="mt-5 flex items-start gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-              <IconCircle icon={Info} theme="slate" size={18} className="h-10 w-10" />
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Description</p>
-                <p className="mt-0.5 text-sm leading-relaxed text-charcoal">
-                  {profile.businessDescription || "No business description added yet."}
-                </p>
-              </div>
-            </div>
-          </SectionCard>
-
-          <SectionCard title="Next best actions" subtitle="Improve discoverability and conversion">
-            <div className="space-y-3 text-sm">
-              <div className="flex items-start gap-3 rounded-xl border border-gray-100 bg-white p-3 shadow-sm">
-                <IconCircle icon={Mail} theme="rose" size={18} className="h-10 w-10" />
-                <p className="text-sm text-slate-600">
-                  Keep inquiries active and respond within 24 hours to improve ranking signals.
-                </p>
-              </div>
-              <div className="flex items-start gap-3 rounded-xl border border-gray-100 bg-white p-3 shadow-sm">
-                <IconCircle icon={User2} theme="blue" size={18} className="h-10 w-10" />
-                <p className="text-sm text-slate-600">
-                  Add multiple services and transparent pricing to increase booking conversions.
-                </p>
-              </div>
-            </div>
-          </SectionCard>
-        </div>
-      </div>
+      </form>
     </div>
   );
 }
-

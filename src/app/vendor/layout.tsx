@@ -14,7 +14,12 @@ export default function VendorLayout({
     const isDashboard = pathname.startsWith('/vendor/dashboard');
     const isLoginPage = pathname === '/vendor/login';
     const isSignupPage = pathname === '/vendor/signup';
-    const hidePortalChrome = isDashboard || isLoginPage || isSignupPage;
+    const isPublicProfile =
+        pathname.startsWith('/vendor/') &&
+        !isDashboard &&
+        !isLoginPage &&
+        !isSignupPage;
+    const hidePortalChrome = isDashboard || isLoginPage || isSignupPage || isPublicProfile;
 
     return (
         <div className="min-h-screen bg-cream flex flex-col font-roboto">
