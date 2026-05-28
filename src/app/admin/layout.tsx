@@ -6,19 +6,11 @@ import Link from "next/link";
 import { useAuth } from "@/shared/context/AuthContext";
 import { auth } from "@/shared/lib/firebase";
 import { signOut } from "firebase/auth";
-import {
-  LayoutDashboard,
-  UserPlus,
-  Loader2,
-  Shield,
-  LogOut,
-  Menu,
-  X,
-} from "lucide-react";
+import { LayoutDashboard, ShieldCheck, LogOut, Menu, X, Loader2 } from "lucide-react";
 
 const NAV_ITEMS = [
-  { label: "Overview", icon: LayoutDashboard, href: "/admin/dashboard" },
-  { label: "Pending vendors", icon: UserPlus, href: "/admin/vendors" },
+  { label: "Overview", href: "/admin" },
+  { label: "KYB queue", href: "/admin/vendors" },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -29,19 +21,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const isLoginPage = pathname === "/admin/login";
 
-  const activeItem = useMemo(
-    () => NAV_ITEMS.find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`)),
-    [pathname]
-  );
-
-  const userInitials = user?.displayName
-    ? user.displayName
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase()
-    : user?.email?.[0]?.toUpperCase() ?? "A";
+  const activeItem = useMemo(() => {
+    if (pathname === "/admin" || pathname === "/admin/dashboard") return NAV_ITEMS[0];
+    return NAV_ITEMS.find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
+  }, [pathname]);
 
   const handleSignOut = async () => {
     try {
@@ -84,78 +67,68 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (authLoading || isAdmin === null) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f8f6f3]">
-        <Loader2 className="animate-spin text-primary" size={32} />
+      <div className="flex min-h-screen items-center justify-center bg-neutral-200 font-sans">
+        <Loader2 className="animate-spin text-neutral-600" size={28} />
       </div>
     );
   }
 
   if (!isAdmin) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-[#f8f6f3] px-4">
-        <Shield size={40} className="text-red-400" />
-        <p className="text-lg font-semibold text-charcoal">Access denied</p>
-        <p className="text-sm text-slate-500">This account does not have admin privileges.</p>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-2 bg-neutral-200 px-4 font-sans">
+        <p className="text-sm font-semibold text-neutral-900">Access denied</p>
+        <p className="text-xs text-neutral-600">Admin role required.</p>
       </div>
     );
   }
 
   const renderNav = (mobile?: boolean) =>
     NAV_ITEMS.map((item) => {
-      const isActive = pathname === item.href;
-      const Icon = item.icon;
+      const isActive =
+        item.href === "/admin"
+          ? pathname === "/admin" || pathname === "/admin/dashboard"
+          : pathname === item.href || pathname.startsWith(`${item.href}/`);
       return (
         <Link
           key={item.href}
           href={item.href}
           onClick={() => mobile && setMobileNavOpen(false)}
-          className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+          className={`block border-l-2 px-3 py-2 text-xs font-medium transition-colors ${
             isActive
-              ? "bg-primary/10 text-primary"
-              : "text-slate-600 hover:bg-slate-50 hover:text-charcoal"
+              ? "border-neutral-900 bg-neutral-100 text-neutral-900"
+              : "border-transparent text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
           }`}
         >
-          <Icon size={18} strokeWidth={2} />
           {item.label}
         </Link>
       );
     });
 
   return (
-    <div className="flex min-h-screen bg-[#f8f6f3] font-roboto">
-      <aside className="fixed z-40 hidden h-full w-64 flex-col border-r border-slate-200/80 bg-white shadow-sm md:flex">
-        <div className="border-b border-slate-100 px-5 py-5">
-          <Link href="/admin/dashboard" className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Shield size={20} />
-            </div>
-            <div className="min-w-0">
-              <p className="truncate font-playfair text-base font-bold text-charcoal">Admin</p>
-              <p className="truncate text-xs text-slate-500">MyWedding.lk</p>
+    <div className="flex min-h-screen bg-neutral-200 font-sans text-neutral-900">
+      <aside className="fixed z-40 hidden h-full w-52 flex-col border-r border-neutral-300 bg-white md:flex">
+        <div className="border-b border-neutral-300 px-3 py-3">
+          <Link href="/admin" className="flex items-center gap-2">
+            <ShieldCheck size={18} className="text-neutral-700" strokeWidth={2} />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide">MyWedding Admin</p>
+              <p className="text-[10px] text-neutral-500">Operations console</p>
             </div>
           </Link>
         </div>
-
-        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">{renderNav()}</nav>
-
-        <div className="border-t border-slate-100 p-3">
+        <nav className="flex-1 py-2">{renderNav()}</nav>
+        <div className="border-t border-neutral-300 p-2">
           {user && (
-            <div className="mb-3 flex items-center gap-3 rounded-lg bg-slate-50 px-3 py-2.5">
-              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-700">
-                {userInitials}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-charcoal">Administrator</p>
-                <p className="truncate text-xs text-slate-500">{user.email}</p>
-              </div>
-            </div>
+            <p className="truncate px-3 py-1 text-[10px] text-neutral-500" title={user.email ?? undefined}>
+              {user.email}
+            </p>
           )}
           <button
             type="button"
             onClick={handleSignOut}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-red-50 hover:text-red-600"
+            className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-neutral-600 hover:bg-neutral-100"
           >
-            <LogOut size={18} />
+            <LogOut size={14} />
             Sign out
           </button>
         </div>
@@ -165,60 +138,42 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="fixed inset-0 z-50 md:hidden">
           <button
             type="button"
-            className="absolute inset-0 bg-black/40"
+            className="absolute inset-0 bg-black/50"
             onClick={() => setMobileNavOpen(false)}
             aria-label="Close menu"
           />
-          <aside className="absolute left-0 top-0 flex h-full w-72 flex-col bg-white shadow-xl">
-            <div className="flex h-14 items-center justify-between border-b border-slate-100 px-4">
-              <span className="font-playfair font-bold text-charcoal">Admin</span>
-              <button
-                type="button"
-                className="rounded-lg p-2 hover:bg-slate-100"
-                onClick={() => setMobileNavOpen(false)}
-              >
-                <X size={18} />
+          <aside className="absolute left-0 top-0 flex h-full w-56 flex-col border-r border-neutral-300 bg-white">
+            <div className="flex h-11 items-center justify-between border-b border-neutral-300 px-3">
+              <span className="text-xs font-bold uppercase">Admin</span>
+              <button type="button" onClick={() => setMobileNavOpen(false)} className="p-1">
+                <X size={16} />
               </button>
             </div>
-            <nav className="flex-1 space-y-1 p-3">{renderNav(true)}</nav>
-            <div className="border-t border-slate-100 p-3">
-              <button
-                type="button"
-                onClick={handleSignOut}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-50 py-3 text-sm font-semibold text-red-600"
-              >
-                <LogOut size={16} />
-                Sign out
-              </button>
-            </div>
+            <nav className="flex-1 py-2">{renderNav(true)}</nav>
           </aside>
         </div>
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col md:ml-64">
-        <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-slate-200/80 bg-white/95 px-4 shadow-sm backdrop-blur-sm md:px-8">
-          <div className="flex items-center gap-3">
+      <div className="flex min-w-0 flex-1 flex-col md:ml-52">
+        <header className="sticky top-0 z-30 flex h-11 items-center justify-between border-b border-neutral-300 bg-white px-3 md:px-4">
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setMobileNavOpen(true)}
-              className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 md:hidden"
+              className="p-1 text-neutral-600 md:hidden"
               aria-label="Open menu"
             >
-              <Menu size={20} />
+              <Menu size={18} />
             </button>
-            <div>
-              <p className="text-sm font-semibold text-charcoal">
-                {activeItem?.label ?? "Admin"}
-              </p>
-              <p className="hidden text-xs text-slate-500 sm:block">Platform operations</p>
-            </div>
+            <LayoutDashboard size={16} className="hidden text-neutral-500 sm:block" />
+            <h1 className="text-sm font-semibold">{activeItem?.label ?? "Admin"}</h1>
           </div>
-          <span className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-600">
+          <span className="border border-neutral-400 bg-neutral-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-neutral-700">
             Internal
           </span>
         </header>
 
-        <main className="mx-auto w-full max-w-6xl flex-1 p-4 md:p-6 lg:p-8">{children}</main>
+        <main className="flex-1 p-3 md:p-4">{children}</main>
       </div>
     </div>
   );

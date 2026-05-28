@@ -13,7 +13,7 @@ export function getRoleFromClaims(claims: Record<string, unknown>): AppRole {
 export function getDashboardPathForRole(role: AppRole): string {
   switch (role) {
     case 'admin':
-      return '/admin/dashboard';
+      return '/admin';
     case 'vendor':
       return '/vendor/dashboard';
     case 'planner':
