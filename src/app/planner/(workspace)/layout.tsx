@@ -33,7 +33,7 @@ type PlannerNavItem = {
 };
 
 const NAV_ITEMS: PlannerNavItem[] = [
-  { href: "/planner/overview", label: "Overview", icon: <LayoutDashboard size={18} /> },
+  { href: "/planner/dashboard", label: "Overview", icon: <LayoutDashboard size={18} /> },
   { href: "/planner/clients", label: "Clients", icon: <FolderKanban size={18} /> },
   { href: "/planner/tasks", label: "Timeline", icon: <CalendarRange size={18} /> },
   { href: "/planner/events", label: "Events", icon: <Users size={18} /> },
@@ -94,7 +94,7 @@ export default function PlannerWorkspaceLayout({
         }`}
       >
         <div className="flex h-20 items-center border-b border-slate-200/70 px-6">
-          <Link href="/planner/overview" className="flex items-center gap-3 overflow-hidden">
+          <Link href="/planner/dashboard" className="flex items-center gap-3 overflow-hidden">
             <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-[#111111] text-white shadow-[0_8px_20px_rgb(0,0,0,0.15)]">
               <Command size={18} />
             </div>

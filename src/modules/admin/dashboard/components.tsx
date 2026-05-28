@@ -17,7 +17,7 @@ export function ApproveButton({
       type="button"
       onClick={onClick}
       disabled={disabled || loading}
-      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 disabled:cursor-not-allowed disabled:opacity-50"
+      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-emerald-800/90 px-4 text-sm font-semibold text-white shadow-sm transition-all duration-300 ease-in-out hover:scale-[1.02] hover:bg-emerald-900 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/40 disabled:cursor-not-allowed disabled:opacity-50"
     >
       {loading ? <Loader2 size={14} className="animate-spin" /> : null}
       Approve
@@ -39,7 +39,7 @@ export function RejectButton({
       type="button"
       onClick={onClick}
       disabled={disabled || loading}
-      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-3.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500/30 disabled:cursor-not-allowed disabled:opacity-50"
+      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full border border-rose-200/80 bg-white px-4 text-sm font-semibold text-rose-800/90 shadow-sm transition-all duration-300 ease-in-out hover:scale-[1.02] hover:bg-rose-50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/30 disabled:cursor-not-allowed disabled:opacity-50"
     >
       {loading ? <Loader2 size={14} className="animate-spin" /> : null}
       Reject
@@ -63,7 +63,7 @@ export function PrimaryButton({
       type="button"
       onClick={onClick}
       disabled={disabled || loading}
-      className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-primary px-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+      className="inline-flex h-9 items-center justify-center gap-2 rounded-full bg-charcoal px-4 text-sm font-semibold text-white shadow-sm transition-all duration-300 ease-in-out hover:scale-[1.02] hover:bg-neutral-900 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
     >
       {loading && <Loader2 size={14} className="animate-spin" />}
       {children}

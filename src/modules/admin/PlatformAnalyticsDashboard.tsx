@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import { AdminPanel } from "./tables";
 
-/** Mock platform financial & growth metrics — Phase 7 UI (wire to API later). */
 const MOCK = {
   mrr: 1_245_000,
   mrrDeltaPct: 8.4,
@@ -41,13 +40,19 @@ function MetricCell({
   delta?: number;
 }) {
   return (
-    <div className="border-r border-neutral-300 px-4 py-3 last:border-r-0">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">{label}</p>
-      <p className="mt-1 font-mono text-xl font-bold tabular-nums text-neutral-900">{value}</p>
-      <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-neutral-500">
+    <div className="border-b border-slate-100/80 p-6 transition-all duration-300 ease-in-out last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0 sm:p-8">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{label}</p>
+      <p className="mt-2 font-playfair text-2xl font-bold tracking-tight text-charcoal tabular-nums sm:text-3xl">
+        {value}
+      </p>
+      <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-500">
         {sub && <span>{sub}</span>}
         {delta !== undefined && (
-          <span className={delta >= 0 ? "font-semibold text-emerald-700" : "font-semibold text-red-600"}>
+          <span
+            className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+              delta >= 0 ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-800"
+            }`}
+          >
             {delta >= 0 ? "+" : ""}
             {delta}% MoM
           </span>
@@ -64,55 +69,61 @@ export function PlatformAnalyticsDashboard() {
   );
 
   return (
-    <div className="space-y-4">
-      <AdminPanel title="Platform analytics" subtitle="Financial health & ecosystem growth (mocked)">
-        <div className="grid grid-cols-1 divide-y divide-neutral-300 sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-5 lg:divide-x lg:divide-y-0">
+    <div className="space-y-6 lg:space-y-8">
+      <AdminPanel
+        title="Platform analytics"
+        subtitle="Financial health & ecosystem growth (mocked)"
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
           <MetricCell
             label="MRR"
             value={formatLKR(MOCK.mrr)}
-            sub="Planner SaaS subscriptions"
+            sub="Planner SaaS"
             delta={MOCK.mrrDeltaPct}
           />
           <MetricCell
             label="TPV"
             value={formatLKR(MOCK.tpv)}
-            sub="Total processing volume"
+            sub="Processing volume"
             delta={MOCK.tpvDeltaPct}
           />
           <MetricCell
-            label="Take rate revenue"
+            label="Take rate"
             value={formatLKR(MOCK.takeRateRevenue)}
-            sub="Platform commission (mock 5%)"
+            sub="Platform commission"
           />
           <MetricCell
             label="Active planners"
             value={String(MOCK.activePlanners)}
-            sub="Paid or trialing in last 30d"
+            sub="Last 30 days"
           />
           <MetricCell
-            label="Registered vendors"
+            label="Vendors"
             value={String(MOCK.registeredVendors)}
             sub={`${MOCK.activeCouples} active couples`}
           />
         </div>
       </AdminPanel>
 
-      <AdminPanel title="Active planners — 6 month trend" subtitle="User growth (mock)">
-        <div className="px-4 py-4">
-          <div className="flex h-28 items-end gap-1 border-b border-neutral-200 pb-1">
+      <AdminPanel title="Planner growth" subtitle="Active planners — 6 month trend (mock)">
+        <div className="px-6 py-6 sm:px-8 sm:py-8">
+          <div className="flex h-36 items-end gap-2 border-b border-slate-100 pb-2 sm:gap-3">
             {MOCK.plannerGrowth.map((point) => (
-              <div key={point.month} className="flex flex-1 flex-col items-center gap-1">
-                <span className="font-mono text-[10px] font-semibold text-neutral-700">{point.count}</span>
+              <div
+                key={point.month}
+                className="group flex flex-1 flex-col items-center gap-2 transition-all duration-300 ease-in-out"
+              >
+                <span className="text-xs font-semibold tabular-nums text-slate-600">{point.count}</span>
                 <div
-                  className="w-full bg-neutral-700"
-                  style={{ height: `${Math.round((point.count / growthMax) * 88)}px` }}
+                  className="w-full rounded-t-xl bg-gradient-to-t from-charcoal to-slate-600 transition-all duration-300 ease-in-out group-hover:from-violet-900 group-hover:to-violet-500"
+                  style={{ height: `${Math.round((point.count / growthMax) * 112)}px` }}
                 />
-                <span className="text-[10px] text-neutral-500">{point.month}</span>
+                <span className="text-[11px] font-medium text-slate-400">{point.month}</span>
               </div>
             ))}
           </div>
-          <p className="mt-3 text-[11px] text-neutral-500">
-            Couples: {MOCK.activeCouples} active · Vendors: {MOCK.registeredVendors} on directory (incl. pending KYB)
+          <p className="mt-6 text-sm text-slate-500">
+            {MOCK.activeCouples} active couples · {MOCK.registeredVendors} vendors on directory
           </p>
         </div>
       </AdminPanel>

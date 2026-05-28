@@ -45,7 +45,7 @@ export default function PlannerSignupPage() {
       });
 
       await user.getIdToken(true);
-      router.push("/planner/overview");
+      router.push("/planner/dashboard");
     } catch (err: unknown) {
       const firebaseErr = err as { code?: string };
       if (firebaseErr.code === "auth/email-already-in-use") {

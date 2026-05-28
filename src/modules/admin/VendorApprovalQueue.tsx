@@ -150,33 +150,36 @@ export function VendorApprovalQueue({ mockOnly = false, compact = false }: Vendo
       }
       action={
         !loading && vendors.length > 0 ? (
-          <span className="border border-amber-400 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-900">
+          <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900/90 transition-all duration-300 ease-in-out">
             {vendors.length} pending
           </span>
         ) : null
       }
     >
       {error && (
-        <div className="border-b border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">{error}</div>
+        <div className="border-b border-amber-200/80 bg-amber-50/90 px-6 py-3 text-sm text-amber-900/90 sm:px-8">
+          {error}
+        </div>
       )}
       {useMock && !mockOnly && !error && (
-        <div className="border-b border-neutral-200 bg-neutral-50 px-3 py-1.5 text-[11px] text-neutral-600">
+        <div className="border-b border-slate-100/80 bg-slate-50/80 px-6 py-2.5 text-sm text-slate-500 sm:px-8">
           Demo data — connect backend or submit real vendor signups to populate live queue.
         </div>
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center gap-2 py-12 text-xs text-neutral-500">
+        <div className="flex items-center justify-center gap-2 py-16 text-sm text-slate-500">
           <Loader2 size={16} className="animate-spin" />
           Loading KYB queue…
         </div>
       ) : vendors.length === 0 ? (
-        <div className="px-4 py-10 text-center text-xs text-neutral-500">
+        <div className="px-8 py-16 text-center text-sm text-slate-500">
           No vendors awaiting KYB review.
         </div>
       ) : (
-        <AdminTableShell>
-          <AdminDataTable>
+        <div className="px-4 pb-6 pt-2 sm:px-6 sm:pb-8">
+          <AdminTableShell>
+            <AdminDataTable>
             <thead>
               <tr>
                 <AdminTh>Business</AdminTh>
@@ -195,19 +198,25 @@ export function VendorApprovalQueue({ mockOnly = false, compact = false }: Vendo
                 const isRejecting = isActing && actionState?.type === "reject";
 
                 return (
-                  <tr key={vendor.userId} className="hover:bg-neutral-50">
+                  <tr
+                    key={vendor.userId}
+                    className="transition-colors duration-300 ease-in-out hover:bg-slate-50/80"
+                  >
                     <AdminTd>
-                      <p className="font-semibold text-neutral-900">{vendor.businessName}</p>
-                      <p className="mt-0.5 line-clamp-2 max-w-xs text-[11px] leading-snug text-neutral-500">
+                      <p className="font-semibold text-charcoal">{vendor.businessName}</p>
+                      <p className="mt-1 line-clamp-2 max-w-xs text-sm leading-relaxed text-slate-500">
                         {vendor.businessDescription ?? "—"}
                       </p>
                     </AdminTd>
                     <AdminTd>
-                      <span className="text-neutral-800">{vendor.ownerName ?? "—"}</span>
+                      <span className="text-charcoal">{vendor.ownerName ?? "—"}</span>
                     </AdminTd>
                     <AdminTd>
                       {vendor.ownerEmail ? (
-                        <a href={`mailto:${vendor.ownerEmail}`} className="text-blue-700 hover:underline">
+                        <a
+                          href={`mailto:${vendor.ownerEmail}`}
+                          className="text-violet-800/90 underline-offset-2 transition-all duration-300 ease-in-out hover:text-violet-950 hover:underline"
+                        >
                           {vendor.ownerEmail}
                         </a>
                       ) : (
@@ -216,12 +225,12 @@ export function VendorApprovalQueue({ mockOnly = false, compact = false }: Vendo
                     </AdminTd>
                     <AdminTd>{vendor.city ?? "—"}</AdminTd>
                     <AdminTd>
-                      <span className="inline-block border border-neutral-300 bg-neutral-100 px-1.5 py-0.5 text-[10px] font-medium">
+                      <span className="inline-block rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
                         {vendor.categoryName ?? "Uncategorized"}
                       </span>
                     </AdminTd>
                     <AdminTd>
-                      <span className="inline-block border border-amber-400 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-amber-900">
+                      <span className="inline-block rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-amber-900/90">
                         {vendor.verificationStatus}
                       </span>
                     </AdminTd>
@@ -243,8 +252,9 @@ export function VendorApprovalQueue({ mockOnly = false, compact = false }: Vendo
                 );
               })}
             </tbody>
-          </AdminDataTable>
-        </AdminTableShell>
+            </AdminDataTable>
+          </AdminTableShell>
+        </div>
       )}
     </AdminPanel>
   );
