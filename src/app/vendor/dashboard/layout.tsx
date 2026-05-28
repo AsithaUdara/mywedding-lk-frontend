@@ -19,6 +19,8 @@ import {
   Bell,
   Sparkles,
   Crown,
+  CalendarDays,
+  LineChart,
 } from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
 import { getVendorAnalytics, getVendorSubscription } from "@/shared/lib/api/vendors";
@@ -33,9 +35,11 @@ const WORKSPACE_BRAND = "Vendor Hub";
 
 const NAV_ITEMS: NavItem[] = [
   { label: "Overview", icon: <BarChart3 size={20} />, href: "/vendor/dashboard" },
+  { label: "Analytics", icon: <LineChart size={20} />, href: "/vendor/dashboard/analytics" },
+  { label: "Inquiries", icon: <MessageSquare size={20} />, href: "/vendor/dashboard/inquiries" },
+  { label: "Availability", icon: <CalendarDays size={20} />, href: "/vendor/dashboard/availability" },
   { label: "My Services", icon: <Package size={20} />, href: "/vendor/dashboard/services" },
   { label: "Bookings", icon: <Briefcase size={20} />, href: "/vendor/dashboard/bookings" },
-  { label: "Inquiries", icon: <MessageSquare size={20} />, href: "/vendor/dashboard/inquiries" },
   { label: "Profile", icon: <User size={20} />, href: "/vendor/dashboard/profile" },
   { label: "Settings", icon: <Settings size={20} />, href: "/vendor/dashboard/settings" },
 ];
