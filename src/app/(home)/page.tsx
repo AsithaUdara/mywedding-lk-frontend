@@ -1,39 +1,39 @@
-// src/app/page.tsx
-"use client"; // This directive MUST be at the very top
+"use client";
 
-import React, { useState } from 'react'; // Import useState
+import { useState } from "react";
 import Header from "@/shared/components/layout/Header";
+import Footer from "@/shared/components/layout/Footer";
 import Hero from "@/app/(home)/components/Hero";
-import BrowseByCategory from "@/app/(home)/components/BrowseByCategory";
+import SocialProof from "@/app/(home)/components/SocialProof";
 import HowItWorks from "@/app/(home)/components/HowItWorks";
 import PricingTiers from "@/app/(home)/components/PricingTiers";
+import VendorCTA from "@/app/(home)/components/VendorCTA";
+import BrowseByCategory from "@/app/(home)/components/BrowseByCategory";
 import FeaturedVenues from "@/modules/vendors/components/FeaturedVenues";
 import Testimonials from "@/modules/vendors/components/Testimonials";
-import Footer from "@/shared/components/layout/Footer";
-import AuthModal from '@/modules/identity/AuthModal'; 
+import AuthModal from "@/modules/identity/AuthModal";
 
 export default function Home() {
-  // State to control the modal's visibility
   const [isAuthModalOpen, setAuthModalOpen] = useState(false);
 
   return (
-    <main>
-      {/* We pass a function to the Header to open the modal */}
+    <div className="marketing-page font-roboto text-foreground">
       <Header onLoginClick={() => setAuthModalOpen(true)} />
-      
-      <Hero />
-      <BrowseByCategory />
-      <HowItWorks />
-      <PricingTiers />
-      <FeaturedVenues />
-      <Testimonials />
+
+      <main>
+        <Hero />
+        <SocialProof />
+        <HowItWorks />
+        <PricingTiers />
+        <BrowseByCategory />
+        <VendorCTA />
+        <FeaturedVenues />
+        <Testimonials />
+      </main>
+
       <Footer />
 
-      {/* The Modal component itself */}
-      <AuthModal 
-        isOpen={isAuthModalOpen} 
-        onClose={() => setAuthModalOpen(false)} 
-      />
-    </main>
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setAuthModalOpen(false)} />
+    </div>
   );
 }

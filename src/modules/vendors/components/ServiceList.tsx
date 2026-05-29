@@ -7,6 +7,9 @@ import BookingModal from "./BookingModal";
 import { useVendorDetailAuth } from "@/modules/vendors/context/VendorDetailAuthContext";
 import { pricingTypeLabel } from "@/shared/lib/vendorMedia";
 import { parseListingDetails } from "@/shared/lib/serviceListingDetails";
+import { formatLKR } from "@/shared/components/ui";
+import { cn } from "@/shared/lib/cn";
+import { pv } from "@/modules/vendors/public-theme";
 
 interface Service {
   id: string;
@@ -24,7 +27,6 @@ interface ServiceListProps {
   vendorName: string;
   selectedServiceId?: string;
   onSelectService?: (serviceId: string) => void;
-  /** When "panel", booking happens via sticky sidebar — hide per-card book buttons */
   bookingMode?: "panel" | "inline";
 }
 
@@ -43,11 +45,11 @@ const ServiceList = ({
   };
 
   if (services.length === 0) {
-    return <p className="text-gray-500">No active services listed yet.</p>;
+    return <p className="text-sm text-muted-foreground">No active services listed yet.</p>;
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {services.map((service) => {
         const details = parseListingDetails(service.listingDetailsJson);
         const isSelected = selectedServiceId === service.id;
@@ -68,11 +70,13 @@ const ServiceList = ({
                   }
                 : undefined
             }
-            className={`overflow-hidden rounded-xl border transition-all ${
+            className={cn(
+              "overflow-hidden rounded-2xl border bg-card transition-all",
               isSelected
                 ? "border-primary ring-2 ring-primary/15"
-                : "border-slate-200 hover:border-slate-300"
-            } ${onSelectService ? "cursor-pointer" : ""}`}
+                : "border-border hover:border-primary/25",
+              onSelectService && "cursor-pointer"
+            )}
           >
             <div className="flex flex-col md:flex-row">
               {service.primaryImageUrl && (
@@ -86,24 +90,24 @@ const ServiceList = ({
                   />
                 </div>
               )}
-              <div className="flex flex-1 flex-col p-6">
+              <div className="flex flex-1 flex-col p-5 sm:p-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="flex-1">
-                    <h4 className="text-xl font-bold text-charcoal">{service.serviceName}</h4>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-xl font-bold text-foreground">{service.serviceName}</h4>
                     {service.tagline && (
-                      <p className="mt-1 text-sm font-medium text-primary/90">{service.tagline}</p>
+                      <p className="mt-1 text-sm font-medium text-primary">{service.tagline}</p>
                     )}
                     {(details.durationLabel || details.capacityNote) && (
-                      <div className="mt-3 flex flex-wrap gap-2 text-sm text-slate-600">
+                      <div className="mt-3 flex flex-wrap gap-2">
                         {details.durationLabel && (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1">
-                            <Clock size={14} />
+                          <span className={pv.chip}>
+                            <Clock size={14} aria-hidden />
                             {details.durationLabel}
                           </span>
                         )}
                         {details.capacityNote && (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1">
-                            <Users size={14} />
+                          <span className={pv.chip}>
+                            <Users size={14} aria-hidden />
                             {details.capacityNote}
                           </span>
                         )}
@@ -114,7 +118,7 @@ const ServiceList = ({
                         {details.highlights.map((highlight, index) => (
                           <span
                             key={`highlight-${index}-${highlight}`}
-                            className="rounded-full border border-slate-200 px-2.5 py-0.5 text-xs font-medium text-slate-600"
+                            className="rounded-full border border-border bg-primary/5 px-2.5 py-0.5 text-xs font-medium text-primary"
                           >
                             {highlight}
                           </span>
@@ -123,9 +127,9 @@ const ServiceList = ({
                     )}
                   </div>
                   <div className="flex flex-col items-start gap-3 sm:items-end">
-                    <p className="text-2xl font-bold text-charcoal">
-                      LKR {service.basePrice.toLocaleString()}
-                      <span className="text-sm font-normal text-gray-500">
+                    <p className="text-2xl font-bold text-primary">
+                      {formatLKR(service.basePrice)}
+                      <span className="text-sm font-normal text-muted-foreground">
                         {pricingTypeLabel(service.pricingType ?? "Fixed")}
                       </span>
                     </p>
@@ -142,11 +146,12 @@ const ServiceList = ({
                             e.stopPropagation();
                             onSelectService(service.id);
                           }}
-                          className={`whitespace-nowrap rounded-lg border px-4 py-2 text-sm font-semibold transition-colors ${
+                          className={cn(
+                            "whitespace-nowrap rounded-xl border px-4 py-2 text-sm font-semibold transition-colors",
                             isSelected
-                              ? "border-primary bg-primary text-white"
-                              : "border-slate-200 text-charcoal hover:border-primary"
-                          }`}
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : pv.outlineBtn
+                          )}
                         >
                           {isSelected ? "Selected" : "Select"}
                         </button>
@@ -158,7 +163,7 @@ const ServiceList = ({
                             e.stopPropagation();
                             handleBookClick(service);
                           }}
-                          className="w-full whitespace-nowrap rounded-lg bg-charcoal px-4 py-2 text-center text-sm font-semibold text-white transition-colors hover:bg-primary sm:w-auto"
+                          className={cn("w-full sm:w-auto", pv.primaryBtn)}
                         >
                           Book this service
                         </button>
@@ -168,18 +173,21 @@ const ServiceList = ({
                 </div>
 
                 {service.description && (
-                  <p className="mt-4 text-sm leading-relaxed text-gray-600">{service.description}</p>
+                  <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+                    {service.description}
+                  </p>
                 )}
 
                 {details.includedItems.length > 0 && (
-                  <div className="mt-4 border-t border-slate-100 pt-4">
-                    <p className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">
-                      What&apos;s included
-                    </p>
-                    <ul className="grid gap-2 sm:grid-cols-2">
+                  <div className="mt-4 border-t border-border pt-4">
+                    <p className={pv.label}>What&apos;s included</p>
+                    <ul className="mt-2 grid gap-2 sm:grid-cols-2">
                       {details.includedItems.map((item, index) => (
-                        <li key={`included-${index}-${item}`} className="flex items-start gap-2 text-sm text-slate-600">
-                          <Check size={14} className="mt-0.5 flex-shrink-0 text-emerald-600" />
+                        <li
+                          key={`included-${index}-${item}`}
+                          className="flex items-start gap-2 text-sm text-muted-foreground"
+                        >
+                          <Check size={14} className="mt-0.5 flex-shrink-0 text-success" aria-hidden />
                           {item}
                         </li>
                       ))}
@@ -194,7 +202,7 @@ const ServiceList = ({
 
       {bookingService && (
         <BookingModal
-          isOpen={true}
+          isOpen
           onClose={() => setBookingService(null)}
           vendorName={vendorName}
           serviceId={bookingService.id}

@@ -1,16 +1,18 @@
 "use client";
 
-import React, { use } from 'react';
-import Header from '@/shared/components/layout/Header';
-import Footer from '@/shared/components/layout/Footer';
-import EventHeaderClient from '@/modules/events/EventHeaderClient';
-import QuickInsightsRow from '@/modules/events/QuickInsightsRow';
-import EventNavigation from '@/modules/events/EventNavigation';
-import CollaborationHubSidebar from '@/modules/collaboration/CollaborationHubSidebar';
-import AIChatWidget from '@/modules/ai/AIChatWidget';
-import { RealTimeProvider } from '@/shared/context/RealTimeContext';
-import { useAuth } from '@/shared/context/AuthContext';
-import { useRouter } from 'next/navigation';
+import React, { use } from "react";
+import Header from "@/shared/components/layout/Header";
+import Footer from "@/shared/components/layout/Footer";
+import EventHeaderClient from "@/modules/events/EventHeaderClient";
+import QuickInsightsRow from "@/modules/events/QuickInsightsRow";
+import EventNavigation from "@/modules/events/EventNavigation";
+import CollaborationHubSidebar from "@/modules/collaboration/CollaborationHubSidebar";
+import AIChatWidget from "@/modules/ai/AIChatWidget";
+import { RealTimeProvider } from "@/shared/context/RealTimeContext";
+import { useAuth } from "@/shared/context/AuthContext";
+import { useRouter } from "next/navigation";
+import { ClientEventShell } from "@/shared/components/layout/ClientEventShell";
+import { PageLoadingSkeleton } from "@/shared/components/ui";
 
 export default function EventLayout({
   children,
@@ -25,12 +27,16 @@ export default function EventLayout({
 
   React.useEffect(() => {
     if (!loading && !user) {
-      router.push('/');
+      router.push("/");
     }
   }, [user, loading, router]);
 
   if (loading) {
-    return <div className="h-screen w-full bg-cream" />;
+    return (
+      <div className="min-h-screen bg-background p-8">
+        <PageLoadingSkeleton />
+      </div>
+    );
   }
 
   if (!user) {
@@ -39,35 +45,23 @@ export default function EventLayout({
 
   return (
     <RealTimeProvider eventId={eventId}>
-      <div className="flex flex-col min-h-screen bg-cream">
-        <Header onLoginClick={() => { }} />
+      <div className="flex min-h-screen flex-col bg-background font-roboto text-foreground">
+        <Header onLoginClick={() => {}} />
 
-        <main className="flex-grow w-full px-4 sm:px-6 lg:px-8 py-12">
-          {/* Header section (Hero & Countdown) */}
-          <div className="max-w-7xl mx-auto mb-6">
-            <EventHeaderClient eventId={eventId} />
-          </div>
-
-          {/* Quick Insights Row */}
-          <div className="max-w-7xl mx-auto">
-            <QuickInsightsRow eventId={eventId} />
-          </div>
-
-          {/* Persistent Event Navigation */}
-          <div className="max-w-7xl mx-auto">
-            <EventNavigation eventId={eventId} />
-          </div>
-
-          {/* Page Content (Overview, Checklist, Budget, etc.) */}
-          <div className="max-w-7xl mx-auto">
-            {children}
-          </div>
-        </main>
+        <ClientEventShell
+          header={
+            <div className="space-y-6">
+              <EventHeaderClient eventId={eventId} />
+              <QuickInsightsRow eventId={eventId} />
+            </div>
+          }
+          subNav={<EventNavigation eventId={eventId} />}
+        >
+          {children}
+        </ClientEventShell>
 
         <Footer />
         <CollaborationHubSidebar eventId={eventId} />
-        
-        {/* Global AI Chat Widget */}
         <AIChatWidget />
       </div>
     </RealTimeProvider>

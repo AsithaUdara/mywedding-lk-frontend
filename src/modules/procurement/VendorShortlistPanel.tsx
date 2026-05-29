@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, Loader2, Send, Store, X } from "lucide-react";
+import { Check, CreditCard, Loader2, Send, Store, X } from "lucide-react";
 import Link from "next/link";
 import {
   approveShortlistItem,
@@ -23,6 +23,8 @@ import {
 } from "@/modules/procurement/shortlist-utils";
 import { AddShortlistProposalModal } from "@/modules/procurement/AddShortlistProposalModal";
 import { useAuth } from "@/shared/context/AuthContext";
+import { createDepositCheckout } from "@/shared/lib/api/vendors";
+import { submitPayHereCheckout } from "@/shared/lib/payhereCheckout";
 
 type Mode = "planner" | "client";
 
@@ -97,6 +99,27 @@ export function VendorShortlistPanel({ eventId, mode }: Props) {
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to request booking.");
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const handlePayDeposit = async (bookingId: string) => {
+    if (!user) return;
+    setActionId(`pay-${bookingId}`);
+    try {
+      const token = await user.getIdToken();
+      const result = await createDepositCheckout(token, bookingId);
+      if (result?.alreadyPaid) {
+        await load();
+        return;
+      }
+      const checkout = result?.checkout as Record<string, unknown> | undefined;
+      if (checkout) {
+        submitPayHereCheckout(checkout);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to start deposit payment.");
     } finally {
       setActionId(null);
     }
@@ -218,17 +241,39 @@ export function VendorShortlistPanel({ eventId, mode }: Props) {
                     </>
                   )}
                   {mode === "client" && item.status === "ClientApproved" && (
+                    <Button
+                      type="button"
+                      variant="primary"
+                      size="sm"
+                      disabled={actionId === item.id}
+                      onClick={() => void handleRequestBooking(item.id)}
+                    >
+                      {actionId === item.id ? "Requesting…" : "Request booking"}
+                    </Button>
+                  )}
+                  {mode === "client" &&
+                    item.vendorBookingId &&
+                    item.status === "BookingAccepted" && (
                       <Button
                         type="button"
-                        variant="primary"
+                        variant="accent"
                         size="sm"
-                        disabled={actionId === item.id}
-                        onClick={() => void handleRequestBooking(item.id)}
+                        className="gap-1"
+                        disabled={actionId === `pay-${item.vendorBookingId}`}
+                        onClick={() => void handlePayDeposit(item.vendorBookingId!)}
                       >
-                        {actionId === item.id ? "Requesting…" : "Request booking"}
+                        <CreditCard size={14} aria-hidden />
+                        {actionId === `pay-${item.vendorBookingId}`
+                          ? "Opening checkout…"
+                          : "Pay deposit"}
                       </Button>
                     )}
-                  {item.vendorBookingId && (
+                  {mode === "client" && item.status === "BookingRequested" && item.vendorBookingId && (
+                    <span className="rounded-full bg-muted px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+                      Awaiting vendor response
+                    </span>
+                  )}
+                  {item.vendorBookingId && item.status !== "BookingRequested" && (
                     <Link
                       href={`/contracts/sign/${item.vendorBookingId}`}
                       className="inline-flex items-center rounded-full border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted"

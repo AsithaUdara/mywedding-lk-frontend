@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Check } from "lucide-react";
+import { cn } from "@/shared/lib/cn";
 
 const tiers = [
   {
@@ -48,51 +49,77 @@ const tiers = [
 
 export default function PricingTiers() {
   return (
-    <section className="bg-white py-24">
-      <div className="container mx-auto px-4">
-        <div className="text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">SaaS pricing</p>
-          <h2 className="mt-3 font-playfair text-4xl font-bold text-charcoal md:text-5xl">
+    <section className="py-20 md:py-28" id="pricing">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-2xl text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">SaaS pricing</p>
+          <h2 className="mt-3 font-playfair text-3xl font-bold text-foreground md:text-4xl">
             Plans that scale with your agency
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600">
+          <p className="mt-4 text-base text-muted-foreground md:text-lg">
             From solo planners to multi-city studios — pick the tier that matches your client load.
           </p>
         </div>
 
-        <div className="mt-14 grid gap-8 lg:grid-cols-3">
+        <div className="mt-14 grid gap-6 lg:grid-cols-3 lg:gap-8">
           {tiers.map((tier) => (
             <article
               key={tier.name}
-              className={`rounded-[2rem] border p-8 shadow-sm transition hover:shadow-lg ${
+              className={cn(
+                "flex flex-col rounded-3xl border p-8 shadow-sm transition-all duration-200",
                 tier.highlighted
-                  ? "border-charcoal bg-charcoal text-white shadow-xl"
-                  : "border-slate-200 bg-white"
-              }`}
+                  ? "border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/15 lg:scale-[1.02]"
+                  : "border-border bg-card hover:shadow-md"
+              )}
             >
-              <p className="text-sm font-semibold uppercase tracking-wider opacity-80">{tier.name}</p>
-              <p className="mt-4 font-playfair text-4xl font-bold">
-                {tier.price}
-                <span className="text-lg font-normal opacity-70">{tier.period}</span>
+              {tier.highlighted && (
+                <span className="mb-4 inline-flex w-fit rounded-full bg-accent/20 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-accent">
+                  Most popular
+                </span>
+              )}
+              <p
+                className={cn(
+                  "text-sm font-semibold uppercase tracking-wider",
+                  tier.highlighted ? "text-primary-foreground/80" : "text-muted-foreground"
+                )}
+              >
+                {tier.name}
               </p>
-              <p className={`mt-3 text-sm ${tier.highlighted ? "text-white/80" : "text-slate-600"}`}>
+              <p className="mt-4 font-playfair text-4xl font-bold tabular-nums">
+                {tier.price}
+                <span className="text-lg font-normal opacity-80">{tier.period}</span>
+              </p>
+              <p
+                className={cn(
+                  "mt-3 text-sm leading-relaxed",
+                  tier.highlighted ? "text-primary-foreground/85" : "text-muted-foreground"
+                )}
+              >
                 {tier.description}
               </p>
-              <ul className="mt-8 space-y-3">
+              <ul className="mt-8 flex-1 space-y-3">
                 {tier.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-2 text-sm">
-                    <Check size={16} className="mt-0.5 flex-shrink-0" />
-                    {feature}
+                  <li key={feature} className="flex items-start gap-2.5 text-sm">
+                    <Check
+                      size={16}
+                      className={cn(
+                        "mt-0.5 flex-shrink-0",
+                        tier.highlighted ? "text-accent" : "text-primary"
+                      )}
+                      aria-hidden
+                    />
+                    <span>{feature}</span>
                   </li>
                 ))}
               </ul>
               <Link
                 href={tier.href}
-                className={`mt-8 inline-flex w-full items-center justify-center rounded-full px-6 py-3 text-sm font-semibold transition ${
+                className={cn(
+                  "mt-8 inline-flex w-full items-center justify-center rounded-full px-6 py-3 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                   tier.highlighted
-                    ? "bg-white text-charcoal hover:bg-slate-100"
-                    : "bg-charcoal text-white hover:bg-neutral-900"
-                }`}
+                    ? "bg-card text-primary hover:opacity-95"
+                    : "bg-primary text-primary-foreground hover:opacity-90"
+                )}
               >
                 {tier.cta}
               </Link>

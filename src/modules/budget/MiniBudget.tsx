@@ -1,13 +1,16 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/shared/context/AuthContext';
-import { getBudgetOverview, type BudgetOverview } from '@/shared/lib/api/budget';
-import { useRealTime } from '@/shared/context/RealTimeContext';
-import { Wallet, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
-import Skeleton from '@/shared/components/ui/Skeleton';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/shared/context/AuthContext";
+import { getBudgetOverview, type BudgetOverview } from "@/shared/lib/api/budget";
+import { useRealTime } from "@/shared/context/RealTimeContext";
+import { Wallet, ArrowRight } from "lucide-react";
+import Link from "next/link";
+import Skeleton from "@/shared/components/ui/Skeleton";
+import { motion } from "framer-motion";
+import { formatLKR } from "@/shared/components/ui";
+import { cp } from "@/modules/client/client-theme";
+import { cn } from "@/shared/lib/cn";
 
 const MiniBudget = ({ eventId }: { eventId: string }) => {
   const { user } = useAuth();
@@ -29,13 +32,13 @@ const MiniBudget = ({ eventId }: { eventId: string }) => {
   }, [user, eventId]);
 
   useEffect(() => {
-    fetchBudget();
+    void fetchBudget();
   }, [fetchBudget, budgetVersion]);
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 border border-white/60">
-        <Skeleton className="h-8 w-1/3 mb-6 rounded-lg" />
+      <div className={cp.panel}>
+        <Skeleton className="mb-6 h-8 w-1/3 rounded-lg" />
         <Skeleton className="h-20 w-full rounded-xl" />
       </div>
     );
@@ -43,60 +46,73 @@ const MiniBudget = ({ eventId }: { eventId: string }) => {
 
   if (!overview) return null;
 
-  const spentPercentage = overview.totalBudget > 0
-    ? Math.min((overview.totalSpent / overview.totalBudget) * 100, 100)
-    : 0;
-
-  const formatCurrency = (amount: number) => {
-    return `LKR ${amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-  };
+  const spentPercentage =
+    overview.totalBudget > 0
+      ? Math.min((overview.totalSpent / overview.totalBudget) * 100, 100)
+      : 0;
 
   return (
-    <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 border border-white/60">
-      <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
+    <div className={cp.panel}>
+      <div className="mb-6 flex items-center justify-between border-b border-border pb-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-            <Wallet className="text-primary" size={16} strokeWidth={2} />
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+            <Wallet className="text-primary" size={16} strokeWidth={2} aria-hidden />
           </div>
-          <h2 className="text-lg font-bold font-playfair text-charcoal tracking-tight">Budget Tracker</h2>
+          <h2 className={cp.sectionTitle}>Budget tracker</h2>
         </div>
-        <Link 
+        <Link
           href={`/events/${eventId}/budget`}
-          className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1 hover:text-primary/70 transition-colors"
+          className="flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-primary transition-colors hover:text-primary/80"
         >
-          Manage <ArrowRight size={14} />
+          Manage <ArrowRight size={14} aria-hidden />
         </Link>
       </div>
 
       <div className="space-y-4">
-        {/* Progress Bar */}
         <div>
-          <div className="flex justify-between items-end mb-2">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Usage</span>
-            <span className="text-lg font-bold text-charcoal">{spentPercentage.toFixed(0)}%</span>
+          <div className="mb-2 flex items-end justify-between">
+            <span className={cp.label}>Usage</span>
+            <span className="text-lg font-bold text-foreground">{spentPercentage.toFixed(0)}%</span>
           </div>
-          <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+          <div className="h-3 w-full overflow-hidden rounded-full bg-muted">
             <motion.div
-              className="bg-primary h-full rounded-full relative"
+              className="relative h-full rounded-full bg-primary"
               initial={{ width: 0 }}
               animate={{ width: `${spentPercentage}%` }}
               transition={{ duration: 1, ease: "easeOut" }}
-            >
-              <div className="absolute inset-0 bg-white/20 w-1/2 -skew-x-12 translate-x-full animate-[shimmer_2s_infinite]" />
-            </motion.div>
+            />
           </div>
         </div>
 
-        {/* Quick Stats */}
         <div className="grid grid-cols-2 gap-3 pt-2">
-          <div className="bg-gray-50/80 p-3 rounded-xl border border-gray-100/50">
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Spent</p>
-            <p className="text-sm font-bold text-red-600/90">{formatCurrency(overview.totalSpent)}</p>
+          <div className="rounded-xl border border-border bg-muted/30 p-3">
+            <p className={cn(cp.label, "mb-1")}>Spent</p>
+            <p className="text-sm font-bold text-primary">{formatLKR(overview.totalSpent)}</p>
           </div>
-          <div className={`p-3 rounded-xl border ${overview.remainingBudget < 0 ? 'bg-red-50/50 border-red-100' : 'bg-green-50/50 border-green-100'}`}>
-            <p className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${overview.remainingBudget < 0 ? 'text-red-400' : 'text-green-600/70'}`}>Remaining</p>
-            <p className={`text-sm font-bold ${overview.remainingBudget < 0 ? 'text-red-700' : 'text-green-700'}`}>
-              {formatCurrency(overview.remainingBudget)}
+          <div
+            className={cn(
+              "rounded-xl border p-3",
+              overview.remainingBudget < 0
+                ? "border-destructive/20 bg-destructive/5"
+                : "border-success/20 bg-success/5"
+            )}
+          >
+            <p
+              className={cn(
+                cp.label,
+                "mb-1",
+                overview.remainingBudget < 0 ? "text-destructive" : "text-success"
+              )}
+            >
+              Remaining
+            </p>
+            <p
+              className={cn(
+                "text-sm font-bold",
+                overview.remainingBudget < 0 ? "text-destructive" : "text-success"
+              )}
+            >
+              {formatLKR(overview.remainingBudget)}
             </p>
           </div>
         </div>
@@ -106,4 +122,3 @@ const MiniBudget = ({ eventId }: { eventId: string }) => {
 };
 
 export default MiniBudget;
-

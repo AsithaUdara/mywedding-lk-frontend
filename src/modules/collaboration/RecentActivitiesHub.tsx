@@ -1,13 +1,15 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/shared/context/AuthContext';
-import { getActivityFeed, type ActivityFeedItem } from '@/shared/lib/api/feed';
-import { getTasksForEvent } from '@/shared/lib/api/tasks';
-import { useRealTime } from '@/shared/context/RealTimeContext';
-import { MessageSquare } from 'lucide-react';
-import ActivityItem from './ActivityItem';
-import Skeleton from '@/shared/components/ui/Skeleton';
+import React, { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/shared/context/AuthContext";
+import { getActivityFeed, type ActivityFeedItem } from "@/shared/lib/api/feed";
+import { getTasksForEvent } from "@/shared/lib/api/tasks";
+import { useRealTime } from "@/shared/context/RealTimeContext";
+import { MessageSquare } from "lucide-react";
+import ActivityItem from "./ActivityItem";
+import Skeleton from "@/shared/components/ui/Skeleton";
+import { cp } from "@/modules/client/client-theme";
+import { cn } from "@/shared/lib/cn";
 
 const RecentActivitiesHub = ({ eventId }: { eventId: string }) => {
   const { user } = useAuth();
@@ -20,15 +22,17 @@ const RecentActivitiesHub = ({ eventId }: { eventId: string }) => {
     if (!user) return;
     try {
       const token = await user.getIdToken();
-      
+
       const [activityData, tasksData] = await Promise.all([
         getActivityFeed(token, eventId).catch(() => []),
-        getTasksForEvent(token, eventId).catch(() => [])
+        getTasksForEvent(token, eventId).catch(() => []),
       ]);
 
-      setItems(activityData.filter((item: ActivityFeedItem) => item.itemType === 'SystemLog'));
-      
-      const pendingCount = (tasksData as { status: string }[]).filter(t => t.status !== 'Completed').length;
+      setItems(activityData.filter((item: ActivityFeedItem) => item.itemType === "SystemLog"));
+
+      const pendingCount = (tasksData as { status: string }[]).filter(
+        (t) => t.status !== "Completed"
+      ).length;
       setPendingTasksCount(pendingCount);
     } catch (error) {
       console.error("Failed to fetch data:", error);
@@ -38,28 +42,22 @@ const RecentActivitiesHub = ({ eventId }: { eventId: string }) => {
   }, [user, eventId]);
 
   useEffect(() => {
-    fetchActivityAndTasks();
+    void fetchActivityAndTasks();
   }, [fetchActivityAndTasks, activityVersion, checklistVersion]);
 
-  // MiniChecklist shows up to 7 tasks.
-  // 0 tasks = 4 activities
-  // 1 task = 4 activities matches height.
-  // 7 tasks = 10 activities perfectly matches height.
   const tasksShown = Math.min(pendingTasksCount, 7);
   const displayCount = Math.max(4, 3 + tasksShown);
 
   return (
-    <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 md:p-8 border border-white/60 transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] h-full flex flex-col">
-      <div className="flex items-center gap-4 mb-6 pb-4 border-b border-gray-100 flex-shrink-0">
-        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-          <MessageSquare className="text-primary" size={20} strokeWidth={1.5} />
+    <div className={cn(cp.panel, "flex h-full flex-col md:p-8")}>
+      <div className="mb-6 flex flex-shrink-0 items-center gap-4 border-b border-border pb-4">
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary/10">
+          <MessageSquare className="text-primary" size={20} strokeWidth={1.5} aria-hidden />
         </div>
-        <div>
-          <h2 className="text-xl font-bold font-playfair text-charcoal tracking-tight">Recent Activities</h2>
-        </div>
+        <h2 className={cp.sectionTitle}>Recent activity</h2>
       </div>
 
-      <div className="flex-1 min-h-0 flex flex-col">
+      <div className="flex min-h-0 flex-1 flex-col">
         {isLoading ? (
           <div className="space-y-4">
             <Skeleton className="h-12 w-full rounded-xl" />
@@ -67,12 +65,14 @@ const RecentActivitiesHub = ({ eventId }: { eventId: string }) => {
             <Skeleton className="h-12 w-full rounded-xl" />
           </div>
         ) : items.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-sm text-gray-400 font-medium tracking-wide uppercase">No recent activities</p>
+          <div className="py-8 text-center">
+            <p className={cp.label}>No recent activities</p>
           </div>
         ) : (
           <div className="flex flex-col gap-5">
-            {items.slice(0, displayCount).map(item => <ActivityItem key={item.id} item={item} />)}
+            {items.slice(0, displayCount).map((item) => (
+              <ActivityItem key={item.id} item={item} />
+            ))}
           </div>
         )}
       </div>
@@ -81,4 +81,3 @@ const RecentActivitiesHub = ({ eventId }: { eventId: string }) => {
 };
 
 export default RecentActivitiesHub;
-

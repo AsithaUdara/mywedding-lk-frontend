@@ -1,63 +1,67 @@
-// src/features/vendor-discovery/components/SearchForm.tsx
 "use client";
 
-import React, { useMemo } from 'react';
-import { Search } from 'lucide-react';
-import Link from 'next/link';
-import SearchableDropdown from '@/shared/components/ui/SearchableDropdown';
-import allVendorsData from '@/shared/lib/data/vendors.json';
+import React, { useMemo } from "react";
+import { Search } from "lucide-react";
+import Link from "next/link";
+import SearchableDropdown from "@/shared/components/ui/SearchableDropdown";
+import allVendorsData from "@/shared/lib/data/vendors.json";
+import { pv } from "@/modules/vendors/public-theme";
+import { cn } from "@/shared/lib/cn";
 
-// Define the props the component will receive
 interface SearchFormProps {
-  type: 'vendor' | 'venue';
+  type: "vendor" | "venue";
 }
 
 const SearchForm = ({ type }: SearchFormProps) => {
-
-  // Use useMemo for performance, so we don't recalculate on every render
   const { title, allCategories, allLocations } = useMemo(() => {
-    const locations = Array.from(new Set(allVendorsData.map(v => v.location)));
-    if (type === 'venue') {
+    const locations = Array.from(new Set(allVendorsData.map((v) => v.location)));
+    if (type === "venue") {
       return {
-        title: 'Find a Venue',
-        allCategories: Array.from(new Set(allVendorsData.filter(v => v.category === 'Venues').map(v => v.name))),
-        allLocations: locations
+        title: "Find a venue",
+        allCategories: Array.from(
+          new Set(allVendorsData.filter((v) => v.category === "Venues").map((v) => v.name))
+        ),
+        allLocations: locations,
       };
     }
-    // Default to 'vendor'
     return {
-      title: 'Find a Vendor',
-      allCategories: Array.from(new Set(allVendorsData.filter(v => v.category !== 'Venues').map(v => v.category))),
-      allLocations: locations
+      title: "Find a vendor",
+      allCategories: Array.from(
+        new Set(allVendorsData.filter((v) => v.category !== "Venues").map((v) => v.category))
+      ),
+      allLocations: locations,
     };
   }, [type]);
 
-
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-2xl max-w-lg w-full">
-      <h1 className="text-4xl font-bold text-charcoal">{title}</h1>
-      <p className="text-gray-500 mt-2 mb-6">
-        {type === 'venue'
-          ? 'Shortlist venues for your clients — inquire with your planner to proceed.'
-          : 'Browse verified vendors — inquire with your planner to request quotes.'}
+    <div className={cn("w-full max-w-lg p-6 shadow-xl", pv.card)}>
+      <h1 className="font-playfair text-3xl font-bold text-foreground sm:text-4xl">{title}</h1>
+      <p className="mt-2 mb-6 text-sm text-muted-foreground">
+        {type === "venue"
+          ? "Shortlist venues for your clients — inquire with your planner to proceed."
+          : "Browse verified vendors — inquire with your planner to request quotes."}
       </p>
-      
+
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">
-            {type === 'venue' ? 'VENUE NAME' : 'CATEGORY / VENDOR'}
+          <label className={cn("mb-1 block", pv.label)}>
+            {type === "venue" ? "Venue name" : "Category / vendor"}
           </label>
-          <SearchableDropdown options={allCategories} placeholder={type === 'venue' ? 'e.g., Galle Face Hotel' : 'e.g., Photographers'} />
+          <SearchableDropdown
+            options={allCategories}
+            placeholder={type === "venue" ? "e.g., Galle Face Hotel" : "e.g., Photographers"}
+          />
         </div>
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">LOCATION</label>
+          <label className={cn("mb-1 block", pv.label)}>Location</label>
           <SearchableDropdown options={allLocations} placeholder="e.g., Colombo" />
         </div>
       </div>
 
-      <Link href="/vendors/search">
-        <button type="button" className="w-full mt-6 py-4 rounded-lg text-white font-semibold flex items-center justify-center elegant-lift-button" style={{ backgroundColor: 'var(--color-primary)' }}>
-          <Search size={20} className="mr-2"/> Inquire with Planner
+      <Link href="/vendors/search" className="mt-6 block">
+        <button type="button" className={cn("flex w-full items-center justify-center gap-2", pv.primaryBtn)}>
+          <Search size={20} aria-hidden />
+          Browse vendors
         </button>
       </Link>
     </div>

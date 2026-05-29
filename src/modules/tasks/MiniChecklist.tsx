@@ -1,14 +1,14 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/shared/context/AuthContext';
-import { getTasksForEvent, type Task } from '@/shared/lib/api/tasks';
-import { useRealTime } from '@/shared/context/RealTimeContext';
-import { CheckSquare, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
-import TaskItem from './TaskItem';
-import Skeleton from '@/shared/components/ui/Skeleton';
-
+import React, { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/shared/context/AuthContext";
+import { getTasksForEvent, type Task } from "@/shared/lib/api/tasks";
+import { useRealTime } from "@/shared/context/RealTimeContext";
+import { CheckSquare, ArrowRight } from "lucide-react";
+import Link from "next/link";
+import TaskItem from "./TaskItem";
+import Skeleton from "@/shared/components/ui/Skeleton";
+import { cp } from "@/modules/client/client-theme";
 const MiniChecklist = ({ eventId }: { eventId: string }) => {
   const { user } = useAuth();
   const { checklistVersion } = useRealTime();
@@ -20,8 +20,7 @@ const MiniChecklist = ({ eventId }: { eventId: string }) => {
     try {
       const token = await user.getIdToken();
       const data = await getTasksForEvent(token, eventId);
-      // Only get pending tasks, take top 7 so the dashboard can grow with user input
-      const pendingTasks = data.filter(t => t.status !== 'Completed').slice(0, 7);
+      const pendingTasks = data.filter((t) => t.status !== "Completed").slice(0, 7);
       setTasks(pendingTasks);
     } catch (error) {
       console.error("Failed to fetch tasks:", error);
@@ -31,23 +30,23 @@ const MiniChecklist = ({ eventId }: { eventId: string }) => {
   }, [user, eventId]);
 
   useEffect(() => {
-    fetchTasks();
+    void fetchTasks();
   }, [fetchTasks, checklistVersion]);
 
   return (
-    <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 border border-white/60">
-      <div className="flex items-center justify-between mb-5 pb-4 border-b border-gray-100">
+    <div className={cp.panel}>
+      <div className="mb-5 flex items-center justify-between border-b border-border pb-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-            <CheckSquare className="text-primary" size={16} strokeWidth={2} />
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+            <CheckSquare className="text-primary" size={16} strokeWidth={2} aria-hidden />
           </div>
-          <h2 className="text-lg font-bold font-playfair text-charcoal tracking-tight">Next Tasks</h2>
+          <h2 className={cp.sectionTitle}>Next tasks</h2>
         </div>
-        <Link 
+        <Link
           href={`/events/${eventId}/checklist`}
-          className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1 hover:text-primary/70 transition-colors"
+          className="flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-primary transition-colors hover:text-primary/80"
         >
-          View All <ArrowRight size={14} />
+          View all <ArrowRight size={14} aria-hidden />
         </Link>
       </div>
 
@@ -58,11 +57,11 @@ const MiniChecklist = ({ eventId }: { eventId: string }) => {
             <Skeleton className="h-16 w-full rounded-xl" />
           </>
         ) : tasks.length === 0 ? (
-          <div className="text-center py-6 bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
-            <p className="text-sm text-gray-500 font-medium">No pending tasks!</p>
+          <div className="rounded-xl border border-dashed border-border bg-muted/30 py-6 text-center">
+            <p className="text-sm font-medium text-muted-foreground">No pending tasks</p>
           </div>
         ) : (
-          tasks.map(task => (
+          tasks.map((task) => (
             <TaskItem key={task.id} task={task} eventId={eventId} onStatusChange={fetchTasks} />
           ))
         )}
@@ -72,4 +71,3 @@ const MiniChecklist = ({ eventId }: { eventId: string }) => {
 };
 
 export default MiniChecklist;
-

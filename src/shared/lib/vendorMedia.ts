@@ -89,6 +89,7 @@ export function mapVendorToCardProps(vendor: Vendor) {
     rating: vendor.averageRating,
     price: vendor.minPrice,
     totalReviews: vendor.totalReviews,
+    isVerified: vendor.verificationStatus === "Verified",
     verificationStatus: vendor.verificationStatus,
     premiumTier: vendor.premiumTier,
   };

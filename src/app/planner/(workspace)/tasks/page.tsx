@@ -1,11 +1,30 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CalendarDays, Clock3, Link2, Sparkles } from "lucide-react";
+import {
+  CalendarDays,
+  CalendarRange,
+  CheckCircle2,
+  Clock3,
+  Link2,
+  ListTodo,
+  Sparkles,
+} from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
 import { getPlannerEvents, PlannerEventListItem } from "@/shared/lib/api/planner";
 import { getTasksForEvent, patchTaskSchedule, Task } from "@/shared/lib/api/tasks";
-import { ErrorBanner, LoadingState } from "@/modules/planner/components/ui";
+import { ErrorBanner } from "@/modules/planner/components/ui";
+import {
+  Badge,
+  Button,
+  EmptyState,
+  PageHeader,
+  PageLoadingSkeleton,
+  SectionCard,
+  StatCard,
+  inputClass,
+} from "@/shared/components/ui";
+import { cn } from "@/shared/lib/cn";
 
 const WEEKS = 16;
 const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
@@ -23,10 +42,10 @@ type GanttTask = {
 
 const WEEKS_LABELS = Array.from({ length: WEEKS }, (_, i) => `W${i + 1}`);
 
-const stageStyle: Record<GanttTask["stage"], string> = {
-  Onboarding: "bg-fuchsia-100 text-fuchsia-700",
-  Planning: "bg-orange-100 text-orange-700",
-  Execution: "bg-emerald-100 text-emerald-700",
+const stageBadgeVariant: Record<GanttTask["stage"], "accent" | "default" | "muted"> = {
+  Onboarding: "accent",
+  Planning: "default",
+  Execution: "muted",
 };
 
 function getTimelineOrigin(eventDate: Date): Date {
@@ -40,7 +59,12 @@ function dateToWeekIndex(date: Date, origin: Date): number {
   return Math.max(0, Math.min(WEEKS - 1, idx));
 }
 
-function weekSpanFromDates(start: Date | null, due: Date | null, origin: Date, index: number): { startWeek: number; duration: number } {
+function weekSpanFromDates(
+  start: Date | null,
+  due: Date | null,
+  origin: Date,
+  index: number
+): { startWeek: number; duration: number } {
   if (start && due) {
     const startWeek = dateToWeekIndex(start, origin);
     const endWeek = dateToWeekIndex(due, origin);
@@ -50,7 +74,11 @@ function weekSpanFromDates(start: Date | null, due: Date | null, origin: Date, i
   return { startWeek, duration: 2 };
 }
 
-function weeksToIsoRange(startWeek: number, duration: number, origin: Date): { startDate: string; dueDate: string } {
+function weeksToIsoRange(
+  startWeek: number,
+  duration: number,
+  origin: Date
+): { startDate: string; dueDate: string } {
   const start = new Date(origin.getTime() + startWeek * MS_PER_WEEK);
   const due = new Date(origin.getTime() + (startWeek + duration) * MS_PER_WEEK - 1);
   return { startDate: start.toISOString(), dueDate: due.toISOString() };
@@ -68,7 +96,12 @@ function inferStage(startWeek: number): GanttTask["stage"] {
   return "Execution";
 }
 
-function mapApiTask(task: Task, index: number, origin: Date, idToShort: Map<string, string>): GanttTask {
+function mapApiTask(
+  task: Task,
+  index: number,
+  origin: Date,
+  idToShort: Map<string, string>
+): GanttTask {
   const start = task.startDate ? new Date(task.startDate) : null;
   const due = task.dueDate ? new Date(task.dueDate) : null;
   const { startWeek, duration } = weekSpanFromDates(start, due, origin, index);
@@ -76,7 +109,7 @@ function mapApiTask(task: Task, index: number, origin: Date, idToShort: Map<stri
   return {
     id: task.id,
     title: task.title,
-    owner: task.assignedToUserId ? task.assignedToUserId.slice(0, 8) : "Unassigned",
+    owner: task.assignedToUserId ? "Assigned" : "Unassigned",
     stage: inferStage(startWeek),
     startWeek,
     duration,
@@ -146,14 +179,17 @@ export default function PlannerTasksPage() {
     return Math.round(tasks.reduce((sum, task) => sum + task.completion, 0) / tasks.length);
   }, [tasks]);
 
+  const criticalCount = useMemo(
+    () => tasks.filter((t) => t.completion < 100 && t.stage === "Execution").length,
+    [tasks]
+  );
+
   const persistTaskWeeks = async (taskId: string, startWeek: number, duration: number) => {
     if (!user || !selectedEventId) return;
     const previous = tasks;
     setTasks((prev) =>
       prev.map((t) =>
-        t.id === taskId
-          ? { ...t, startWeek, duration, stage: inferStage(startWeek) }
-          : t
+        t.id === taskId ? { ...t, startWeek, duration, stage: inferStage(startWeek) } : t
       )
     );
 
@@ -203,29 +239,28 @@ export default function PlannerTasksPage() {
     }
   };
 
+  const selectedEvent = events.find((e) => e.eventId === selectedEventId);
+
   if (loading && tasks.length === 0 && events.length === 0) {
-    return <LoadingState label="Loading timeline…" />;
+    return <PageLoadingSkeleton />;
   }
 
   return (
-    <section className="space-y-6">
+    <div className="space-y-8 pb-4">
       {error && <ErrorBanner message={error} />}
 
-      <header className="rounded-[1.5rem] bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Timeline Workspace</p>
-            <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">Master Gantt</h1>
-            <p className="mt-1 text-sm text-slate-500">
-              Drag task bars horizontally to reschedule. Changes save to the database automatically.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
+      <PageHeader
+        title="Master Gantt"
+        description="Drag task bars horizontally to reschedule. Changes save automatically to your event timeline."
+        badge="Timeline"
+        action={
+          <div className="flex flex-wrap items-center gap-2">
             {events.length > 0 && (
               <select
                 value={selectedEventId}
                 onChange={(e) => setSelectedEventId(e.target.value)}
-                className="rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700"
+                className={cn(inputClass, "w-auto min-w-[12rem] rounded-full py-2")}
+                aria-label="Select wedding event"
               >
                 {events.map((ev) => (
                   <option key={ev.eventId} value={ev.eventId}>
@@ -234,117 +269,176 @@ export default function PlannerTasksPage() {
                 ))}
               </select>
             )}
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 rounded-full bg-[#111111] px-6 py-2.5 text-sm font-medium text-white transition hover:bg-black"
+            <Button
+              href="/planner/ai"
+              variant="secondary"
+              size="sm"
+              className="whitespace-nowrap"
             >
-              <Sparkles size={16} />
-              Auto-Schedule Timeline
-            </button>
+              <Sparkles size={16} aria-hidden />
+              Auto-schedule
+            </Button>
           </div>
-        </div>
-      </header>
+        }
+      />
 
-      <div className="grid grid-cols-12 gap-6">
-        <article className="col-span-12 rounded-[1.5rem] bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] md:col-span-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Critical Tasks</p>
-          <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{tasks.length}</p>
-        </article>
-        <article className="col-span-12 rounded-[1.5rem] bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] md:col-span-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Completion</p>
-          <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{totalProgress}%</p>
-        </article>
-        <article className="col-span-12 rounded-[1.5rem] bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] md:col-span-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Window</p>
-          <p className="mt-2 inline-flex items-center gap-2 text-xl font-bold tracking-tight text-slate-900">
-            <CalendarDays size={18} className="text-slate-400" />
-            16 Weeks
-          </p>
-        </article>
+      {selectedEvent && (
+        <p className="-mt-4 text-sm text-muted-foreground">
+          Planning window for{" "}
+          <span className="font-semibold text-foreground">{selectedEvent.eventName}</span>
+          {" · "}
+          wedding{" "}
+          {new Date(selectedEvent.eventDate).toLocaleDateString(undefined, {
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+          })}
+        </p>
+      )}
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <StatCard
+          label="Scheduled tasks"
+          value={tasks.length}
+          sub={
+            criticalCount > 0 ? `${criticalCount} in execution phase` : undefined
+          }
+          icon={ListTodo}
+          iconTheme="primary"
+          index={0}
+        />
+        <StatCard
+          label="Completion"
+          value={`${totalProgress}%`}
+          icon={CheckCircle2}
+          iconTheme="success"
+          index={1}
+        />
+        <StatCard
+          label="Planning window"
+          value="16 weeks"
+          icon={CalendarDays}
+          iconTheme="accent"
+          index={2}
+        />
       </div>
 
       {events.length === 0 ? (
-        <div className="rounded-[1.5rem] bg-white p-8 text-center text-sm text-slate-500 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-          Create a planner event to manage tasks on the timeline.
-        </div>
+        <EmptyState
+          title="No events to plan yet"
+          description="Create a wedding event first, then add tasks to build your master timeline."
+          action={
+            <Button href="/planner/events" size="sm">
+              Create event
+            </Button>
+          }
+        />
       ) : (
-        <div className="overflow-hidden rounded-[1.5rem] bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-          <div className="overflow-x-auto">
-            <div className="min-w-[1100px]">
-              <div className="grid grid-cols-[320px_repeat(16,minmax(52px,1fr))] border-b border-slate-200/70 bg-slate-50/70 px-4 py-3">
-                <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Task / Owner</div>
-                {WEEKS_LABELS.map((week) => (
-                  <div key={week} className="text-center text-[11px] font-semibold text-slate-500">
-                    {week}
+        <SectionCard
+          title="Task timeline"
+          subtitle="16-week horizon · drag bars to shift start dates"
+          action={
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+              <CalendarRange size={14} aria-hidden />
+              {WEEKS} columns
+            </span>
+          }
+        >
+          {tasks.length === 0 && !loading ? (
+            <EmptyState
+              title="No tasks for this event"
+              description="Add tasks from the client event hub, then return here to schedule them on the Gantt."
+              className="border-0 bg-transparent shadow-none"
+            />
+          ) : (
+            <div className="-mx-2 overflow-x-auto">
+              <div className="min-w-[1100px] px-2">
+                <div className="grid grid-cols-[minmax(240px,320px)_repeat(16,minmax(48px,1fr))] border-b border-border bg-muted/50 px-3 py-3">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                    Task / owner
                   </div>
-                ))}
-              </div>
-
-              <div className="space-y-2 p-4">
-                {tasks.length === 0 && !loading && (
-                  <p className="py-8 text-center text-sm text-slate-500">No tasks yet for this event.</p>
-                )}
-                {tasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className="grid grid-cols-[320px_repeat(16,minmax(52px,1fr))] items-center gap-y-2 rounded-2xl border border-slate-100 p-3"
-                  >
-                    <div className="pr-4">
-                      <p className="text-sm font-semibold tracking-tight text-slate-900">{task.title}</p>
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${stageStyle[task.stage]}`}>
-                          {task.stage}
-                        </span>
-                        <span className="inline-flex items-center gap-1 text-[11px] text-slate-500">
-                          <Clock3 size={12} />
-                          {task.owner}
-                        </span>
-                        {task.dependency && (
-                          <span className="inline-flex items-center gap-1 text-[11px] text-slate-500">
-                            <Link2 size={12} />
-                            Depends on {task.dependency.toUpperCase()}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
+                  {WEEKS_LABELS.map((week) => (
                     <div
-                      className="col-span-16 relative h-9 rounded-full bg-slate-100"
-                      onPointerMove={(e) => {
-                        const width = (e.currentTarget as HTMLDivElement).offsetWidth;
-                        onBarPointerMove(e, width);
-                      }}
+                      key={week}
+                      className="text-center text-[10px] font-semibold tabular-nums text-muted-foreground"
                     >
+                      {week}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="space-y-2 py-4">
+                  {tasks.map((task) => (
+                    <div
+                      key={task.id}
+                      className="grid grid-cols-[minmax(240px,320px)_repeat(16,minmax(48px,1fr))] items-center gap-y-2 rounded-2xl border border-border bg-background/80 p-3 transition-colors hover:border-primary/20"
+                    >
+                      <div className="pr-3">
+                        <p className="text-sm font-semibold text-foreground">{task.title}</p>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <Badge variant={stageBadgeVariant[task.stage]}>{task.stage}</Badge>
+                          <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                            <Clock3 size={12} aria-hidden />
+                            {task.owner}
+                          </span>
+                          {task.dependency && (
+                            <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                              <Link2 size={12} aria-hidden />
+                              {task.dependency.toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
                       <div
-                        role="slider"
-                        aria-label={`Reschedule ${task.title}`}
-                        onPointerDown={(e) => onBarPointerDown(e, task)}
-                        onPointerUp={(e) => {
-                          const width = (e.currentTarget.parentElement as HTMLDivElement).offsetWidth;
-                          onBarPointerUp(e, task, width);
-                        }}
-                        className={`absolute top-1/2 h-7 -translate-y-1/2 cursor-grab rounded-full bg-[#111111] px-3 text-[11px] font-semibold text-white shadow-[0_8px_24px_rgba(0,0,0,0.18)] active:cursor-grabbing ${
-                          savingTaskId === task.id ? "opacity-60" : ""
-                        }`}
-                        style={{
-                          left: `calc(${(task.startWeek / WEEKS) * 100}% + 4px)`,
-                          width: `calc(${(task.duration / WEEKS) * 100}% - 8px)`,
-                          minWidth: "84px",
+                        className="relative col-span-16 h-9 rounded-full bg-muted"
+                        onPointerMove={(e) => {
+                          const width = (e.currentTarget as HTMLDivElement).offsetWidth;
+                          onBarPointerMove(e, width);
                         }}
                       >
-                        <div className="flex h-full items-center justify-between gap-2">
-                          <span className="truncate">{task.title.slice(0, 12)}</span>
-                          <span className="text-white/80">{task.completion}%</span>
+                        <div
+                          role="slider"
+                          aria-label={`Reschedule ${task.title}`}
+                          aria-valuemin={0}
+                          aria-valuemax={WEEKS - 1}
+                          aria-valuenow={task.startWeek}
+                          onPointerDown={(e) => onBarPointerDown(e, task)}
+                          onPointerUp={(e) => {
+                            const width = (e.currentTarget.parentElement as HTMLDivElement)
+                              .offsetWidth;
+                            onBarPointerUp(e, task, width);
+                          }}
+                          className={cn(
+                            "absolute top-1/2 flex h-7 -translate-y-1/2 cursor-grab items-center justify-between gap-2 overflow-hidden rounded-full bg-primary px-3 text-[11px] font-semibold text-primary-foreground shadow-md shadow-primary/25 active:cursor-grabbing",
+                            (draggingTaskId === task.id || savingTaskId === task.id) &&
+                              "opacity-70 ring-2 ring-accent/50"
+                          )}
+                          style={{
+                            left: `calc(${(task.startWeek / WEEKS) * 100}% + 4px)`,
+                            width: `calc(${(task.duration / WEEKS) * 100}% - 8px)`,
+                            minWidth: "84px",
+                          }}
+                        >
+                          <span
+                            className="absolute inset-y-0 left-0 bg-accent/35"
+                            style={{ width: `${task.completion}%` }}
+                            aria-hidden
+                          />
+                          <span className="relative z-[1] truncate">{task.title.slice(0, 14)}</span>
+                          <span className="relative z-[1] tabular-nums text-primary-foreground/90">
+                            {task.completion}%
+                          </span>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        </div>
+          )}
+        </SectionCard>
       )}
-    </section>
+    </div>
   );
 }

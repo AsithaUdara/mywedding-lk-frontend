@@ -1,9 +1,17 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import Link from "next/link";
-import { Plus, Package, Tag, LayoutGrid, Pencil } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
+import {
+  Eye,
+  EyeOff,
+  LayoutGrid,
+  Package,
+  Plus,
+  RefreshCw,
+  Tag,
+  Pencil,
+} from "lucide-react";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import { useAuth } from "@/shared/context/AuthContext";
 import {
@@ -16,7 +24,6 @@ import {
   DataTable,
   IconButton,
   InlineSpinner,
-  MetricPill,
   RowActionsMenu,
   SearchField,
   StatusBadge,
@@ -26,14 +33,18 @@ import {
   ToggleSwitch,
 } from "@/modules/vendor/dashboard/components";
 import {
+  Button,
   EmptyState,
   ErrorBanner,
   formatLKR,
-  IconCircle,
-  LoadingState,
   PageHeader,
+  PageLoadingSkeleton,
   SectionCard,
+  StatCard,
+  StatIcon,
 } from "@/modules/vendor/dashboard/ui";
+import { cn } from "@/shared/lib/cn";
+import { vd } from "@/modules/vendor/dashboard/vendor-dashboard-theme";
 
 export type VendorService = VendorDashboardService;
 
@@ -52,10 +63,46 @@ function buildServiceUpdatePayload(service: VendorService, isActive: boolean) {
   };
 }
 
+function ListingPlaceholderPreview() {
+  const samples = [
+    { name: "Premium wedding package", category: "Photography", price: "LKR 85,000", active: true },
+    { name: "Reception décor bundle", category: "Décor", price: "LKR 120,000", active: false },
+  ];
+
+  return (
+    <div className="mt-6 space-y-3 opacity-90" aria-hidden>
+      <p className="text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        Preview — your catalog will look like this
+      </p>
+      {samples.map((row) => (
+        <div
+          key={row.name}
+          className="flex items-center gap-4 rounded-2xl border border-dashed border-border bg-muted/20 px-4 py-3"
+        >
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <Package size={20} aria-hidden />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold text-muted-foreground">{row.name}</p>
+            <p className="text-xs text-muted-foreground/80">{row.category}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm font-semibold text-muted-foreground">{row.price}</p>
+            <p className="text-[10px] font-semibold uppercase text-muted-foreground/70">
+              {row.active ? "Published" : "Draft"}
+            </p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function VendorServicesPage() {
   const { user } = useAuth();
   const [services, setServices] = useState<VendorService[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -66,7 +113,6 @@ export default function VendorServicesPage() {
   const fetchServices = useCallback(async () => {
     if (!user) return;
     try {
-      setLoading(true);
       setError(null);
       const token = await user.getIdToken();
       const data = await getVendorDashboardServices(token);
@@ -74,14 +120,30 @@ export default function VendorServicesPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load services.");
       setServices([]);
-    } finally {
-      setLoading(false);
     }
   }, [user]);
 
   useEffect(() => {
-    fetchServices();
-  }, [fetchServices]);
+    let cancelled = false;
+    (async () => {
+      if (!user) return;
+      try {
+        setLoading(true);
+        await fetchServices();
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchServices, user]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchServices();
+    setRefreshing(false);
+  };
 
   const filteredServices = useMemo(() => {
     const needle = search.trim().toLowerCase();
@@ -89,7 +151,8 @@ export default function VendorServicesPage() {
     return services.filter(
       (service) =>
         service.serviceName.toLowerCase().includes(needle) ||
-        service.categoryName.toLowerCase().includes(needle)
+        service.categoryName.toLowerCase().includes(needle) ||
+        (service.tagline?.toLowerCase().includes(needle) ?? false)
     );
   }, [services, search]);
 
@@ -129,6 +192,7 @@ export default function VendorServicesPage() {
       setServices((prev) => prev.filter((service) => service.id !== serviceIdToDelete));
       setDeleteModalOpen(false);
       setServiceIdToDelete(null);
+      setDeleteError(null);
     } catch (err) {
       setDeleteError(err instanceof Error ? err.message : "Failed to delete service.");
     }
@@ -137,32 +201,63 @@ export default function VendorServicesPage() {
   const activeCount = services.filter((service) => service.isActive).length;
   const draftCount = services.length - activeCount;
 
+  if (loading && !refreshing) {
+    return <PageLoadingSkeleton />;
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 pb-4">
       <PageHeader
-        title="My Services"
+        title="My services"
         description="Manage listings couples see on search and your vendor profile. Publish when ready, or hide listings without deleting them."
-        badge={`${activeCount} published · ${services.length} total`}
+        badge="Storefront"
         action={
-          <Link
-            href="/vendor/dashboard/services/new"
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
-          >
-            <Plus size={18} strokeWidth={2.5} />
-            New listing
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => void handleRefresh()}
+              disabled={refreshing}
+            >
+              <RefreshCw size={16} className={cn(refreshing && "animate-spin")} aria-hidden />
+              Refresh
+            </Button>
+            <Button href="/vendor/dashboard/services/new" variant="primary" size="sm">
+              <Plus size={18} aria-hidden />
+              New listing
+            </Button>
+          </div>
         }
       />
 
       {error && <ErrorBanner message={error} />}
 
-      {!loading && services.length > 0 && (
-        <div className="grid gap-3 sm:grid-cols-3">
-          <MetricPill label="Total listings" value={services.length} />
-          <MetricPill label="Published" value={activeCount} tone="success" />
-          <MetricPill label="Draft / hidden" value={draftCount} tone="muted" />
-        </div>
-      )}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard
+          label="Total listings"
+          value={services.length}
+          icon={LayoutGrid}
+          iconTheme="primary"
+          index={0}
+        />
+        <StatCard
+          label="Published"
+          value={activeCount}
+          sub="Visible on marketplace"
+          icon={Eye}
+          iconTheme="success"
+          index={1}
+        />
+        <StatCard
+          label="Draft / hidden"
+          value={draftCount}
+          sub="Not shown in search"
+          icon={EyeOff}
+          iconTheme="muted"
+          index={2}
+        />
+      </div>
 
       <SectionCard
         title="Service catalog"
@@ -172,36 +267,41 @@ export default function VendorServicesPage() {
           <SearchField
             value={search}
             onChange={setSearch}
-            placeholder="Search by name or category..."
+            placeholder="Search by name or category…"
             className="w-full sm:max-w-md"
           />
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-muted-foreground">
             {filteredServices.length} listing{filteredServices.length === 1 ? "" : "s"}
           </p>
         </div>
 
-        {loading ? (
-          <LoadingState label="Loading services..." />
+        {refreshing ? (
+          <p className="py-8 text-center text-sm text-muted-foreground">Refreshing catalog…</p>
         ) : filteredServices.length === 0 ? (
-          <EmptyState
-            title={services.length === 0 ? "No listings yet" : "No matching listings"}
-            description={
-              services.length === 0
-                ? "Create your first listing with photos, pricing, and highlights — couples discover you from search and your profile."
-                : "Try a different search term or clear the filter."
-            }
-            action={
-              services.length === 0 ? (
-                <Link
-                  href="/vendor/dashboard/services/new"
-                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white"
-                >
-                  <LayoutGrid size={18} />
-                  Create listing
-                </Link>
-              ) : undefined
-            }
-          />
+          <div className="space-y-2">
+            <EmptyState
+              title={services.length === 0 ? "No listings yet" : "No matching listings"}
+              description={
+                services.length === 0
+                  ? "Create your first listing with photos, pricing, and highlights — couples discover you from search and your profile."
+                  : "Try a different search term or clear the filter."
+              }
+              icon={Package}
+              action={
+                services.length === 0 ? (
+                  <Button href="/vendor/dashboard/services/new" variant="primary" size="sm">
+                    <LayoutGrid size={18} aria-hidden />
+                    Create listing
+                  </Button>
+                ) : (
+                  <Button type="button" variant="secondary" size="sm" onClick={() => setSearch("")}>
+                    Clear search
+                  </Button>
+                )
+              }
+            />
+            {services.length === 0 && <ListingPlaceholderPreview />}
+          </div>
         ) : (
           <TableShell>
             <DataTable>
@@ -218,11 +318,11 @@ export default function VendorServicesPage() {
                 {filteredServices.map((service) => {
                   const isUpdating = statusUpdatingId === service.id;
                   return (
-                    <tr key={service.id} className="group transition-colors hover:bg-slate-50/80">
+                    <tr key={service.id} className="group transition-colors hover:bg-muted/40">
                       <Td>
                         <div className="flex items-center gap-3">
                           {service.primaryImageUrl ? (
-                            <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
+                            <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-xl border border-border bg-muted">
                               <Image
                                 src={service.primaryImageUrl}
                                 alt=""
@@ -232,27 +332,29 @@ export default function VendorServicesPage() {
                               />
                             </div>
                           ) : (
-                            <IconCircle icon={Package} theme="primary" size={18} className="h-12 w-12" />
+                            <StatIcon icon={Package} theme="primary" className="!h-12 !w-12" />
                           )}
                           <div className="min-w-0">
-                            <p className="truncate font-semibold text-charcoal">{service.serviceName}</p>
+                            <p className="truncate font-semibold text-foreground">{service.serviceName}</p>
                             {service.tagline ? (
-                              <p className="mt-0.5 truncate text-xs text-slate-500">{service.tagline}</p>
+                              <p className="mt-0.5 truncate text-xs text-muted-foreground">{service.tagline}</p>
                             ) : (
-                              <p className="mt-0.5 text-xs text-slate-400">No headline</p>
+                              <p className="mt-0.5 text-xs text-muted-foreground/70">No headline</p>
                             )}
                           </div>
                         </div>
                       </Td>
                       <Td>
-                        <span className="inline-flex items-center gap-1.5 text-slate-600">
-                          <Tag size={14} className="text-slate-400" />
+                        <span className="inline-flex items-center gap-1.5 text-foreground">
+                          <Tag size={14} className="text-muted-foreground" aria-hidden />
                           {service.categoryName}
                         </span>
                       </Td>
                       <Td>
-                        <p className="font-semibold text-charcoal">{formatLKR(service.basePrice)}</p>
-                        <p className="text-xs capitalize text-slate-500">{service.pricingType.toLowerCase()}</p>
+                        <p className="font-semibold text-primary">{formatLKR(service.basePrice)}</p>
+                        <p className="text-xs capitalize text-muted-foreground">
+                          {service.pricingType.toLowerCase()}
+                        </p>
                       </Td>
                       <Td>
                         <div className="flex items-center gap-3">
@@ -261,7 +363,7 @@ export default function VendorServicesPage() {
                           ) : (
                             <ToggleSwitch
                               checked={service.isActive}
-                              onChange={() => handleToggleActive(service)}
+                              onChange={() => void handleToggleActive(service)}
                               disabled={isUpdating}
                               aria-label={
                                 service.isActive
@@ -272,7 +374,7 @@ export default function VendorServicesPage() {
                           )}
                           <div className="min-w-0">
                             <StatusBadge active={service.isActive} />
-                            <p className="mt-1 text-xs text-slate-500">
+                            <p className="mt-1 text-xs text-muted-foreground">
                               {service.isActive ? "Visible on marketplace" : "Hidden from search"}
                             </p>
                           </div>
@@ -290,7 +392,7 @@ export default function VendorServicesPage() {
                               {
                                 key: "toggle",
                                 label: service.isActive ? "Unpublish listing" : "Publish listing",
-                                onClick: () => handleToggleActive(service),
+                                onClick: () => void handleToggleActive(service),
                                 disabled: isUpdating,
                               },
                               {
@@ -312,10 +414,30 @@ export default function VendorServicesPage() {
         )}
       </SectionCard>
 
+      <SectionCard title="Listing tips" subtitle="Improve discovery on MyWedding.lk">
+        <ul className="grid gap-3 text-sm text-muted-foreground sm:grid-cols-3">
+          <li className={cn(vd.metaBox)}>
+            <span className="font-bold text-primary">Photos</span> — use a clear cover image; couples
+            browse visually first.
+          </li>
+          <li className={cn(vd.metaBox)}>
+            <span className="font-bold text-primary">Headline</span> — a short tagline helps you stand out
+            in search results.
+          </li>
+          <li className={cn(vd.metaBox)}>
+            <span className="font-bold text-primary">Publish</span> — only published listings appear in
+            marketplace search.
+          </li>
+        </ul>
+      </SectionCard>
+
       <DeleteConfirmationModal
         isOpen={deleteModalOpen}
-        onClose={() => setDeleteModalOpen(false)}
-        onConfirm={confirmDelete}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setDeleteError(null);
+        }}
+        onConfirm={() => void confirmDelete()}
         title="Delete listing?"
         message={
           deleteError ||

@@ -4,6 +4,9 @@ import React, { useState } from "react";
 import { useAuth } from "@/shared/context/AuthContext";
 import { sendInquiry } from "@/shared/lib/api/vendors";
 import { X, Send, MessageCircle } from "lucide-react";
+import { inputClass } from "@/shared/components/ui";
+import { cn } from "@/shared/lib/cn";
+import { pv } from "@/modules/vendors/public-theme";
 
 interface InquiryModalProps {
   isOpen: boolean;
@@ -46,26 +49,26 @@ const InquiryModal = ({ isOpen, onClose, vendorId, vendorName }: InquiryModalPro
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg overflow-hidden rounded-xl bg-white shadow-xl"
+        className={cn("w-full max-w-lg overflow-hidden shadow-xl", pv.card)}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-labelledby="inquiry-title"
       >
-        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+        <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <div className="flex items-center gap-2">
-            <MessageCircle size={20} className="text-primary" />
-            <h2 id="inquiry-title" className="text-lg font-semibold text-charcoal">
+            <MessageCircle size={20} className="text-primary" aria-hidden />
+            <h2 id="inquiry-title" className="text-lg font-semibold text-foreground">
               Message {vendorName}
             </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-charcoal"
+            className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
             aria-label="Close"
           >
             <X size={18} />
@@ -74,38 +77,38 @@ const InquiryModal = ({ isOpen, onClose, vendorId, vendorName }: InquiryModalPro
 
         {success ? (
           <div className="px-6 py-10 text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50">
-              <Send size={24} className="text-emerald-600" />
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-success/10">
+              <Send size={24} className="text-success" aria-hidden />
             </div>
-            <h3 className="text-lg font-semibold text-charcoal">Message sent</h3>
-            <p className="mt-2 text-sm text-slate-500">
+            <h3 className="text-lg font-semibold text-foreground">Message sent</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
               {vendorName} will reply to your registered email address.
             </p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="p-6">
-            <p className="mb-4 text-sm text-slate-600">
+            <p className="mb-4 text-sm text-muted-foreground">
               Ask about availability, packages, or pricing. Your message is sent securely through
               MyWedding.lk.
             </p>
-            <label className="mb-1.5 block text-sm font-semibold text-charcoal">Your message</label>
+            <label className={cn("mb-1.5 block", pv.label)}>Your message</label>
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Hi, I'm planning a wedding in [month] and interested in your services. Could you share availability and pricing?"
               rows={5}
               required
-              className="w-full resize-none rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+              className={cn(inputClass, "resize-none")}
             />
 
-            {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+            {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
 
             <button
               type="submit"
               disabled={isSubmitting || !message.trim()}
-              className="mt-5 w-full rounded-lg bg-primary py-3 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+              className={cn("mt-5 w-full", pv.primaryBtn)}
             >
-              {isSubmitting ? "Sending..." : "Send message"}
+              {isSubmitting ? "Sending…" : "Send message"}
             </button>
           </form>
         )}

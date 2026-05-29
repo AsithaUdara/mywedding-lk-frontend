@@ -1,11 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/shared/context/AuthContext';
-import { getEvents, type WeddingEventSummary } from '@/shared/lib/api/events';
-import { createBooking, createDepositCheckout } from '@/shared/lib/api/vendors';
-import { postComment } from '@/shared/lib/api/feed';
-import { X, ChevronDown, Calendar } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@/shared/context/AuthContext";
+import { getEvents, type WeddingEventSummary } from "@/shared/lib/api/events";
+import { createBooking, createDepositCheckout } from "@/shared/lib/api/vendors";
+import { submitPayHereCheckout } from "@/shared/lib/payhereCheckout";
+import { postComment } from "@/shared/lib/api/feed";
+import { X, ChevronDown, Calendar } from "lucide-react";
+import { formatLKR, inputClass } from "@/shared/components/ui";
+import { cn } from "@/shared/lib/cn";
+import { pv } from "@/modules/vendors/public-theme";
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -19,8 +23,8 @@ const BookingModal = ({ isOpen, onClose, vendorName, serviceId, price }: Booking
   const { user } = useAuth();
 
   const [bookableEvents, setBookableEvents] = useState<WeddingEventSummary[]>([]);
-  const [selectedEventId, setSelectedEventId] = useState('');
-  const [serviceDate, setServiceDate] = useState('');
+  const [selectedEventId, setSelectedEventId] = useState("");
+  const [serviceDate, setServiceDate] = useState("");
 
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -28,13 +32,13 @@ const BookingModal = ({ isOpen, onClose, vendorName, serviceId, price }: Booking
 
   useEffect(() => {
     if (isOpen) {
-      document.body.classList.add('modal-open');
+      document.body.classList.add("modal-open");
     } else {
-      document.body.classList.remove('modal-open');
+      document.body.classList.remove("modal-open");
     }
 
     return () => {
-      document.body.classList.remove('modal-open');
+      document.body.classList.remove("modal-open");
     };
   }, [isOpen]);
 
@@ -56,7 +60,7 @@ const BookingModal = ({ isOpen, onClose, vendorName, serviceId, price }: Booking
         if (canBook.length > 0) {
           setSelectedEventId(canBook[0].id);
         } else {
-          setSelectedEventId('');
+          setSelectedEventId("");
         }
       } catch {
         setError("Could not load your events.");
@@ -86,40 +90,25 @@ const BookingModal = ({ isOpen, onClose, vendorName, serviceId, price }: Booking
         serviceDate,
       });
 
-      const bookingId = (bookingResponse as { bookingId?: string; BookingId?: string }).bookingId
-        || (bookingResponse as { bookingId?: string; BookingId?: string }).BookingId;
+      const bookingId =
+        (bookingResponse as { bookingId?: string; BookingId?: string }).bookingId ||
+        (bookingResponse as { bookingId?: string; BookingId?: string }).BookingId;
       if (!bookingId) {
-        throw new Error('Booking created but booking ID was not returned by API.');
+        throw new Error("Booking created but booking ID was not returned by API.");
       }
 
       const checkout = await createDepositCheckout(token, bookingId);
-      const payload = checkout?.checkout;
-      if (payload?.checkoutUrl) {
-        const form = document.createElement("form");
-        form.method = "POST";
-        form.action = payload.checkoutUrl;
-        form.target = "_blank";
-
-        const toHidden = (name: string, value: unknown) => {
-          const input = document.createElement("input");
-          input.type = "hidden";
-          input.name = name;
-          input.value = String(value ?? "");
-          return input;
-        };
-
-        Object.entries(payload).forEach(([key, value]) => {
-          if (key === "checkoutUrl") return;
-          form.appendChild(toHidden(key, value));
-        });
-
-        document.body.appendChild(form);
-        form.submit();
-        form.remove();
+      const payload = checkout?.checkout as Record<string, unknown> | undefined;
+      if (payload) {
+        submitPayHereCheckout(payload);
       }
 
       try {
-        await postComment(token, selectedEventId, `Requested vendor service and started deposit checkout: "${vendorName}" for LKR ${price}`);
+        await postComment(
+          token,
+          selectedEventId,
+          `Requested vendor service and started deposit checkout: "${vendorName}" for LKR ${price}`
+        );
       } catch (feedError) {
         console.error("Failed to post to activity feed", feedError);
       }
@@ -128,7 +117,8 @@ const BookingModal = ({ isOpen, onClose, vendorName, serviceId, price }: Booking
         "Booking request created. PayHere checkout opened in a new tab — complete the deposit there to confirm. You can close this dialog when done."
       );
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred during booking.";
+      const errorMessage =
+        err instanceof Error ? err.message : "An unexpected error occurred during booking.";
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -136,20 +126,46 @@ const BookingModal = ({ isOpen, onClose, vendorName, serviceId, price }: Booking
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 modal-container" onClick={onClose}>
-      <div className="relative w-full max-w-lg p-8 rounded-xl shadow-2xl bg-cream max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-charcoal transition-colors"><X size={24} /></button>
-        <h2 className="text-3xl font-bold font-playfair text-charcoal text-center mb-2">Confirm Your Booking</h2>
-        <p className="text-center text-gray-600 mb-6">You are booking <span className="font-semibold">{vendorName}</span>.</p>
-        {error && <p className="text-red-600 bg-red-50 border border-red-200 p-3 rounded-lg text-center mb-4 text-sm">{error}</p>}
+    <div
+      className="modal-container fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className={cn(
+          "relative max-h-[85vh] w-full max-w-lg overflow-y-auto p-6 shadow-2xl sm:p-8",
+          pv.card
+        )}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-4 top-4 rounded-lg p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+          aria-label="Close"
+        >
+          <X size={22} />
+        </button>
+        <h2 className="mb-2 text-center font-playfair text-2xl font-bold text-foreground sm:text-3xl">
+          Confirm your booking
+        </h2>
+        <p className="mb-6 text-center text-sm text-muted-foreground">
+          You are booking <span className="font-semibold text-foreground">{vendorName}</span>.
+        </p>
+        {error && (
+          <p className="mb-4 rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-center text-sm text-destructive">
+            {error}
+          </p>
+        )}
         {success && (
-          <p className="text-green-800 bg-green-50 border border-green-200 p-3 rounded-lg text-center mb-4 text-sm">
+          <p className="mb-4 rounded-xl border border-success/20 bg-success/5 p-3 text-center text-sm text-success">
             {success}
           </p>
         )}
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="eventSelect" className="block text-sm font-medium text-charcoal mb-2">Select Your Event</label>
+            <label htmlFor="eventSelect" className={cn("mb-2 block", pv.label)}>
+              Select your event
+            </label>
             <div className="relative">
               {bookableEvents.length > 0 ? (
                 <>
@@ -159,25 +175,39 @@ const BookingModal = ({ isOpen, onClose, vendorName, serviceId, price }: Booking
                     onChange={(e) => setSelectedEventId(e.target.value)}
                     required
                     disabled={!!success}
-                    className="w-full appearance-none py-3 px-4 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent outline-none disabled:opacity-70"
+                    className={cn(inputClass, "appearance-none pr-10 disabled:opacity-70")}
                   >
                     {bookableEvents.map((event) => (
-                      <option key={event.id} value={event.id}>{event.eventName}</option>
+                      <option key={event.id} value={event.id}>
+                        {event.eventName}
+                      </option>
                     ))}
                   </select>
-                  <ChevronDown size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <ChevronDown
+                    size={18}
+                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    aria-hidden
+                  />
                 </>
               ) : (
-                <p className="text-sm text-gray-600 p-3 bg-white border rounded-lg">
-                  No events you can book for. Create an event on your dashboard, or ask the owner to give you <strong>Editor</strong> access (Viewers cannot book vendors).
+                <p className="rounded-xl border border-border bg-muted/50 p-3 text-sm text-muted-foreground">
+                  No events you can book for. Create an event on your dashboard, or ask the owner
+                  to give you <strong className="text-foreground">Editor</strong> access (Viewers
+                  cannot book vendors).
                 </p>
               )}
             </div>
           </div>
           <div>
-            <label htmlFor="serviceDate" className="block text-sm font-medium text-charcoal mb-2">Service Date</label>
+            <label htmlFor="serviceDate" className={cn("mb-2 block", pv.label)}>
+              Service date
+            </label>
             <div className="relative">
-              <Calendar size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Calendar
+                size={18}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
+                aria-hidden
+              />
               <input
                 id="serviceDate"
                 type="date"
@@ -185,31 +215,25 @@ const BookingModal = ({ isOpen, onClose, vendorName, serviceId, price }: Booking
                 onChange={(e) => setServiceDate(e.target.value)}
                 required
                 disabled={!!success}
-                className="w-full py-3 pl-12 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent outline-none disabled:opacity-70"
+                className={cn(inputClass, "pl-11 disabled:opacity-70")}
               />
             </div>
           </div>
-          <div className="pt-4 border-t border-gray-300/70 text-center">
-            <p className="text-sm text-gray-600">Total Amount</p>
-            <p className="text-3xl font-bold text-charcoal">LKR {price.toLocaleString()}</p>
+          <div className="border-t border-border pt-4 text-center">
+            <p className="text-sm text-muted-foreground">Total amount</p>
+            <p className="text-3xl font-bold text-primary">{formatLKR(price)}</p>
           </div>
           {success ? (
-            <button
-              type="button"
-              onClick={onClose}
-              className="w-full py-3 rounded-lg text-white font-semibold shadow-lg"
-              style={{ backgroundColor: 'var(--color-primary)' }}
-            >
+            <button type="button" onClick={onClose} className={cn("w-full", pv.primaryBtn)}>
               Close
             </button>
           ) : (
             <button
               type="submit"
               disabled={loading || bookableEvents.length === 0}
-              className="w-full py-3 rounded-lg text-white font-semibold shadow-lg transition-transform hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed"
-              style={{ backgroundColor: 'var(--color-primary)' }}
+              className={cn("w-full", pv.primaryBtn)}
             >
-              {loading ? 'Creating Request...' : 'Request & Pay Deposit'}
+              {loading ? "Creating request…" : "Request & pay deposit"}
             </button>
           )}
         </form>

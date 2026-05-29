@@ -1,24 +1,23 @@
-// src/features/vendor-discovery/components/VendorCard.tsx
 "use client";
 
-import React, { useState } from 'react';
-import Image from 'next/image';
-import { Star, Heart, ChevronLeft, ChevronRight } from 'lucide-react';
-import Link from 'next/link';
+import React, { useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { ChevronLeft, ChevronRight, Heart, Star } from "lucide-react";
+import { cn } from "@/shared/lib/cn";
 
 interface VendorCardProps {
   vendor: {
-    id: string | number;
+    id: string;
     name: string;
     category: string;
     location: string;
-    images: string[];
-    rating: number;
     price: number;
-    totalReviews?: number;
-    verificationStatus?: string;
-    premiumTier?: string;
-  }
+    rating: number;
+    totalReviews: number;
+    isVerified?: boolean;
+    images: string[];
+  };
 }
 
 const VendorCard = ({ vendor }: VendorCardProps) => {
@@ -37,57 +36,74 @@ const VendorCard = ({ vendor }: VendorCardProps) => {
   };
 
   return (
-    <Link href={`/vendor/${vendor.id}`}>
-      <div className="group cursor-pointer">
-        <div className="relative w-full aspect-square mb-2 overflow-hidden rounded-xl">
-          <button className="absolute top-3 right-3 z-10 p-1 rounded-full bg-black/20 hover:bg-black/50 transition">
-            <Heart size={24} className="text-white" fill="rgba(0,0,0,0.5)" strokeWidth={1}/>
+    <Link href={`/vendor/${vendor.id}`} className="group block">
+      <div className="cursor-pointer">
+        <div className="relative mb-2 aspect-square w-full overflow-hidden rounded-2xl border border-border bg-muted">
+          <button
+            type="button"
+            className="absolute right-3 top-3 z-10 rounded-full bg-foreground/20 p-1 transition hover:bg-foreground/40"
+            aria-label="Save to favorites"
+            onClick={(e) => e.preventDefault()}
+          >
+            <Heart size={22} className="text-primary-foreground" strokeWidth={1.5} />
           </button>
-          
-          {/* Modern Next.js Image Syntax */}
+
           <Image
             src={vendor.images[currentImage]}
             alt={vendor.name}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            style={{ objectFit: 'cover' }}
-            className="transition-transform duration-300 group-hover:scale-105"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
 
-          <div className="absolute top-1/2 -translate-y-12 w-full flex justify-between px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <button onClick={prevImage} className="bg-white/80 hover:bg-white rounded-full p-1.5 shadow-md">
-                  <ChevronLeft size={18} />
+          {vendor.images.length > 1 && (
+            <div className="absolute top-1/2 flex w-full -translate-y-1/2 justify-between px-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+              <button
+                type="button"
+                onClick={prevImage}
+                className="rounded-full bg-card/90 p-1.5 shadow-md hover:bg-card"
+              >
+                <ChevronLeft size={18} />
               </button>
-              <button onClick={nextImage} className="bg-white/80 hover:bg-white rounded-full p-1.5 shadow-md">
-                  <ChevronRight size={18} />
+              <button
+                type="button"
+                onClick={nextImage}
+                className="rounded-full bg-card/90 p-1.5 shadow-md hover:bg-card"
+              >
+                <ChevronRight size={18} />
               </button>
+            </div>
+          )}
+        </div>
+        <div className="mt-1 flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <h3 className="truncate text-base font-semibold text-foreground">{vendor.name}</h3>
+              {vendor.isVerified && (
+                <span className="inline-flex rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-success">
+                  Verified
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {vendor.category} · {vendor.location}
+            </p>
+            {vendor.totalReviews > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {vendor.totalReviews} review{vendor.totalReviews === 1 ? "" : "s"}
+              </p>
+            )}
+          </div>
+          <div className="flex shrink-0 items-center gap-0.5 text-sm">
+            <Star size={14} className="fill-accent text-accent" aria-hidden />
+            <span className="font-semibold text-foreground">{vendor.rating.toFixed(1)}</span>
           </div>
         </div>
-        <div className="flex justify-between items-start mt-1">
-          <div>
-            <h3 className="font-semibold text-md">{vendor.name}</h3>
-            {vendor.verificationStatus === 'Verified' && (
-              <span className="mt-1 mr-2 inline-flex rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
-                Verified
-              </span>
-            )}
-            {vendor.premiumTier && vendor.premiumTier !== 'Free' && (
-              <span className="mt-1 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-bold text-primary">
-                {vendor.premiumTier}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center space-x-1 flex-shrink-0">
-            <Star size={14} fill="black" strokeWidth={0}/>
-            <span className="text-sm">{vendor.rating.toFixed(1)}</span>
-          </div>
-        </div>
-        <p className="text-gray-500 text-sm">{vendor.category} in {vendor.location}</p>
-        {typeof vendor.totalReviews === 'number' && (
-          <p className="text-gray-400 text-xs">{vendor.totalReviews} review{vendor.totalReviews === 1 ? '' : 's'}</p>
-        )}
-        <p className="mt-1">
-          <span className="font-semibold">LKR {vendor.price.toLocaleString()}</span> / event
+        <p className="mt-1 text-sm">
+          <span className="font-semibold text-foreground">
+            LKR {vendor.price.toLocaleString()}
+          </span>
+          <span className="text-muted-foreground"> starting</span>
         </p>
       </div>
     </Link>

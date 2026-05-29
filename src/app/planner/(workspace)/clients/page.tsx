@@ -1,7 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowRight, CalendarClock, CircleDollarSign, GripVertical, UserRoundPlus, Users } from "lucide-react";
+import {
+  ArrowRight,
+  CalendarClock,
+  CircleDollarSign,
+  GripVertical,
+  UserRoundPlus,
+  Users,
+} from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
 import {
   EventLifecycleStage,
@@ -9,7 +17,17 @@ import {
   PlannerEventListItem,
   updatePlannerEventStage,
 } from "@/shared/lib/api/planner";
-import { ErrorBanner, LoadingState } from "@/modules/planner/components/ui";
+import { ErrorBanner } from "@/modules/planner/components/ui";
+import {
+  Badge,
+  Button,
+  EmptyState,
+  PageHeader,
+  PageLoadingSkeleton,
+  StatCard,
+  formatLKR,
+} from "@/shared/components/ui";
+import { cn } from "@/shared/lib/cn";
 
 type ClientCard = {
   id: string;
@@ -25,10 +43,18 @@ type ClientCard = {
 
 const STAGES: EventLifecycleStage[] = ["Lead", "Onboarding", "Planning", "Execution", "Archived"];
 
-const priorityStyles: Record<ClientCard["priority"], string> = {
-  High: "bg-orange-100 text-orange-700",
-  Medium: "bg-fuchsia-100 text-fuchsia-700",
-  Low: "bg-emerald-100 text-emerald-700",
+const STAGE_ACCENT: Record<EventLifecycleStage, string> = {
+  Lead: "border-t-muted-foreground/40",
+  Onboarding: "border-t-warning",
+  Planning: "border-t-accent",
+  Execution: "border-t-primary",
+  Archived: "border-t-border",
+};
+
+const priorityVariant: Record<ClientCard["priority"], "default" | "accent" | "muted"> = {
+  High: "default",
+  Medium: "accent",
+  Low: "muted",
 };
 
 function completionForStage(stage: EventLifecycleStage): number {
@@ -136,140 +162,160 @@ export default function PlannerClientsPage() {
   };
 
   if (loading) {
-    return <LoadingState label="Loading client pipeline…" />;
+    return <PageLoadingSkeleton />;
   }
 
   return (
-    <section className="space-y-6">
+    <div className="space-y-8 pb-4">
       {error && <ErrorBanner message={error} />}
 
-      <div className="rounded-[1.5rem] bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Planner CRM Board</p>
-            <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">Clients Pipeline</h1>
-            <p className="mt-1 text-sm text-slate-500">Drag and drop each client event through lifecycle stages.</p>
-          </div>
-          <button className="inline-flex items-center gap-2 rounded-full bg-[#111111] px-6 py-2.5 text-sm font-medium text-white transition hover:bg-black">
-            <UserRoundPlus size={16} />
-            Add New Lead
-          </button>
-        </div>
+      <PageHeader
+        title="Clients pipeline"
+        description="Drag and drop each client event through lifecycle stages — from lead to archived."
+        badge="CRM"
+        action={
+          <Button href="/planner/events" size="sm">
+            <UserRoundPlus size={16} aria-hidden />
+            Add new lead
+          </Button>
+        }
+      />
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <StatCard
+          label="Managed clients"
+          value={clients.length}
+          icon={Users}
+          iconTheme="primary"
+          index={0}
+        />
+        <StatCard
+          label="Pipeline value"
+          value={formatLKR(totalValue)}
+          icon={CircleDollarSign}
+          iconTheme="accent"
+          index={1}
+        />
+        <StatCard
+          label="Active / progress"
+          value={`${activeCount} · ${weightedProgress}%`}
+          icon={CalendarClock}
+          iconTheme="success"
+          index={2}
+        />
       </div>
 
-      <div className="grid grid-cols-12 gap-6">
-        <article className="col-span-12 rounded-[1.5rem] bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] md:col-span-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-50 text-indigo-500">
-              <Users size={18} />
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Managed Clients</p>
-              <p className="text-2xl font-bold tracking-tight text-slate-900">{clients.length}</p>
-            </div>
-          </div>
-        </article>
-        <article className="col-span-12 rounded-[1.5rem] bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] md:col-span-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100 text-orange-700">
-              <CircleDollarSign size={18} />
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Pipeline Value</p>
-              <p className="text-2xl font-bold tracking-tight text-slate-900">
-                LKR {totalValue.toLocaleString("en-LK")}
-              </p>
-            </div>
-          </div>
-        </article>
-        <article className="col-span-12 rounded-[1.5rem] bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] md:col-span-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-              <CalendarClock size={18} />
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Active / Progress</p>
-              <p className="text-2xl font-bold tracking-tight text-slate-900">
-                {activeCount} · {weightedProgress}%
-              </p>
-            </div>
-          </div>
-        </article>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
-        {STAGES.map((stage) => {
-          const stageItems = clients.filter((client) => client.stage === stage);
-          return (
-            <section
-              key={stage}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                const cardId = e.dataTransfer.getData("text/plain");
-                if (cardId) void moveCard(cardId, stage);
-                setDraggingId(null);
-              }}
-              className="rounded-[1.5rem] border border-slate-200/70 bg-white/95 p-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)]"
-            >
-              <div className="mb-4 flex items-center justify-between">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">{stage}</p>
-                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
-                  {stageItems.length}
-                </span>
-              </div>
-
-              <div className="space-y-3">
-                {stageItems.length === 0 && (
-                  <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 px-3 py-5 text-center text-xs text-slate-400">
-                    Drop client here
-                  </div>
+      {clients.length === 0 ? (
+        <EmptyState
+          title="No clients in your pipeline"
+          description="Create a client event to start tracking lifecycle stages."
+          action={
+            <Button href="/planner/events" size="sm">
+              Create first event
+            </Button>
+          }
+        />
+      ) : (
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
+          {STAGES.map((stage) => {
+            const stageItems = clients.filter((client) => client.stage === stage);
+            return (
+              <section
+                key={stage}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  const cardId = e.dataTransfer.getData("text/plain");
+                  if (cardId) void moveCard(cardId, stage);
+                  setDraggingId(null);
+                }}
+                className={cn(
+                  "rounded-3xl border border-border bg-card p-4 shadow-sm",
+                  "border-t-4",
+                  STAGE_ACCENT[stage]
                 )}
-                {stageItems.map((client) => (
-                  <article
-                    key={client.id}
-                    draggable={savingId !== client.id}
-                    onDragStart={(e) => {
-                      e.dataTransfer.setData("text/plain", client.id);
-                      setDraggingId(client.id);
-                    }}
-                    onDragEnd={() => setDraggingId(null)}
-                    className={`cursor-grab rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_8px_24px_rgb(0,0,0,0.04)] transition active:cursor-grabbing ${
-                      draggingId === client.id || savingId === client.id ? "opacity-60" : "opacity-100"
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold tracking-tight text-slate-900">{client.title}</p>
-                        <p className="truncate text-xs text-slate-500">{client.couple}</p>
+              >
+                <div className="mb-4 flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    {stage}
+                  </p>
+                  <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold tabular-nums text-primary">
+                    {stageItems.length}
+                  </span>
+                </div>
+
+                <div className="space-y-3 min-h-[120px]">
+                  {stageItems.length === 0 && (
+                    <div className="rounded-2xl border border-dashed border-border bg-muted/40 px-3 py-8 text-center text-xs text-muted-foreground">
+                      Drop client here
+                    </div>
+                  )}
+                  {stageItems.map((client) => (
+                    <article
+                      key={client.id}
+                      draggable={savingId !== client.id}
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData("text/plain", client.id);
+                        setDraggingId(client.id);
+                      }}
+                      onDragEnd={() => setDraggingId(null)}
+                      className={cn(
+                        "cursor-grab rounded-2xl border border-border bg-background p-4 shadow-sm transition-all duration-200",
+                        "active:cursor-grabbing hover:border-primary/25 hover:shadow-md",
+                        (draggingId === client.id || savingId === client.id) && "opacity-60"
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-foreground">{client.title}</p>
+                          <p className="truncate text-xs text-muted-foreground">{client.couple}</p>
+                        </div>
+                        <GripVertical
+                          size={14}
+                          className="mt-0.5 shrink-0 text-muted-foreground"
+                          aria-hidden
+                        />
                       </div>
-                      <GripVertical size={14} className="mt-0.5 flex-shrink-0 text-slate-300" />
-                    </div>
-                    <p className="mt-2 truncate text-[11px] text-slate-400">{client.email}</p>
-                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
-                      <div
-                        className="h-full rounded-full bg-slate-900"
-                        style={{ width: `${Math.max(client.completion, 8)}%` }}
-                      />
-                    </div>
-                    <div className="mt-3 flex items-center justify-between">
-                      <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${priorityStyles[client.priority]}`}>
-                        {client.priority}
-                      </span>
-                      <span className="text-[11px] font-medium text-slate-500">{client.completion}%</span>
-                    </div>
-                    <div className="mt-3 flex items-center justify-between text-[11px] text-slate-500">
-                      <span>{new Date(client.weddingDate).toLocaleDateString()}</span>
-                      <span className="inline-flex items-center gap-1">
-                        Open <ArrowRight size={12} />
-                      </span>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </section>
-          );
-        })}
-      </div>
-    </section>
+                      <p className="mt-2 truncate text-[11px] text-muted-foreground">{client.email}</p>
+                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full rounded-full bg-primary transition-all duration-300"
+                          style={{ width: `${Math.max(client.completion, 8)}%` }}
+                          role="progressbar"
+                          aria-valuenow={client.completion}
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                        />
+                      </div>
+                      <div className="mt-3 flex items-center justify-between">
+                        <Badge variant={priorityVariant[client.priority]}>{client.priority}</Badge>
+                        <span className="text-[11px] font-medium tabular-nums text-muted-foreground">
+                          {client.completion}%
+                        </span>
+                      </div>
+                      <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground">
+                        <span>
+                          {new Date(client.weddingDate).toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </span>
+                        <Link
+                          href={`/events/${client.id}`}
+                          className="inline-flex items-center gap-0.5 font-semibold text-primary hover:underline"
+                        >
+                          Open
+                          <ArrowRight size={12} aria-hidden />
+                        </Link>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }

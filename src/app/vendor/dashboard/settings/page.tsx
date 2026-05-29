@@ -16,21 +16,42 @@ import {
   VENDOR_TIER_PRICING,
   VendorTier,
 } from "@/modules/vendor/billing/constants";
-import { Check, CreditCard, Crown, Shield, Star, Zap } from "lucide-react";
+import { Check, CreditCard, Crown, RefreshCw, Shield, Star, Zap } from "lucide-react";
 import {
+  Badge,
+  Button,
   ErrorBanner,
-  IconCircle,
-  LoadingState,
+  formatLKR,
   PageHeader,
+  PageLoadingSkeleton,
   SectionCard,
+  StatCard,
+  StatIcon,
   SuccessBanner,
+  inputClass,
 } from "@/modules/vendor/dashboard/ui";
+import { cn } from "@/shared/lib/cn";
+import { vd } from "@/modules/vendor/dashboard/vendor-dashboard-theme";
 
 function detectBrand(cardNumber: string): string {
   const n = cardNumber.replace(/\s/g, "");
   if (n.startsWith("4")) return "Visa";
   if (/^5[1-5]/.test(n) || /^2[2-7]/.test(n)) return "Mastercard";
   return "Card";
+}
+
+const TIERS: VendorTier[] = ["Free", "Featured", "Sponsored"];
+
+function tierIcon(item: VendorTier) {
+  if (item === "Free") return Zap;
+  if (item === "Featured") return Star;
+  return Crown;
+}
+
+function tierTheme(item: VendorTier): "muted" | "primary" | "accent" {
+  if (item === "Free") return "muted";
+  if (item === "Featured") return "primary";
+  return "accent";
 }
 
 export default function VendorSettingsPage() {
@@ -56,6 +77,7 @@ export default function VendorSettingsPage() {
     if (!user) return;
     try {
       setLoading(true);
+      setError(null);
       const token = await user.getIdToken();
       const [sub, profile] = await Promise.all([
         getVendorSubscription(token),
@@ -76,13 +98,13 @@ export default function VendorSettingsPage() {
   }, [user]);
 
   useEffect(() => {
-    load();
+    void load();
   }, [load]);
 
   useEffect(() => {
     if (paymentReturn === "success") {
       setMessage("Payment received. Your plan will activate shortly after confirmation.");
-      load();
+      void load();
     } else if (paymentReturn === "cancelled") {
       setError("Payment was cancelled. Your plan was not changed.");
     }
@@ -162,79 +184,95 @@ export default function VendorSettingsPage() {
     }
   };
 
-  const tierIconTheme = (item: VendorTier): "slate" | "primary" | "gold" => {
-    if (item === "Free") return "slate";
-    if (item === "Featured") return "primary";
-    return "gold";
-  };
-
-  const tierIcon = (item: VendorTier) => {
-    if (item === "Free") return Zap;
-    if (item === "Featured") return Star;
-    return Crown;
-  };
+  if (loading) {
+    return <PageLoadingSkeleton />;
+  }
 
   return (
-    <section className="space-y-8">
+    <section className="space-y-8 pb-4">
       <PageHeader
-        title="Plan & Billing"
+        title="Plan & billing"
         description="Compare visibility tiers, add a card for monthly billing, and pay securely via PayHere."
-        badge={tier}
+        badge="Account"
+        action={
+          <div className="flex items-center gap-2">
+            <Badge variant="accent">{tier}</Badge>
+            <Button type="button" variant="secondary" size="sm" onClick={() => void load()}>
+              <RefreshCw size={16} aria-hidden />
+              Refresh
+            </Button>
+          </div>
+        }
       />
 
       {error && <ErrorBanner message={error} />}
       {message && <SuccessBanner message={message} />}
 
-      <SectionCard title="Visibility tiers" subtitle="What you get with each plan">
-        {loading ? (
-          <LoadingState label="Loading your current plan..." />
-        ) : (
-          <div className="grid gap-4 lg:grid-cols-3">
-            {(["Free", "Featured", "Sponsored"] as VendorTier[]).map((item) => (
-              <label
-                key={item}
-                className={`flex cursor-pointer flex-col rounded-2xl border p-5 transition ${
-                  tier === item
-                    ? "border-primary bg-primary/5 shadow-md ring-1 ring-primary/20"
-                    : "border-slate-200 hover:border-slate-300"
-                }`}
-              >
-                <div className="mb-4 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <IconCircle icon={tierIcon(item)} theme={tierIconTheme(item)} size={18} />
-                    <p className="font-bold text-charcoal">{item}</p>
-                  </div>
-                  <input
-                    type="radio"
-                    name="tier"
-                    checked={tier === item}
-                    onChange={() => setTier(item)}
-                  />
-                </div>
-                <p className="text-2xl font-bold text-primary">
-                  LKR {VENDOR_TIER_PRICING[item].toLocaleString()}
-                  <span className="text-sm font-normal text-slate-500">/mo</span>
-                </p>
-                <ul className="mt-4 flex-1 space-y-2">
-                  {VENDOR_TIER_FEATURES[item].map((feature) => (
-                    <li key={feature} className="flex items-start gap-2 text-sm text-slate-600">
-                      <Check size={14} className="mt-0.5 flex-shrink-0 text-emerald-600" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </label>
-            ))}
-          </div>
-        )}
+      <div className="grid gap-4 sm:grid-cols-3">
+        {TIERS.map((item, index) => (
+          <StatCard
+            key={item}
+            label={`${item} plan`}
+            value={formatLKR(VENDOR_TIER_PRICING[item])}
+            sub={item === tier ? "Current plan" : "per month"}
+            icon={tierIcon(item)}
+            iconTheme={tierTheme(item)}
+            index={index}
+          />
+        ))}
+      </div>
 
-        <button
-          onClick={savePlan}
-          disabled={saving || loading}
-          className="mt-6 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+      <SectionCard title="Visibility tiers" subtitle="Choose how prominently you appear in search">
+        <div className="grid gap-4 lg:grid-cols-3">
+          {TIERS.map((item) => (
+            <label
+              key={item}
+              className={cn(
+                "flex cursor-pointer flex-col rounded-3xl border p-5 transition-shadow",
+                tier === item
+                  ? "border-primary bg-primary/5 shadow-md ring-1 ring-primary/20"
+                  : "border-border bg-card hover:border-primary/30"
+              )}
+            >
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <StatIcon icon={tierIcon(item)} theme={tierTheme(item)} size={18} />
+                  <p className="font-bold text-foreground">{item}</p>
+                </div>
+                <input
+                  type="radio"
+                  name="tier"
+                  checked={tier === item}
+                  onChange={() => setTier(item)}
+                  className="h-4 w-4 accent-primary"
+                />
+              </div>
+              <p className="text-2xl font-bold text-primary">
+                {formatLKR(VENDOR_TIER_PRICING[item])}
+                <span className="text-sm font-normal text-muted-foreground">/mo</span>
+              </p>
+              <ul className="mt-4 flex-1 space-y-2">
+                {VENDOR_TIER_FEATURES[item].map((feature) => (
+                  <li key={feature} className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <Check size={14} className="mt-0.5 flex-shrink-0 text-success" aria-hidden />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </label>
+          ))}
+        </div>
+
+        <Button
+          type="button"
+          variant="primary"
+          size="md"
+          className="mt-6"
+          onClick={() => void savePlan()}
+          disabled={saving}
         >
-          {saving ? "Processing..." : tier === "Free" ? "Save plan" : "Save plan & pay via PayHere"}
-        </button>
+          {saving ? "Processing…" : tier === "Free" ? "Save plan" : "Save plan & pay via PayHere"}
+        </Button>
       </SectionCard>
 
       <SectionCard
@@ -242,9 +280,9 @@ export default function VendorSettingsPage() {
         subtitle="Visa, Mastercard, and other cards via PayHere — we never store full card numbers"
       >
         {hasPaymentMethod && savedLast4 && (
-          <div className="mb-5 flex items-center gap-3 rounded-xl border border-gray-100 bg-white px-4 py-3 text-sm text-charcoal shadow-sm">
-            <IconCircle icon={CreditCard} theme="green" size={18} className="h-10 w-10" />
-            <span>
+          <div className={cn("mb-5 flex items-center gap-3", vd.metaBox)}>
+            <StatIcon icon={CreditCard} theme="success" size={18} className="!h-10 !w-10" />
+            <span className="text-sm text-foreground">
               {savedBrand ?? "Card"} ending in <strong>{savedLast4}</strong> on file
             </span>
           </div>
@@ -252,64 +290,77 @@ export default function VendorSettingsPage() {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <label className="mb-1 block text-xs font-semibold text-slate-500">Cardholder name</label>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Cardholder name
+            </label>
             <input
               value={cardholderName}
               onChange={(e) => setCardholderName(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+              className={inputClass}
               placeholder="Name on card"
             />
           </div>
           <div className="sm:col-span-2">
-            <label className="mb-1 block text-xs font-semibold text-slate-500">Card number</label>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Card number
+            </label>
             <input
               value={cardNumber}
               onChange={(e) => setCardNumber(e.target.value.replace(/[^\d\s]/g, "").slice(0, 19))}
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+              className={inputClass}
               placeholder="4242 4242 4242 4242"
               inputMode="numeric"
               autoComplete="cc-number"
             />
-            <p className="mt-1 text-[11px] text-slate-400">
+            <p className="mt-1 text-[11px] text-muted-foreground">
               Used only in your browser to detect brand; only the last 4 digits are sent to our servers.
             </p>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-semibold text-slate-500">Expiry</label>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Expiry
+            </label>
             <input
               value={expiry}
               onChange={(e) => setExpiry(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+              className={inputClass}
               placeholder="MM/YY"
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-semibold text-slate-500">CVV</label>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              CVV
+            </label>
             <input
               value={cvv}
               onChange={(e) => setCvv(e.target.value.replace(/\D/g, "").slice(0, 4))}
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+              className={inputClass}
               placeholder="123"
               type="password"
               autoComplete="cc-csc"
             />
-            <p className="mt-1 text-[11px] text-slate-400">CVV is never stored.</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">CVV is never stored.</p>
           </div>
         </div>
 
-        <div className="mt-4 flex items-start gap-3 rounded-xl border border-gray-100 bg-white px-4 py-3 text-xs text-slate-600 shadow-sm">
-          <IconCircle icon={Shield} theme="primary" size={16} className="h-9 w-9" />
-          Monthly charges for Featured/Sponsored plans are collected through PayHere. Card details are tokenized
-          by the gateway; MyWeddingLK stores masked metadata only.
+        <div className={cn("mt-4 flex items-start gap-3", vd.metaBox)}>
+          <StatIcon icon={Shield} theme="primary" size={16} className="!h-9 !w-9 flex-shrink-0" />
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            Monthly charges for Featured and Sponsored plans are collected through PayHere. Card details are
+            tokenized by the gateway; MyWedding.lk stores masked metadata only.
+          </p>
         </div>
 
-        <button
-          onClick={savePaymentMethod}
+        <Button
+          type="button"
+          variant="secondary"
+          size="md"
+          className="mt-5"
+          onClick={() => void savePaymentMethod()}
           disabled={saving}
-          className="mt-5 rounded-xl border border-primary/30 bg-white px-5 py-2.5 text-sm font-semibold text-primary transition hover:bg-primary/5 disabled:opacity-60"
         >
-          {saving ? "Saving..." : "Save payment method"}
-        </button>
+          {saving ? "Saving…" : "Save payment method"}
+        </Button>
       </SectionCard>
     </section>
   );

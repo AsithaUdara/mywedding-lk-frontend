@@ -31,7 +31,8 @@ import {
   DEFAULT_INCLUDED_SUGGESTIONS,
 } from "@/shared/lib/serviceListingDetails";
 import { parseListingDetails } from "@/shared/lib/serviceListingDetails";
-import { ErrorBanner, formatLKR } from "@/modules/vendor/dashboard/ui";
+import { Button, ErrorBanner, formatLKR, PageLoadingSkeleton } from "@/modules/vendor/dashboard/ui";
+import { cn } from "@/shared/lib/cn";
 import ListingPreviewPanel from "./ListingPreviewPanel";
 import { saveServiceListing } from "./saveServiceListing";
 import {
@@ -275,8 +276,8 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
 
   if (loading) {
     return (
-      <div className="listing-editor-page flex min-h-[60vh] items-center justify-center font-roboto text-charcoal/60">
-        Loading your listing...
+      <div className="listing-editor-page p-8">
+        <PageLoadingSkeleton />
       </div>
     );
   }
@@ -287,7 +288,7 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 md:px-8">
           <Link
             href="/vendor/dashboard/services"
-            className="inline-flex items-center gap-2 rounded-lg px-2 py-1 text-sm font-semibold text-charcoal/80 transition hover:bg-primary/5 hover:text-primary"
+            className="inline-flex items-center gap-2 rounded-lg px-2 py-1 text-sm font-semibold text-muted-foreground transition hover:bg-primary/5 hover:text-primary"
           >
             <ArrowLeft size={18} />
             Exit
@@ -296,26 +297,28 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/70">
               Step {stepIndex + 1} of {LISTING_STEPS.length}
             </p>
-            <p className="font-playfair text-lg font-bold text-charcoal">{currentStepMeta.label}</p>
+            <p className="font-playfair text-lg font-bold text-foreground">{currentStepMeta.label}</p>
           </div>
           <div className="flex items-center gap-2">
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               disabled={saving}
-              onClick={() => handlePublish(false)}
-              className="rounded-xl border border-primary/20 bg-cream px-4 py-2 text-sm font-bold text-charcoal transition hover:border-primary/40 hover:bg-accent-light/40 disabled:opacity-50"
+              onClick={() => void handlePublish(false)}
             >
               Save draft
-            </button>
+            </Button>
             {step === "review" && (
-              <button
+              <Button
                 type="button"
+                variant="primary"
+                size="sm"
                 disabled={saving}
-                onClick={() => handlePublish(true)}
-                className="rounded-xl bg-primary px-5 py-2 text-sm font-bold text-white shadow-lg shadow-primary/20 disabled:opacity-50"
+                onClick={() => void handlePublish(true)}
               >
-                {saving ? "Publishing..." : "Publish listing"}
-              </button>
+                {saving ? "Publishing…" : "Publish listing"}
+              </Button>
             )}
           </div>
         </div>
@@ -351,15 +354,15 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
           <div className="listing-editor-card p-6 md:p-10">
             <div className="mb-8 border-b border-primary/10 pb-6">
               <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-accent">MyWedding.lk listing</p>
-              <h1 className="mt-2 font-playfair text-3xl font-bold text-charcoal">{currentStepMeta.label}</h1>
-              <p className="mt-2 text-charcoal/70">{currentStepMeta.description}</p>
+              <h1 className="mt-2 font-playfair text-3xl font-bold text-foreground">{currentStepMeta.label}</h1>
+              <p className="mt-2 text-muted-foreground">{currentStepMeta.description}</p>
             </div>
 
             {step === "photos" && (
               <div className="space-y-8">
                 <section>
-                  <h2 className="mb-2 text-lg font-bold text-charcoal">Cover photo</h2>
-                  <p className="mb-4 text-sm text-charcoal/70">
+                  <h2 className="mb-2 text-lg font-bold text-foreground">Cover photo</h2>
+                  <p className="mb-4 text-sm text-foreground/70">
                     This is the first image couples see — like the hero photo on Airbnb.
                   </p>
                   <div className="flex flex-wrap gap-4">
@@ -385,7 +388,7 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
                       </div>
                     )}
                     {!hasPrimaryImage && (
-                      <label className="listing-editor-upload-zone flex aspect-[4/3] w-full max-w-md cursor-pointer flex-col items-center justify-center rounded-2xl text-charcoal/70">
+                      <label className="listing-editor-upload-zone flex aspect-[4/3] w-full max-w-md cursor-pointer flex-col items-center justify-center rounded-2xl text-foreground/70">
                         <Upload size={32} className="mb-2" />
                         <span className="font-semibold">Upload cover photo</span>
                         <span className="mt-1 text-xs">JPEG, PNG or WebP · max 5 MB</span>
@@ -401,8 +404,8 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
                 </section>
 
                 <section>
-                  <h2 className="mb-2 text-lg font-bold text-charcoal">Photo gallery</h2>
-                  <p className="mb-4 text-sm text-charcoal/70">
+                  <h2 className="mb-2 text-lg font-bold text-foreground">Photo gallery</h2>
+                  <p className="mb-4 text-sm text-foreground/70">
                     Add 3–10 photos showing your work, setup, and results. More photos build trust.
                   </p>
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
@@ -443,7 +446,7 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
                         </button>
                       </div>
                     ))}
-                    <label className="listing-editor-upload-zone flex aspect-square cursor-pointer flex-col items-center justify-center rounded-xl text-charcoal/60 hover:text-primary">
+                    <label className="listing-editor-upload-zone flex aspect-square cursor-pointer flex-col items-center justify-center rounded-xl text-foreground/60 hover:text-primary">
                       <Plus size={24} />
                       <span className="mt-1 text-xs font-semibold">Add photos</span>
                       <input
@@ -462,7 +465,7 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
             {step === "basics" && (
               <div className="space-y-6">
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-charcoal">Service name</label>
+                  <label className="mb-2 block text-sm font-bold text-foreground">Service name</label>
                   <input
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -471,7 +474,7 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
                   />
                 </div>
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-charcoal">
+                  <label className="mb-2 block text-sm font-bold text-foreground">
                     Headline for couples
                   </label>
                   <input
@@ -480,10 +483,10 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
                     placeholder="e.g. Candid storytelling with cinematic edits"
                     className="listing-editor-input w-full rounded-xl px-4 py-3"
                   />
-                  <p className="mt-1 text-xs text-charcoal/55">One line that appears under your title on the listing.</p>
+                  <p className="mt-1 text-xs text-foreground/55">One line that appears under your title on the listing.</p>
                 </div>
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-charcoal">Category</label>
+                  <label className="mb-2 block text-sm font-bold text-foreground">Category</label>
                   <select
                     value={form.categoryId}
                     onChange={(e) => {
@@ -511,7 +514,7 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
               <div className="space-y-8">
                 <div className="grid gap-6 md:grid-cols-2">
                   <div>
-                    <label className="mb-2 block text-sm font-bold text-charcoal">Starting price (LKR)</label>
+                    <label className="mb-2 block text-sm font-bold text-foreground">Starting price (LKR)</label>
                     <input
                       type="number"
                       value={form.basePrice}
@@ -520,7 +523,7 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
                     />
                   </div>
                   <div>
-                    <label className="mb-2 block text-sm font-bold text-charcoal">Price unit</label>
+                    <label className="mb-2 block text-sm font-bold text-foreground">Price unit</label>
                     <select
                       value={form.pricingType}
                       onChange={(e) => setForm({ ...form, pricingType: e.target.value })}
@@ -535,8 +538,8 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
                 </div>
 
                 <div>
-                  <h3 className="mb-2 text-lg font-bold text-charcoal">What&apos;s included</h3>
-                  <p className="mb-4 text-sm text-charcoal/70">
+                  <h3 className="mb-2 text-lg font-bold text-foreground">What&apos;s included</h3>
+                  <p className="mb-4 text-sm text-foreground/70">
                     List everything couples get — transparency reduces back-and-forth.
                   </p>
                   <div className="mb-3 flex flex-wrap gap-2">
@@ -574,11 +577,11 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
                         className="listing-editor-surface-muted flex items-center justify-between rounded-xl px-4 py-2 text-sm"
                       >
                         <span className="flex items-center gap-2">
-                          <Check size={14} className="text-emerald-700" />
+                          <Check size={14} className="text-success" />
                           {item}
                         </span>
                         <button type="button" onClick={() => removeChipItem("includedItems", index)}>
-                          <X size={14} className="text-charcoal/40" />
+                          <X size={14} className="text-foreground/40" />
                         </button>
                       </li>
                     ))}
@@ -591,7 +594,7 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
               <div className="space-y-8">
                 <div className="grid gap-6 md:grid-cols-2">
                   <div>
-                    <label className="mb-2 flex items-center gap-2 text-sm font-bold text-charcoal">
+                    <label className="mb-2 flex items-center gap-2 text-sm font-bold text-foreground">
                       <Clock size={16} /> Duration / coverage
                     </label>
                     <input
@@ -607,7 +610,7 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
                     />
                   </div>
                   <div>
-                    <label className="mb-2 flex items-center gap-2 text-sm font-bold text-charcoal">
+                    <label className="mb-2 flex items-center gap-2 text-sm font-bold text-foreground">
                       <Users size={16} /> Capacity
                     </label>
                     <input
@@ -625,7 +628,7 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-charcoal">About this service</label>
+                  <label className="mb-2 block text-sm font-bold text-foreground">About this service</label>
                   <textarea
                     rows={8}
                     value={form.description}
@@ -636,7 +639,7 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
                     placeholder="Describe your style, process, deliverables, and what makes your offering unique for Sri Lankan weddings..."
                     className={`listing-editor-input w-full rounded-xl px-4 py-3 text-sm leading-relaxed ${
                       form.description.trim().length < MIN_DESCRIPTION_LENGTH
-                        ? "ring-1 ring-amber-300/80"
+                        ? "ring-1 ring-warning/50"
                         : ""
                     }`}
                     aria-describedby="listing-description-hint"
@@ -645,8 +648,8 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
                     id="listing-description-hint"
                     className={`mt-1 text-xs ${
                       form.description.trim().length < MIN_DESCRIPTION_LENGTH
-                        ? "font-medium text-amber-800"
-                        : "text-charcoal/55"
+                        ? "font-medium text-warning"
+                        : "text-foreground/55"
                     }`}
                   >
                     {form.description.trim().length} / {MIN_DESCRIPTION_LENGTH} characters minimum
@@ -657,7 +660,7 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
                 </div>
 
                 <div>
-                  <h3 className="mb-2 flex items-center gap-2 text-lg font-bold text-charcoal">
+                  <h3 className="mb-2 flex items-center gap-2 text-lg font-bold text-foreground">
                     <Sparkles size={18} className="text-primary" />
                     Highlights
                   </h3>
@@ -708,12 +711,12 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
 
             {step === "review" && (
               <div className="space-y-8">
-                <div className="rounded-2xl border border-primary/15 bg-gradient-to-br from-accent-light/50 to-cream p-6">
-                  <h3 className="flex items-center gap-2 text-lg font-bold text-charcoal">
+                <div className="rounded-2xl border border-border bg-gradient-to-br from-accent/10 to-background p-6">
+                  <h3 className="flex items-center gap-2 text-lg font-bold text-foreground">
                     <ImageIcon size={20} className="text-primary" />
                     Listing summary
                   </h3>
-                  <ul className="mt-4 space-y-2 text-sm text-charcoal/80">
+                  <ul className="mt-4 space-y-2 text-sm text-foreground/80">
                     <li className="flex justify-between">
                       <span>Photos</span>
                       <span className="font-semibold">{allPreviewImages.length} uploaded</span>
@@ -733,15 +736,18 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
 
                 <div className="listing-editor-surface-muted flex items-center justify-between rounded-2xl p-6">
                   <div>
-                    <p className="font-bold text-charcoal">Publish to couples</p>
-                    <p className="text-sm text-charcoal/70">
+                    <p className="font-bold text-foreground">Publish to couples</p>
+                    <p className="text-sm text-foreground/70">
                       When on, verified vendors show this listing on search and your profile.
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setForm({ ...form, isActive: !form.isActive })}
-                    className={`relative h-8 w-14 rounded-full transition ${form.isActive ? "bg-primary" : "bg-charcoal/20"}`}
+                    className={cn(
+                      "relative h-8 w-14 rounded-full transition",
+                      form.isActive ? "bg-primary" : "bg-muted"
+                    )}
                   >
                     <div
                       className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow transition ${form.isActive ? "left-7" : "left-1"}`}
@@ -749,7 +755,7 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
                   </button>
                 </div>
 
-                <p className="text-sm text-charcoal/60">
+                <p className="text-sm text-foreground/60">
                   Check the preview panel on the right (desktop) to see how couples will experience your listing.
                 </p>
               </div>
@@ -757,7 +763,7 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
 
             <div className="mt-10 border-t border-primary/10 pt-8">
               {stepBlocker && step !== "review" && (
-                <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                <p className="mb-4 rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning">
                   {stepBlocker}
                 </p>
               )}
@@ -765,7 +771,7 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
               <button
                 type="button"
                 onClick={goBack}
-                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-charcoal/70 transition hover:bg-accent-light/50 hover:text-primary"
+                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-muted-foreground transition hover:bg-muted hover:text-primary"
               >
                 <ArrowLeft size={18} />
                 {stepIndex === 0 ? "Cancel" : "Back"}
@@ -802,7 +808,7 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
         </div>
       </div>
 
-      <div className="border-t border-primary/10 bg-cream/60 px-4 py-8 lg:hidden">
+      <div className="border-t border-border bg-muted/30 px-4 py-8 lg:hidden">
         <div className="mx-auto max-w-md">
           <ListingPreviewPanel form={form} primaryPreview={primaryPreview} />
         </div>

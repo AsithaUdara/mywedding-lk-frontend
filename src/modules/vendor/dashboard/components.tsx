@@ -3,6 +3,7 @@
 import React, { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { Loader2, LucideIcon, MoreHorizontal, Search } from "lucide-react";
+import { cn } from "@/shared/lib/cn";
 
 export function StatusBadge({
   active,
@@ -13,14 +14,15 @@ export function StatusBadge({
 }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold",
         active
-          ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/15"
-          : "bg-slate-100 text-slate-600 ring-1 ring-slate-200"
-      }`}
+          ? "bg-success/10 text-success ring-1 ring-success/20"
+          : "bg-muted text-muted-foreground ring-1 ring-border"
+      )}
     >
       <span
-        className={`h-1.5 w-1.5 rounded-full ${active ? "bg-emerald-500" : "bg-slate-400"}`}
+        className={cn("h-1.5 w-1.5 rounded-full", active ? "bg-success" : "bg-muted-foreground/50")}
         aria-hidden
       />
       {label ?? (active ? "Published" : "Draft")}
@@ -53,14 +55,16 @@ export function ToggleSwitch({
       aria-label={ariaLabel}
       disabled={disabled}
       onClick={onChange}
-      className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
-        checked ? "bg-primary" : "bg-slate-300"
-      }`}
+      className={cn(
+        "relative inline-flex h-6 w-11 flex-shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+        checked ? "bg-primary" : "bg-muted"
+      )}
     >
       <span
-        className={`pointer-events-none inline-block h-5 w-5 translate-y-0.5 rounded-full bg-white shadow-sm ring-0 transition-transform ${
+        className={cn(
+          "pointer-events-none inline-block h-5 w-5 translate-y-0.5 rounded-full bg-card shadow-sm ring-0 transition-transform",
           checked ? "translate-x-5" : "translate-x-0.5"
-        }`}
+        )}
       />
     </button>
   );
@@ -81,11 +85,12 @@ export function IconButton({
   variant?: "default" | "danger";
   disabled?: boolean;
 }) {
-  const className = `inline-flex h-9 w-9 items-center justify-center rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50 ${
+  const className = cn(
+    "inline-flex h-9 w-9 items-center justify-center rounded-xl border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
     variant === "danger"
-      ? "border-transparent text-slate-500 hover:border-red-100 hover:bg-red-50 hover:text-red-600"
-      : "border-slate-200 bg-white text-slate-600 hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
-  }`;
+      ? "border-transparent text-muted-foreground hover:border-destructive/20 hover:bg-destructive/10 hover:text-destructive"
+      : "border-border bg-card text-muted-foreground hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+  );
 
   if (href) {
     return (
@@ -142,7 +147,7 @@ export function RowActionsMenu({ actions }: { actions: RowAction[] }) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         aria-label="More actions"
         aria-expanded={open}
         aria-haspopup="menu"
@@ -152,7 +157,7 @@ export function RowActionsMenu({ actions }: { actions: RowAction[] }) {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 z-20 mt-1 min-w-[180px] overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg shadow-slate-200/60"
+          className="absolute right-0 z-20 mt-1 min-w-[180px] overflow-hidden rounded-2xl border border-border bg-card py-1 shadow-lg"
         >
           {actions.map((action) => (
             <button
@@ -164,11 +169,12 @@ export function RowActionsMenu({ actions }: { actions: RowAction[] }) {
                 setOpen(false);
                 action.onClick();
               }}
-              className={`flex w-full px-3 py-2.5 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+              className={cn(
+                "flex w-full px-3 py-2.5 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50",
                 action.destructive
-                  ? "text-red-600 hover:bg-red-50"
-                  : "text-charcoal hover:bg-slate-50"
-              }`}
+                  ? "text-destructive hover:bg-destructive/10"
+                  : "text-foreground hover:bg-muted"
+              )}
             >
               {action.label}
             </button>
@@ -191,47 +197,26 @@ export function SearchField({
   className?: string;
 }) {
   return (
-    <div className={`relative ${className ?? ""}`}>
+    <div className={cn("relative", className)}>
       <Search
-        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
         size={18}
+        aria-hidden
       />
       <input
         type="search"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-charcoal shadow-sm outline-none transition placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/15"
+        className="w-full rounded-full border border-border bg-muted/40 py-2.5 pl-10 pr-4 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:bg-card focus:ring-2 focus:ring-primary/10"
       />
-    </div>
-  );
-}
-
-export function MetricPill({
-  label,
-  value,
-  tone = "neutral",
-}: {
-  label: string;
-  value: string | number;
-  tone?: "neutral" | "success" | "muted";
-}) {
-  const tones = {
-    neutral: "border-slate-200 bg-white text-charcoal",
-    success: "border-emerald-200 bg-emerald-50/80 text-emerald-800",
-    muted: "border-slate-200 bg-slate-50 text-slate-600",
-  };
-  return (
-    <div className={`rounded-xl border px-4 py-3 ${tones[tone]}`}>
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-0.5 text-xl font-bold tabular-nums">{value}</p>
     </div>
   );
 }
 
 export function TableShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+    <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
       <div className="overflow-x-auto">{children}</div>
     </div>
   );
@@ -246,9 +231,10 @@ export function DataTable({ children }: { children: React.ReactNode }) {
 export function Th({ children, align = "left" }: { children: React.ReactNode; align?: "left" | "right" }) {
   return (
     <th
-      className={`border-b border-slate-200 bg-slate-50/80 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 ${
+      className={cn(
+        "border-b border-border bg-muted/40 px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-muted-foreground",
         align === "right" ? "text-right" : "text-left"
-      }`}
+      )}
     >
       {children}
     </th>
@@ -266,9 +252,11 @@ export function Td({
 }) {
   return (
     <td
-      className={`border-b border-slate-100 px-4 py-4 align-middle ${
-        align === "right" ? "text-right" : "text-left"
-      } ${className}`}
+      className={cn(
+        "border-b border-border px-4 py-4 align-middle",
+        align === "right" ? "text-right" : "text-left",
+        className
+      )}
     >
       {children}
     </td>
@@ -276,5 +264,5 @@ export function Td({
 }
 
 export function InlineSpinner() {
-  return <Loader2 size={16} className="animate-spin text-slate-400" />;
+  return <Loader2 size={16} className="animate-spin text-primary" aria-hidden />;
 }

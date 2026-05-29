@@ -1,92 +1,115 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { useAuth } from '@/shared/context/AuthContext';
-import { LayoutDashboard, Settings, LogOut, ChevronDown } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import Link from "next/link";
+import Image from "next/image";
+import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
+import { useAuth } from "@/shared/context/AuthContext";
+import { ChevronDown, LayoutDashboard, LogOut, Settings } from "lucide-react";
+import { cn } from "@/shared/lib/cn";
+import {
+  dropdownIconWrapClass,
+  dropdownItemClass,
+  dropdownPanelClass,
+} from "./dropdown-styles";
 
-const UserDropdown = () => {
+function getInitials(displayName: string | null, email: string | null) {
+  if (displayName) {
+    const names = displayName.split(" ");
+    if (names.length > 1) return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+    return displayName.substring(0, 1).toUpperCase();
+  }
+  if (email) return email.substring(0, 1).toUpperCase();
+  return "U";
+}
+
+export default function UserDropdown() {
   const { user, logOut } = useAuth();
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
 
   if (!user) return null;
 
-  const getInitials = (displayName: string | null, email: string | null) => {
-    if (displayName) {
-      const names = displayName.split(' ');
-      if (names.length > 1) return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
-      return displayName.substring(0, 1).toUpperCase();
-    }
-    if (email) return email.substring(0, 1).toUpperCase();
-    return 'U';
-  };
+  const initials = getInitials(user.displayName, user.email);
 
   return (
-    <div className="relative" ref={dropdownRef}>
-
-      {/* User Avatar Button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 focus:outline-none"
-      >
-        <div className="relative flex items-center justify-center w-9 h-9 rounded-full bg-primary/20 text-primary font-bold overflow-hidden">
-          {user.photoURL ? (
-            <Image src={user.photoURL} alt="User Avatar" fill className="object-cover" />
-          ) : (
-            <span>{getInitials(user.displayName, user.email)}</span>
-          )}
-        </div>
-        <ChevronDown size={16} className={`text-gray-500 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-
-      {/* Dropdown Menu - Styled like the Vendor Dropdown */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="absolute top-full right-0 mt-2 w-64 bg-white rounded-lg shadow-2xl p-4 origin-top-right"
-          >
-            <div className="pb-3 border-b border-gray-100 mb-2">
-              <p className="font-bold text-charcoal truncate">{user.displayName || 'Welcome'}</p>
-              <p className="text-sm text-gray-500 truncate">{user.email}</p>
-            </div>
-            <div className="space-y-1">
-              <Link href="/dashboard" className="flex items-center space-x-3 p-3 rounded-lg hover:bg-cream transition-colors">
-                <div className="text-primary"><LayoutDashboard size={20} /></div>
-                <span className="font-semibold text-charcoal">Dashboard</span>
-              </Link>
-              <Link href="/settings" className="flex items-center space-x-3 p-3 rounded-lg hover:bg-cream transition-colors">
-                <div className="text-primary"><Settings size={20} /></div>
-                <span className="font-semibold text-charcoal">Account Settings</span>
-              </Link>
-              <hr className="my-1" />
-              <button onClick={logOut} className="flex items-center w-full text-left space-x-3 p-3 rounded-lg hover:bg-cream transition-colors">
-                <div className="text-primary"><LogOut size={20} /></div>
-                <span className="font-semibold text-charcoal">Log Out</span>
-              </button>
-            </div>
-          </motion.div>
+    <Menu as="div" className="relative">
+      <MenuButton
+        className={cn(
+          "group inline-flex items-center gap-2 rounded-full py-1 pl-1 pr-2",
+          "transition-colors duration-150",
+          "hover:bg-muted/80",
+          "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+          "data-[open]:bg-muted"
         )}
-      </AnimatePresence>
-    </div>
-  );
-};
+      >
+        <span className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-sm font-semibold text-primary ring-2 ring-transparent transition-shadow group-data-[open]:ring-primary/25">
+          {user.photoURL ? (
+            <Image src={user.photoURL} alt="" fill className="object-cover" sizes="36px" />
+          ) : (
+            initials
+          )}
+        </span>
+        <ChevronDown
+          size={16}
+          strokeWidth={2}
+          className="text-muted-foreground transition-transform duration-200 group-data-[open]:rotate-180"
+          aria-hidden
+        />
+      </MenuButton>
 
-export default UserDropdown;
+      <MenuItems
+        anchor="bottom end"
+        transition
+        modal={false}
+        className={cn(dropdownPanelClass, "w-64 [--anchor-gap:0.5rem]")}
+      >
+        <div className="border-b border-border px-3 py-3">
+          <p className="truncate text-sm font-semibold text-foreground">
+            {user.displayName || "Account"}
+          </p>
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">{user.email}</p>
+        </div>
+
+        <div className="py-1">
+          <MenuItem>
+            <Link href="/dashboard" className={dropdownItemClass}>
+              <span className={dropdownIconWrapClass}>
+                <LayoutDashboard size={18} strokeWidth={2} aria-hidden />
+              </span>
+              Dashboard
+            </Link>
+          </MenuItem>
+          <MenuItem>
+            <Link href="/settings" className={dropdownItemClass}>
+              <span className={dropdownIconWrapClass}>
+                <Settings size={18} strokeWidth={2} aria-hidden />
+              </span>
+              Account settings
+            </Link>
+          </MenuItem>
+        </div>
+
+        <div className="border-t border-border pt-1">
+          <MenuItem>
+            <button
+              type="button"
+              onClick={() => logOut()}
+              className={cn(
+                dropdownItemClass,
+                "text-destructive hover:bg-destructive/10 hover:text-destructive data-[focus]:bg-destructive/10"
+              )}
+            >
+              <span
+                className={cn(
+                  dropdownIconWrapClass,
+                  "bg-destructive/10 text-destructive group-hover:bg-destructive/15"
+                )}
+              >
+                <LogOut size={18} strokeWidth={2} aria-hidden />
+              </span>
+              Log out
+            </button>
+          </MenuItem>
+        </div>
+      </MenuItems>
+    </Menu>
+  );
+}

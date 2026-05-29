@@ -45,7 +45,7 @@ const VendorsHubPage = () => {
 
   return (
     <>
-      <main className="bg-white">
+      <main className="bg-background font-roboto">
         <Header onLoginClick={() => setAuthModalOpen(true)} />
 
         <HeroWithSearch
@@ -58,7 +58,9 @@ const VendorsHubPage = () => {
             <VendorsHubTopRatedWrapper />
 
             <section>
-              <h2 className="mb-8 text-4xl font-bold text-charcoal">Services for every style</h2>
+              <h2 className="mb-8 font-playfair text-3xl font-bold text-foreground sm:text-4xl">
+                Services for every style
+              </h2>
               <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
                 {styleCategories.map((style) => (
                   <StyleCard key={style.title} {...style} />
@@ -67,7 +69,9 @@ const VendorsHubPage = () => {
             </section>
 
             <section>
-              <h2 className="mb-8 text-4xl font-bold text-charcoal">Popular features and services</h2>
+              <h2 className="mb-8 font-playfair text-3xl font-bold text-foreground sm:text-4xl">
+                Popular features and services
+              </h2>
               <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
                 {popularAmenities.map((amenity) => (
                   <AmenityCard key={amenity.title} {...amenity} />

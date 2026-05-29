@@ -2,6 +2,8 @@
 
 import React from "react";
 import { Loader2 } from "lucide-react";
+import { Button } from "@/shared/components/ui";
+import { cn } from "@/shared/lib/cn";
 
 export function ApproveButton({
   onClick,
@@ -13,15 +15,19 @@ export function ApproveButton({
   disabled?: boolean;
 }) {
   return (
-    <button
+    <Button
       type="button"
+      size="sm"
       onClick={onClick}
       disabled={disabled || loading}
-      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-emerald-800/90 px-4 text-sm font-semibold text-white shadow-sm transition-all duration-300 ease-in-out hover:scale-[1.02] hover:bg-emerald-900 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/40 disabled:cursor-not-allowed disabled:opacity-50"
+      className={cn(
+        "bg-success text-primary-foreground hover:opacity-90",
+        "shadow-sm shadow-success/20"
+      )}
     >
-      {loading ? <Loader2 size={14} className="animate-spin" /> : null}
+      {loading ? <Loader2 size={14} className="animate-spin" aria-hidden /> : null}
       Approve
-    </button>
+    </Button>
   );
 }
 
@@ -35,15 +41,10 @@ export function RejectButton({
   disabled?: boolean;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled || loading}
-      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full border border-rose-200/80 bg-white px-4 text-sm font-semibold text-rose-800/90 shadow-sm transition-all duration-300 ease-in-out hover:scale-[1.02] hover:bg-rose-50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/30 disabled:cursor-not-allowed disabled:opacity-50"
-    >
-      {loading ? <Loader2 size={14} className="animate-spin" /> : null}
+    <Button type="button" variant="danger" size="sm" onClick={onClick} disabled={disabled || loading}>
+      {loading ? <Loader2 size={14} className="animate-spin" aria-hidden /> : null}
       Reject
-    </button>
+    </Button>
   );
 }
 
@@ -59,14 +60,9 @@ export function PrimaryButton({
   disabled?: boolean;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled || loading}
-      className="inline-flex h-9 items-center justify-center gap-2 rounded-full bg-charcoal px-4 text-sm font-semibold text-white shadow-sm transition-all duration-300 ease-in-out hover:scale-[1.02] hover:bg-neutral-900 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
-    >
-      {loading && <Loader2 size={14} className="animate-spin" />}
+    <Button type="button" variant="primary" size="sm" onClick={onClick} disabled={disabled || loading}>
+      {loading && <Loader2 size={14} className="animate-spin" aria-hidden />}
       {children}
-    </button>
+    </Button>
   );
 }

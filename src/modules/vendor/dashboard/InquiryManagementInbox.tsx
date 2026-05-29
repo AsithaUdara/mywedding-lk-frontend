@@ -1,59 +1,161 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Building2,
   Calendar,
   FileText,
+  Inbox,
   Loader2,
+  MessageSquare,
   Paperclip,
+  RefreshCw,
   Send,
   Sparkles,
   UserCircle2,
-  Building2,
 } from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
 import {
   generateInquiryQuote,
   getVendorInquiries,
+  markInquiryAsRead,
   VendorInquiryItem,
 } from "@/shared/lib/api/vendors";
-import { bento } from "./bento";
+import {
+  Button,
+  EmptyState,
+  ErrorBanner,
+  PageHeader,
+  PageLoadingSkeleton,
+  SectionCard,
+  StatCard,
+} from "@/shared/components/ui";
+import { cn } from "@/shared/lib/cn";
+import { vd } from "./vendor-dashboard-theme";
+
+type InboxFilter = "all" | "unread" | "planner" | "client";
+
+const INBOX_FILTERS: { value: InboxFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "unread", label: "Unread" },
+  { value: "planner", label: "Planners" },
+  { value: "client", label: "Clients" },
+];
 
 type InquiryManagementInboxProps = {
   embedded?: boolean;
+  fullPage?: boolean;
 };
 
-export function InquiryManagementInbox({ embedded = false }: InquiryManagementInboxProps) {
+export function InquiryManagementInbox({ embedded = false, fullPage = false }: InquiryManagementInboxProps) {
   const { user } = useAuth();
   const [inquiries, setInquiries] = useState<VendorInquiryItem[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
+  const [inboxFilter, setInboxFilter] = useState<InboxFilter>("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [quoteGenerated, setQuoteGenerated] = useState(false);
   const [replyDraft, setReplyDraft] = useState("");
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!user) return;
     try {
-      setLoading(true);
+      setError(null);
       const token = await user.getIdToken();
       const data = await getVendorInquiries(token);
       setInquiries(data);
-      setSelectedId((current) => current || data[0]?.id || "");
-      setError(null);
+      setSelectedId((current) => {
+        if (current && data.some((i) => i.id === current)) return current;
+        return data[0]?.id ?? "";
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load inquiries.");
-    } finally {
-      setLoading(false);
     }
   }, [user]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    let cancelled = false;
+    (async () => {
+      if (!user) return;
+      try {
+        setLoading(true);
+        await load();
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [load, user]);
 
-  const selected = inquiries.find((i) => i.id === selectedId) ?? inquiries[0];
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  };
+
+  const stats = useMemo(
+    () =>
+      inquiries.reduce(
+        (acc, inq) => {
+          if (!inq.isRead) acc.unread += 1;
+          if (inq.from === "planner") acc.planner += 1;
+          else acc.client += 1;
+          return acc;
+        },
+        { unread: 0, planner: 0, client: 0 }
+      ),
+    [inquiries]
+  );
+
+  const filteredInquiries = useMemo(() => {
+    let list = [...inquiries];
+    const q = searchQuery.trim().toLowerCase();
+    if (inboxFilter === "unread") list = list.filter((i) => !i.isRead);
+    else if (inboxFilter === "planner") list = list.filter((i) => i.from === "planner");
+    else if (inboxFilter === "client") list = list.filter((i) => i.from === "client");
+    if (q) {
+      list = list.filter(
+        (i) =>
+          i.senderName.toLowerCase().includes(q) ||
+          i.senderOrg.toLowerCase().includes(q) ||
+          (i.subject?.toLowerCase().includes(q) ?? false) ||
+          i.message.toLowerCase().includes(q)
+      );
+    }
+    return list.sort(
+      (a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime()
+    );
+  }, [inquiries, inboxFilter, searchQuery]);
+
+  const selected =
+    filteredInquiries.find((i) => i.id === selectedId) ??
+    inquiries.find((i) => i.id === selectedId) ??
+    filteredInquiries[0];
+
+  const selectInquiry = useCallback(
+    async (inq: VendorInquiryItem) => {
+      setSelectedId(inq.id);
+      setQuoteGenerated(false);
+      setReplyDraft("");
+      if (!inq.isRead && user) {
+        try {
+          const token = await user.getIdToken();
+          await markInquiryAsRead(token, inq.id);
+          setInquiries((prev) =>
+            prev.map((item) => (item.id === inq.id ? { ...item, isRead: true } : item))
+          );
+        } catch {
+          /* non-blocking */
+        }
+      }
+    },
+    [user]
+  );
 
   const handleGenerateQuote = async () => {
     if (!user || !selected) return;
@@ -71,176 +173,416 @@ export function InquiryManagementInbox({ embedded = false }: InquiryManagementIn
     }
   };
 
-  if (loading) {
+  const previewList = embedded ? inquiries.slice(0, 5) : filteredInquiries;
+
+  if (loading && !refreshing && !embedded) {
+    if (fullPage) return <PageLoadingSkeleton />;
     return (
-      <div className="flex items-center justify-center py-16 text-slate-400">
-        <Loader2 className="mr-2 animate-spin" size={20} />
+      <div className="flex items-center justify-center py-16 text-muted-foreground">
+        <Loader2 className="mr-2 animate-spin text-primary" size={20} aria-hidden />
         Loading inbox…
       </div>
     );
   }
 
-  return (
-    <div className={embedded ? "space-y-4" : "space-y-6"}>
+  const inboxList = (
+    <aside className={cn("overflow-hidden !p-0", vd.card, embedded ? "" : "lg:col-span-4")}>
       {!embedded && (
-        <header className={bento.card}>
-          <p className={bento.label}>CRM Inbox</p>
-          <h2 className={`mt-2 ${bento.title}`}>Inquiry Management</h2>
-          <p className={`mt-1 ${bento.subtitle}`}>
-            Planner and client messages land here. Generate official quotes without leaving the platform.
-          </p>
-        </header>
-      )}
-
-      {error && (
-        <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>
-      )}
-
-      {inquiries.length === 0 ? (
-        <div className={`${bento.card} text-center text-sm text-slate-500`}>No inquiries yet.</div>
-      ) : (
-        <div className={`grid gap-6 ${embedded ? "" : "lg:grid-cols-12"}`}>
-          <aside className={`${embedded ? "" : "lg:col-span-4"} ${bento.card} !p-0 overflow-hidden`}>
-            <div className="border-b border-slate-100 px-5 py-4">
-              <p className={bento.label}>Inbox</p>
-              <p className="text-sm font-semibold text-slate-800">{inquiries.length} conversations</p>
-            </div>
-            <ul className="max-h-[420px] divide-y divide-slate-100 overflow-y-auto">
-              {inquiries.map((inq) => (
-                <li key={inq.id}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedId(inq.id);
-                      setQuoteGenerated(false);
-                      setReplyDraft("");
-                    }}
-                    className={`w-full px-5 py-4 text-left transition hover:bg-slate-50 ${
-                      selectedId === inq.id ? "bg-slate-50" : ""
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className={`mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl ${
-                          inq.from === "planner" ? "bg-indigo-50 text-indigo-600" : "bg-orange-50 text-orange-600"
-                        }`}
-                      >
-                        {inq.from === "planner" ? <Building2 size={16} /> : <UserCircle2 size={16} />}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="truncate text-sm font-semibold text-slate-900">{inq.senderName}</p>
-                          {!inq.isRead && (
-                            <span className="rounded-full bg-fuchsia-100 px-2 py-0.5 text-[10px] font-bold text-fuchsia-700">
-                              New
-                            </span>
-                          )}
-                        </div>
-                        <p className="truncate text-xs text-slate-500">{inq.subject ?? inq.message.slice(0, 48)}</p>
-                      </div>
-                    </div>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </aside>
-
-          {selected && (
-            <section className={`${embedded ? "" : "lg:col-span-8"} space-y-4`}>
-              <article className={bento.card}>
-                <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-100 pb-5">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      {selected.from === "planner" ? (
-                        <span className="rounded-full bg-indigo-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-indigo-700">
-                          Planner inquiry
-                        </span>
-                      ) : (
-                        <span className="rounded-full bg-orange-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-orange-700">
-                          Client inquiry
-                        </span>
-                      )}
-                      <span className="text-xs text-slate-400">
-                        {new Date(selected.sentAt).toLocaleString(undefined, {
-                          dateStyle: "medium",
-                          timeStyle: "short",
-                        })}
-                      </span>
-                    </div>
-                    <h3 className="mt-2 text-lg font-bold tracking-tight text-slate-900">
-                      {selected.subject ?? "Inquiry"}
-                    </h3>
-                    <p className="mt-1 text-sm text-slate-500">
-                      {selected.senderName} · {selected.senderOrg}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => void handleGenerateQuote()}
-                    disabled={generating}
-                    className={bento.pillBtn}
-                  >
-                    {generating ? <Loader2 size={16} className="animate-spin" /> : <FileText size={16} />}
-                    Generate Quote
-                  </button>
-                </div>
-
-                <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Event</p>
-                    <p className="mt-1 text-sm font-semibold text-slate-800">{selected.eventName ?? "—"}</p>
-                  </div>
-                  <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Date</p>
-                    <p className="mt-1 flex items-center gap-1 text-sm font-semibold text-slate-800">
-                      <Calendar size={14} className="text-slate-400" />
-                      {selected.weddingDate
-                        ? new Date(selected.weddingDate).toLocaleDateString()
-                        : "—"}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Budget hint</p>
-                    <p className="mt-1 text-sm font-semibold text-slate-800">{selected.budgetHint ?? "—"}</p>
-                  </div>
-                </div>
-
-                <div className="mt-6 whitespace-pre-wrap rounded-2xl border border-slate-100 bg-slate-50/80 p-5 text-sm leading-relaxed text-slate-700">
-                  {selected.message}
-                </div>
-
-                {quoteGenerated && (
-                  <div className="mt-4 flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-                    <Sparkles size={16} />
-                    Official quote draft generated — review and send below.
-                  </div>
-                )}
-              </article>
-
-              <article className={bento.card}>
-                <p className={bento.label}>Reply</p>
-                <textarea
-                  value={replyDraft}
-                  onChange={(e) => setReplyDraft(e.target.value)}
-                  rows={5}
-                  placeholder="Type your response or use Generate Quote..."
-                  className="mt-3 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
-                />
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                  <button type="button" className={bento.pillBtnOutline}>
-                    <Paperclip size={16} />
-                    Attach brochure
-                  </button>
-                  <button type="button" className={bento.pillBtn}>
-                    <Send size={16} />
-                    Send reply
-                  </button>
-                </div>
-              </article>
-            </section>
-          )}
+        <div className="border-b border-border px-4 py-3">
+          <label className="sr-only" htmlFor="vendor-inbox-search">
+            Search inquiries
+          </label>
+          <input
+            id="vendor-inbox-search"
+            type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search name, event, message…"
+            className="w-full rounded-full border border-border bg-muted/40 px-4 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary focus:bg-card focus:ring-2 focus:ring-primary/10"
+          />
         </div>
       )}
+      <div className="border-b border-border px-5 py-4">
+        <p className={vd.label}>{embedded ? "Recent" : "Inbox"}</p>
+        <p className="text-sm font-semibold text-foreground">
+          {embedded ? inquiries.length : filteredInquiries.length}
+          {!embedded && filteredInquiries.length !== inquiries.length
+            ? ` of ${inquiries.length}`
+            : ""}{" "}
+          conversations
+        </p>
+      </div>
+      <ul
+        className={cn(
+          "overflow-y-auto",
+          vd.listDivide,
+          embedded ? "max-h-64" : "max-h-[min(520px,60vh)]"
+        )}
+      >
+        {previewList.length === 0 ? (
+          <li className="px-5 py-8 text-center text-sm text-muted-foreground">
+            {searchQuery.trim() ? "No matches for your search." : "No conversations in this filter."}
+          </li>
+        ) : (
+          previewList.map((inq) => (
+            <li key={inq.id}>
+              {embedded ? (
+                <div className="flex items-start gap-3 px-4 py-3">
+                  <InquiryListAvatar inq={inq} />
+                  <InquiryListBody inq={inq} />
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void selectInquiry(inq)}
+                  className={cn(
+                    "w-full px-5 py-4 text-left",
+                    vd.rowHover,
+                    selected?.id === inq.id && vd.rowActive
+                  )}
+                >
+                  <div className="flex items-start gap-3">
+                    <InquiryListAvatar inq={inq} />
+                    <InquiryListBody inq={inq} />
+                  </div>
+                </button>
+              )}
+            </li>
+          ))
+        )}
+      </ul>
+      {embedded && inquiries.length > 5 && (
+        <p className="border-t border-border px-4 py-2 text-center text-xs text-muted-foreground">
+          +{inquiries.length - 5} more in full inbox
+        </p>
+      )}
+    </aside>
+  );
+
+  const detailPanel = selected ? (
+    <section className={cn("space-y-4", embedded ? "" : "lg:col-span-8")}>
+      <article className={vd.cardPad}>
+        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-5">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              {selected.from === "planner" ? (
+                <span className={vd.badgePlanner}>Planner inquiry</span>
+              ) : (
+                <span className={vd.badgeClient}>Client inquiry</span>
+              )}
+              <span className="text-xs text-muted-foreground">
+                {new Date(selected.sentAt).toLocaleString(undefined, {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                })}
+              </span>
+            </div>
+            <h3 className="mt-2 text-lg font-bold tracking-tight text-foreground">
+              {selected.subject ?? "Inquiry"}
+            </h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {selected.senderName} · {selected.senderOrg}
+            </p>
+          </div>
+          {!embedded && (
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={() => void handleGenerateQuote()}
+              disabled={generating}
+            >
+              {generating ? <Loader2 size={16} className="animate-spin" /> : <FileText size={16} />}
+              Generate quote
+            </Button>
+          )}
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div className={vd.metaBox}>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Event
+            </p>
+            <p className="mt-1 text-sm font-semibold text-foreground">{selected.eventName ?? "—"}</p>
+          </div>
+          <div className={vd.metaBox}>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Date
+            </p>
+            <p className="mt-1 flex items-center gap-1 text-sm font-semibold text-foreground">
+              <Calendar size={14} className="text-muted-foreground" aria-hidden />
+              {selected.weddingDate
+                ? new Date(selected.weddingDate).toLocaleDateString()
+                : "—"}
+            </p>
+          </div>
+          <div className={vd.metaBox}>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Budget hint
+            </p>
+            <p className="mt-1 text-sm font-semibold text-foreground">{selected.budgetHint ?? "—"}</p>
+          </div>
+        </div>
+
+        <div className={cn("mt-6", vd.messageBox)}>{selected.message}</div>
+
+        {quoteGenerated && (
+          <div className={cn("mt-4 flex items-center gap-2", vd.successBanner)}>
+            <Sparkles size={16} aria-hidden />
+            Official quote draft generated — review and send below.
+          </div>
+        )}
+      </article>
+
+      {!embedded && (
+        <article className={vd.cardPad}>
+          <p className={vd.label}>Reply</p>
+          <textarea
+            value={replyDraft}
+            onChange={(e) => setReplyDraft(e.target.value)}
+            rows={5}
+            placeholder="Type your response or use Generate quote…"
+            className={cn("mt-3", vd.input)}
+          />
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+            <Button type="button" variant="secondary" size="sm">
+              <Paperclip size={16} aria-hidden />
+              Attach brochure
+            </Button>
+            <Button type="button" variant="primary" size="sm">
+              <Send size={16} aria-hidden />
+              Send reply
+            </Button>
+          </div>
+        </article>
+      )}
+    </section>
+  ) : null;
+
+  const emptyInboxPlaceholder = (
+    <div className="space-y-6">
+      <EmptyState
+        title="No inquiries yet"
+        description="When planners or couples message you from MyWedding.lk, conversations appear here. Keep your profile and services complete to get discovered."
+        icon={Inbox}
+        action={
+          <div className="flex flex-wrap justify-center gap-2">
+            <Button href="/vendor/dashboard/profile" variant="primary" size="sm">
+              Improve profile
+            </Button>
+            <Button href="/vendor/dashboard/services" variant="secondary" size="sm">
+              Manage services
+            </Button>
+          </div>
+        }
+      />
+      <div
+        className="grid gap-4 opacity-90 lg:grid-cols-12"
+        aria-hidden
+      >
+        <div className={cn(vd.card, "lg:col-span-4 overflow-hidden")}>
+          <div className="border-b border-border px-5 py-4">
+            <p className={vd.label}>Preview</p>
+            <p className="text-sm font-semibold text-muted-foreground">Your inbox will look like this</p>
+          </div>
+          <ul className={vd.listDivide}>
+            {[
+              { name: "Planner inquiry", sub: "Wedding date & event details", planner: true },
+              { name: "Client inquiry", sub: "Package question from couple", planner: false },
+            ].map((row) => (
+              <li key={row.name} className="px-5 py-4">
+                <div className="flex items-start gap-3">
+                  <div
+                    className={cn(
+                      "flex h-9 w-9 items-center justify-center rounded-xl",
+                      row.planner ? vd.iconPlanner : vd.iconClient
+                    )}
+                  >
+                    {row.planner ? <Building2 size={16} /> : <UserCircle2 size={16} />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-muted-foreground">{row.name}</p>
+                    <p className="truncate text-xs text-muted-foreground/80">{row.sub}</p>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div
+          className={cn(
+            vd.cardPad,
+            "lg:col-span-8 flex flex-col items-center justify-center border-dashed py-12 text-center"
+          )}
+        >
+          <MessageSquare className="text-muted-foreground/40" size={36} strokeWidth={1.25} />
+          <p className="mt-3 text-sm font-medium text-muted-foreground">
+            Select a conversation to read details and send a quote
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+
+  const crmBody =
+    inquiries.length === 0 ? (
+      embedded ? (
+        <div className={cn(vd.card, "px-4 py-8 text-center text-sm text-muted-foreground")}>
+          <Inbox className="mx-auto mb-2 text-muted-foreground/50" size={28} strokeWidth={1.5} aria-hidden />
+          No inquiries yet — they will appear here when planners or couples message you.
+        </div>
+      ) : (
+        emptyInboxPlaceholder
+      )
+    ) : embedded ? (
+      inboxList
+    ) : (
+      <div className="grid gap-6 lg:grid-cols-12">
+        {inboxList}
+        {detailPanel ?? (
+          <div className={cn(vd.cardPad, "lg:col-span-8 text-center text-sm text-muted-foreground")}>
+            Select a conversation to read and reply.
+          </div>
+        )}
+      </div>
+    );
+
+  const statRow = (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <StatCard
+        label="Total conversations"
+        value={inquiries.length}
+        icon={Inbox}
+        iconTheme="primary"
+        index={0}
+      />
+      <StatCard
+        label="Unread"
+        value={stats.unread}
+        sub={stats.unread > 0 ? "Needs a response" : "All caught up"}
+        icon={MessageSquare}
+        iconTheme={stats.unread > 0 ? "warning" : "success"}
+        index={1}
+      />
+      <StatCard
+        label="From planners"
+        value={stats.planner}
+        sub="Wedding planner leads"
+        icon={Building2}
+        iconTheme="accent"
+        index={2}
+      />
+      <StatCard
+        label="From clients"
+        value={stats.client}
+        sub="Direct couple inquiries"
+        icon={UserCircle2}
+        iconTheme="muted"
+        index={3}
+      />
+    </div>
+  );
+
+  const filterPills = (
+    <div className="flex flex-wrap gap-1.5">
+      {INBOX_FILTERS.map((f) => (
+        <button
+          key={f.value}
+          type="button"
+          onClick={() => setInboxFilter(f.value)}
+          className={cn(
+            "rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-200",
+            inboxFilter === f.value
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "bg-muted text-muted-foreground hover:text-foreground"
+          )}
+          aria-pressed={inboxFilter === f.value}
+        >
+          {f.label}
+        </button>
+      ))}
+    </div>
+  );
+
+  const content = (
+    <>
+      {error && <ErrorBanner message={error} />}
+
+      {fullPage && statRow}
+
+      {fullPage ? (
+        <SectionCard
+          title="Conversations"
+          subtitle={
+            inquiries.length === 0
+              ? "Nothing here yet — complete your storefront so planners and couples can reach you"
+              : "Reply with official quotes — planners and couples see your responses in their workflow"
+          }
+          action={inquiries.length > 0 ? filterPills : undefined}
+        >
+          {refreshing ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">Refreshing inbox…</p>
+          ) : (
+            crmBody
+          )}
+        </SectionCard>
+      ) : (
+        crmBody
+      )}
+    </>
+  );
+
+  if (fullPage) {
+    return (
+      <div className="space-y-8 pb-4">
+        <PageHeader
+          title="Inquiry inbox"
+          description="Planner and client messages for your storefront — generate quotes and reply without leaving MyWedding.lk."
+          badge="CRM"
+          action={
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => void handleRefresh()}
+              disabled={refreshing}
+            >
+              <RefreshCw size={16} className={cn(refreshing && "animate-spin")} aria-hidden />
+              Refresh
+            </Button>
+          }
+        />
+        {content}
+      </div>
+    );
+  }
+
+  return <div className={embedded ? "space-y-3" : "space-y-6"}>{content}</div>;
+}
+
+function InquiryListAvatar({ inq }: { inq: VendorInquiryItem }) {
+  return (
+    <div
+      className={cn(
+        "mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl",
+        inq.from === "planner" ? vd.iconPlanner : vd.iconClient
+      )}
+    >
+      {inq.from === "planner" ? <Building2 size={16} /> : <UserCircle2 size={16} />}
+    </div>
+  );
+}
+
+function InquiryListBody({ inq }: { inq: VendorInquiryItem }) {
+  return (
+    <div className="min-w-0 flex-1">
+      <div className="flex items-center gap-2">
+        <p className="truncate text-sm font-semibold text-foreground">{inq.senderName}</p>
+        {!inq.isRead && <span className={vd.badgeNew}>New</span>}
+      </div>
+      <p className="truncate text-xs text-muted-foreground">
+        {inq.subject ?? inq.message.slice(0, 48)}
+      </p>
     </div>
   );
 }

@@ -5,7 +5,6 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  AlertCircle,
   ArrowRight,
   Briefcase,
   Building2,
@@ -31,12 +30,12 @@ import {
   VendorSignupForm,
 } from "./constants";
 
-const inputClass =
-  "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10";
+import { ErrorBanner, inputClass } from "@/modules/vendor/dashboard/ui";
+import { cn } from "@/shared/lib/cn";
 
 function StepSidebar({ step }: { step: number }) {
   return (
-    <aside className="relative hidden overflow-hidden bg-gradient-to-br from-charcoal via-charcoal to-primary p-10 text-white lg:flex lg:w-[380px] lg:flex-col lg:justify-between">
+    <aside className="relative hidden overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/85 p-10 text-primary-foreground lg:flex lg:w-[380px] lg:flex-col lg:justify-between">
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -69,7 +68,7 @@ function StepSidebar({ step }: { step: number }) {
                 active
                   ? "border-white/30 bg-white/10"
                   : done
-                    ? "border-emerald-400/30 bg-emerald-500/10"
+                    ? "border-success/40 bg-success/15"
                     : "border-white/10 bg-white/5"
               }`}
             >
@@ -80,9 +79,9 @@ function StepSidebar({ step }: { step: number }) {
                 }}
                 className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl text-sm font-bold ${
                   done
-                    ? "bg-emerald-500 text-white"
+                    ? "bg-success text-success-foreground"
                     : active
-                      ? "bg-white text-charcoal"
+                      ? "bg-card text-foreground"
                       : "bg-white/15 text-white/60"
                 }`}
               >
@@ -130,17 +129,17 @@ function MobileStepper({ step }: { step: number }) {
             <div
               className={`flex h-9 w-9 items-center justify-center rounded-xl text-sm font-bold transition ${
                 step > s.id
-                  ? "bg-emerald-500 text-white"
+                  ? "bg-success text-success-foreground"
                   : step === s.id
-                    ? "bg-primary text-white shadow-lg shadow-primary/30"
-                    : "bg-slate-100 text-slate-400"
+                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
+                    : "bg-muted text-muted-foreground"
               }`}
             >
               {step > s.id ? <CheckCircle2 size={16} /> : s.id}
             </div>
             <p
               className={`hidden text-center text-[10px] font-semibold sm:block ${
-                step === s.id ? "text-charcoal" : "text-slate-400"
+                step === s.id ? "text-foreground" : "text-muted-foreground"
               }`}
             >
               {s.title}
@@ -148,7 +147,7 @@ function MobileStepper({ step }: { step: number }) {
           </motion.div>
         ))}
       </div>
-      <motion.div className="mt-3 h-1 overflow-hidden rounded-full bg-slate-100">
+      <motion.div className="mt-3 h-1 overflow-hidden rounded-full bg-muted">
         <motion.div
           className="h-full rounded-full bg-primary"
           initial={{ width: 0 }}
@@ -168,7 +167,7 @@ function FieldLabel({
   children: React.ReactNode;
 }) {
   return (
-    <label className="mb-1.5 flex items-center gap-2 text-sm font-semibold text-charcoal">
+    <label className="mb-1.5 flex items-center gap-2 text-sm font-semibold text-foreground">
       {icon}
       {children}
     </label>
@@ -281,7 +280,7 @@ export default function VendorSignupFlow() {
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-5xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl shadow-slate-200/60"
+      className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-5xl overflow-hidden rounded-3xl border border-border bg-card shadow-xl"
     >
       <StepSidebar step={step} />
 
@@ -296,16 +295,11 @@ export default function VendorSignupFlow() {
           <p className="text-xs font-bold uppercase tracking-widest text-primary">
             Step {step} of {VENDOR_SIGNUP_STEPS.length}
           </p>
-          <h1 className="mt-2 font-playfair text-3xl font-bold text-charcoal">{stepMeta.title}</h1>
-          <p className="mt-1 text-slate-500">{stepMeta.subtitle}</p>
+          <h1 className="mt-2 font-playfair text-3xl font-bold text-foreground">{stepMeta.title}</h1>
+          <p className="mt-1 text-muted-foreground">{stepMeta.subtitle}</p>
         </div>
 
-        {error && (
-          <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-600">
-            <AlertCircle size={18} className="mt-0.5 flex-shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
+        {error && <ErrorBanner message={error} className="mb-6" />}
 
         <AnimatePresence mode="wait">
           {step === 1 && (
@@ -317,7 +311,7 @@ export default function VendorSignupFlow() {
               >
                 <div className="grid gap-5 sm:grid-cols-2">
                   <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-                    <FieldLabel icon={<User size={15} className="text-slate-400" />}>
+                    <FieldLabel icon={<User size={15} className="text-muted-foreground" />}>
                       First name
                     </FieldLabel>
                     <input
@@ -342,7 +336,7 @@ export default function VendorSignupFlow() {
                   </motion.div>
                 </div>
                 <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                  <FieldLabel icon={<Mail size={15} className="text-slate-400" />}>
+                  <FieldLabel icon={<Mail size={15} className="text-muted-foreground" />}>
                     Work email
                   </FieldLabel>
                   <input
@@ -355,7 +349,7 @@ export default function VendorSignupFlow() {
                   />
                 </motion.div>
                 <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-                  <FieldLabel icon={<Lock size={15} className="text-slate-400" />}>
+                  <FieldLabel icon={<Lock size={15} className="text-muted-foreground" />}>
                     Password
                   </FieldLabel>
                   <input
@@ -366,7 +360,7 @@ export default function VendorSignupFlow() {
                     value={form.password}
                     onChange={(e) => patch({ password: e.target.value })}
                   />
-                  <p className="mt-1.5 text-xs text-slate-400">
+                  <p className="mt-1.5 text-xs text-muted-foreground">
                     You&apos;ll use this to access bookings, inquiries, and payouts.
                   </p>
                 </motion.div>
@@ -382,7 +376,7 @@ export default function VendorSignupFlow() {
                 className="space-y-6"
               >
                 <div>
-                  <FieldLabel icon={<Building2 size={15} className="text-slate-400" />}>
+                  <FieldLabel icon={<Building2 size={15} className="text-muted-foreground" />}>
                     Business name
                   </FieldLabel>
                   <input
@@ -392,7 +386,7 @@ export default function VendorSignupFlow() {
                     value={form.businessName}
                     onChange={(e) => patch({ businessName: e.target.value })}
                   />
-                  <p className="mt-1.5 text-xs text-slate-400">
+                  <p className="mt-1.5 text-xs text-muted-foreground">
                     Shown on your public vendor profile and search results.
                   </p>
                 </div>
@@ -410,7 +404,7 @@ export default function VendorSignupFlow() {
                           className={`flex items-center gap-3 rounded-xl border-2 p-4 text-left transition ${
                             selected
                               ? "border-primary bg-primary/5 shadow-md shadow-primary/10"
-                              : "border-slate-100 bg-slate-50/50 hover:border-slate-200 hover:bg-white"
+                              : "border-border bg-muted/30 hover:border-primary/20 hover:bg-card"
                           }`}
                         >
                           <motion.div
@@ -419,14 +413,14 @@ export default function VendorSignupFlow() {
                             className={`rounded-lg p-2.5 ${
                               selected
                                 ? "bg-primary text-white"
-                                : "bg-white text-slate-400 shadow-sm"
+                                : "bg-card text-muted-foreground shadow-sm"
                             }`}
                           >
                             {cat.icon}
                           </motion.div>
                           <motion.div initial={false} animate={{ opacity: selected ? 1 : 0.85 }}>
-                            <p className="text-sm font-semibold text-charcoal">{cat.name}</p>
-                            <p className="text-xs text-slate-500">{cat.description}</p>
+                            <p className="text-sm font-semibold text-foreground">{cat.name}</p>
+                            <p className="text-xs text-muted-foreground">{cat.description}</p>
                           </motion.div>
                         </button>
                       );
@@ -436,7 +430,7 @@ export default function VendorSignupFlow() {
 
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div>
-                    <FieldLabel icon={<MapPin size={15} className="text-slate-400" />}>
+                    <FieldLabel icon={<MapPin size={15} className="text-muted-foreground" />}>
                       City
                     </FieldLabel>
                     <input
@@ -449,7 +443,7 @@ export default function VendorSignupFlow() {
                     />
                   </div>
                   <div>
-                    <FieldLabel icon={<Phone size={15} className="text-slate-400" />}>
+                    <FieldLabel icon={<Phone size={15} className="text-muted-foreground" />}>
                       Contact phone
                     </FieldLabel>
                     <input
@@ -468,49 +462,49 @@ export default function VendorSignupFlow() {
 
           {step === 3 && (
             <motion.div key="review" {...slide} className="flex flex-1 flex-col space-y-6">
-              <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-6">
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              <div className="rounded-2xl border border-border bg-muted/40 p-6">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                   Application summary
                 </p>
                 <dl className="mt-4 space-y-3 text-sm">
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex justify-between gap-4 border-b border-slate-200/80 pb-3">
-                    <dt className="text-slate-500">Account owner</dt>
-                    <dd className="font-semibold text-charcoal text-right">
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex justify-between gap-4 border-b border-border/80 pb-3">
+                    <dt className="text-muted-foreground">Account owner</dt>
+                    <dd className="font-semibold text-foreground text-right">
                       {form.firstName} {form.lastName}
                     </dd>
                   </motion.div>
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="flex justify-between gap-4 border-b border-slate-200/80 pb-3">
-                    <dt className="text-slate-500">Email</dt>
-                    <dd className="font-semibold text-charcoal text-right">{form.email}</dd>
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="flex justify-between gap-4 border-b border-border/80 pb-3">
+                    <dt className="text-muted-foreground">Email</dt>
+                    <dd className="font-semibold text-foreground text-right">{form.email}</dd>
                   </motion.div>
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="flex justify-between gap-4 border-b border-slate-200/80 pb-3">
-                    <dt className="text-slate-500">Business</dt>
-                    <dd className="font-semibold text-charcoal text-right">{form.businessName}</dd>
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="flex justify-between gap-4 border-b border-border/80 pb-3">
+                    <dt className="text-muted-foreground">Business</dt>
+                    <dd className="font-semibold text-foreground text-right">{form.businessName}</dd>
                   </motion.div>
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="flex justify-between gap-4 border-b border-slate-200/80 pb-3">
-                    <dt className="text-slate-500">Category</dt>
-                    <dd className="font-semibold text-charcoal text-right">
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="flex justify-between gap-4 border-b border-border/80 pb-3">
+                    <dt className="text-muted-foreground">Category</dt>
+                    <dd className="font-semibold text-foreground text-right">
                       {getCategoryLabel(form.category)}
                     </dd>
                   </motion.div>
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="flex justify-between gap-4 border-b border-slate-200/80 pb-3">
-                    <dt className="text-slate-500">Location</dt>
-                    <dd className="font-semibold text-charcoal text-right">{form.city}</dd>
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="flex justify-between gap-4 border-b border-border/80 pb-3">
+                    <dt className="text-muted-foreground">Location</dt>
+                    <dd className="font-semibold text-foreground text-right">{form.city}</dd>
                   </motion.div>
                   <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="flex justify-between gap-4">
-                    <dt className="text-slate-500">Contact phone</dt>
-                    <dd className="font-semibold text-charcoal text-right">{form.contactPhone}</dd>
+                    <dt className="text-muted-foreground">Contact phone</dt>
+                    <dd className="font-semibold text-foreground text-right">{form.contactPhone}</dd>
                   </motion.div>
                 </dl>
               </div>
 
-              <div className="flex items-start gap-4 rounded-2xl border border-slate-100 bg-white p-5">
+              <div className="flex items-start gap-4 rounded-2xl border border-border bg-card p-5">
                 <div className="rounded-xl bg-primary/10 p-3 text-primary">
                   <ShieldCheck size={22} />
                 </div>
                 <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-                  <p className="font-semibold text-charcoal">Partner terms</p>
-                  <p className="mt-1 text-sm leading-relaxed text-slate-500">
+                  <p className="font-semibold text-foreground">Partner terms</p>
+                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                     MyWedding.lk charges a{" "}
                     <span className="font-semibold text-primary">5% commission</span> on successful
                     bookings. Respond to inquiries within 24 hours and maintain the service quality
@@ -519,14 +513,14 @@ export default function VendorSignupFlow() {
                 </motion.div>
               </div>
 
-              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-4 transition hover:border-primary/30 hover:bg-primary/5">
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border p-4 transition hover:border-primary/30 hover:bg-primary/5">
                 <input
                   type="checkbox"
                   className="mt-1 h-4 w-4 rounded accent-primary"
                   checked={form.agreeTerms}
                   onChange={(e) => patch({ agreeTerms: e.target.checked })}
                 />
-                <span className="text-sm text-slate-600">
+                <span className="text-sm text-muted-foreground">
                   I agree to the{" "}
                   <Link href="#" className="font-semibold text-primary hover:underline">
                     partner terms
@@ -538,19 +532,19 @@ export default function VendorSignupFlow() {
           )}
         </AnimatePresence>
 
-        <div className="mt-auto flex items-center justify-between gap-4 border-t border-slate-100 pt-8">
+        <div className="mt-auto flex items-center justify-between gap-4 border-t border-border pt-8">
           {step > 1 ? (
             <button
               type="button"
               onClick={() => setStep((s) => s - 1)}
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-500 transition hover:bg-slate-50 hover:text-charcoal disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-50"
             >
               <ChevronLeft size={18} />
               Back
             </button>
           ) : (
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-muted-foreground">
               Already a partner?{" "}
               <Link href="/vendor/login" className="font-semibold text-primary hover:underline">
                 Sign in

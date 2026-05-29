@@ -1,6 +1,8 @@
 import React from "react";
 import Link from "next/link";
 import { Calendar, ArrowRight } from "lucide-react";
+import { Button } from "@/shared/components/ui";
+import { cp } from "@/modules/client/client-theme";
 
 interface EventCardProps {
   event: {
@@ -19,25 +21,23 @@ const EventCard = ({ event }: EventCardProps) => {
   });
 
   return (
-    <article className="group flex flex-col justify-between rounded-3xl border border-slate-100/80 bg-white p-6 shadow-sm transition-all duration-300 ease-in-out hover:scale-[1.01] hover:shadow-xl hover:shadow-primary/10 sm:p-8">
+    <article
+      className={`group flex flex-col justify-between transition-all duration-300 hover:border-primary/25 hover:shadow-md ${cp.cardPad}`}
+    >
       <div>
-        <h3 className="font-playfair text-2xl font-bold tracking-tight text-charcoal">{event.eventName}</h3>
-        <div className="mt-4 flex items-center gap-2 text-sm text-slate-500">
-          <Calendar size={16} className="shrink-0 text-slate-400" strokeWidth={2} />
+        <h3 className="font-playfair text-2xl font-bold tracking-tight text-foreground">
+          {event.eventName}
+        </h3>
+        <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+          <Calendar size={16} className="shrink-0 text-primary/70" strokeWidth={2} aria-hidden />
           <span>{formattedDate}</span>
         </div>
       </div>
       <div className="mt-8 flex justify-end">
-        <Link
-          href={`/events/${event.id}`}
-          className="inline-flex items-center gap-2 rounded-full bg-charcoal px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-300 ease-in-out hover:scale-[1.02] hover:bg-neutral-900 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-charcoal/30"
-        >
+        <Button href={`/events/${event.id}`} variant="primary" size="sm">
           Open
-          <ArrowRight
-            size={16}
-            className="transition-transform duration-300 ease-in-out group-hover:translate-x-0.5"
-          />
-        </Link>
+          <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
+        </Button>
       </div>
     </article>
   );

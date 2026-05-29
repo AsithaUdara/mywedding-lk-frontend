@@ -1,85 +1,121 @@
-// src/components/Footer.tsx
-import React from 'react';
-import Image from 'next/image';
-import { Facebook, Instagram, Linkedin, Twitter } from 'lucide-react';
-import Logo from '@/assets/MyWedding.png'; // Assuming your logo has a transparent background
+import Image from "next/image";
+import Link from "next/link";
+import { Facebook, Instagram, Linkedin } from "lucide-react";
+import Logo from "@/assets/MyWedding.png";
 
-const Footer = () => {
+const footerLinks = {
+  product: [
+    { label: "Planner workspace", href: "/planner/signup" },
+    { label: "Vendor directory", href: "/vendors" },
+    { label: "Pricing", href: "/#pricing" },
+    { label: "How it works", href: "/#how-it-works" },
+  ],
+  vendors: [
+    { label: "List your business", href: "/vendor/signup" },
+    { label: "Vendor login", href: "/vendor/login" },
+    { label: "Venues", href: "/venues" },
+  ],
+  company: [
+    { label: "About", href: "#" },
+    { label: "Contact", href: "#" },
+    { label: "Privacy", href: "#" },
+    { label: "Terms", href: "#" },
+  ],
+};
+
+export default function Footer() {
   return (
-    <footer style={{ backgroundColor: 'var(--color-primary)' }} className="text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          
-          {/* Column 1: Branding & Socials */}
-          <div className="md:col-span-1">
-            <a href="#">
-              {/* Use a version of your logo suitable for dark backgrounds */}
+    <footer className="bg-sidebar text-sidebar-foreground">
+      <div className="h-1 bg-gradient-to-r from-transparent via-accent to-transparent opacity-80" aria-hidden />
+
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-5 lg:gap-8">
+          <div className="lg:col-span-2">
+            <Link href="/" className="inline-block">
               <Image
                 src={Logo}
-                alt="MyWedding.lk Logo"
-                width={120}
-                height={30}
-                className="brightness-0 invert" // CSS filter to make the PNG logo white
+                alt="MyWedding.lk"
+                width={140}
+                height={36}
+                className="brightness-0 invert"
               />
-            </a>
-            <p className="mt-2 text-cream/70 text-sm">
-              Crafting memorable moments. Your dream wedding, simplified.
+            </Link>
+            <p className="mt-4 max-w-sm text-sm leading-relaxed text-sidebar-muted">
+              The B2B2C wedding platform for Sri Lankan planners, vendors, and couples — heritage-grade
+              tools with enterprise clarity.
             </p>
-            <div className="flex space-x-4 mt-3">
-              <a href="#" className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"><Facebook size={18} /></a>
-              <a href="#" className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"><Instagram size={18} /></a>
-              <a href="#" className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"><Twitter size={18} /></a>
-              <a href="#" className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"><Linkedin size={18} /></a>
+            <div className="mt-6 flex gap-3">
+              {[
+                { Icon: Facebook, label: "Facebook" },
+                { Icon: Instagram, label: "Instagram" },
+                { Icon: Linkedin, label: "LinkedIn" },
+              ].map(({ Icon, label }) => (
+                <a
+                  key={label}
+                  href="#"
+                  aria-label={label}
+                  className="rounded-full bg-sidebar-border p-2.5 text-sidebar-muted transition-colors duration-200 hover:bg-accent/20 hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                >
+                  <Icon size={18} />
+                </a>
+              ))}
             </div>
           </div>
 
-          {/* Column 2: Company Links */}
           <div>
-            <h3 className="text-lg font-bold text-cream mb-2">Company</h3>
-            <ul className="space-y-2">
-              <li><a href="#" className="hover:text-accent transition-colors">About Us</a></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Careers</a></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Contact</a></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Blog</a></li>
+            <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-accent">Product</h3>
+            <ul className="mt-4 space-y-2.5">
+              {footerLinks.product.map((link) => (
+                <li key={link.label}>
+                  <Link
+                    href={link.href}
+                    className="text-sm text-sidebar-muted transition-colors duration-200 hover:text-sidebar-foreground"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Column 3: For Vendors */}
           <div>
-            <h3 className="text-lg font-bold text-cream mb-2">For Vendors</h3>
-            <ul className="space-y-2">
-              <li><a href="#" className="hover:text-accent transition-colors">List Your Business</a></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Vendor Login</a></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Advertising</a></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Help Center</a></li>
+            <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-accent">For vendors</h3>
+            <ul className="mt-4 space-y-2.5">
+              {footerLinks.vendors.map((link) => (
+                <li key={link.label}>
+                  <Link
+                    href={link.href}
+                    className="text-sm text-sidebar-muted transition-colors duration-200 hover:text-sidebar-foreground"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Column 4: Resources */}
           <div>
-            <h3 className="text-lg font-bold text-cream mb-2">Resources</h3>
-            <ul className="space-y-2">
-              <li><a href="#" className="hover:text-accent transition-colors">Inspiration Gallery</a></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Checklists</a></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Budget Calculator</a></li>
-              <li><a href="#" className="hover:text-accent transition-colors">Real Weddings</a></li>
+            <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-accent">Company</h3>
+            <ul className="mt-4 space-y-2.5">
+              {footerLinks.company.map((link) => (
+                <li key={link.label}>
+                  <Link
+                    href={link.href}
+                    className="text-sm text-sidebar-muted transition-colors duration-200 hover:text-sidebar-foreground"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
-
         </div>
 
-        {/* Bottom Bar */}
-        <div className="mt-6 pt-4 border-t border-white/10 flex flex-col md:flex-row justify-between items-center text-sm text-cream/50">
-          <p>© {new Date().getFullYear()} MyWedding.lk. All Rights Reserved.</p>
-          <div className="flex space-x-6 mt-4 md:mt-0">
-            <a href="#" className="hover:text-accent transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-accent transition-colors">Privacy Policy</a>
-          </div>
+        <div className="mt-12 border-t border-sidebar-border pt-8 flex flex-col gap-4 text-sm text-sidebar-muted md:flex-row md:items-center md:justify-between">
+          <p>© {new Date().getFullYear()} MyWedding.lk. All rights reserved.</p>
+          <p className="text-xs">Colombo · Kandy · Galle</p>
         </div>
-
       </div>
     </footer>
   );
-};
-
-export default Footer;
+}

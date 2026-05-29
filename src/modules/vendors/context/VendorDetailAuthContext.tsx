@@ -90,15 +90,15 @@ export function VendorDetailAuthProvider({ children }: { children: React.ReactNo
 
       {reviewNoticeOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4 backdrop-blur-sm"
           onClick={() => setReviewNoticeOpen(false)}
         >
           <div
-            className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
+            className="w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-semibold text-charcoal">Reviews after your event</h3>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600">
+            <h3 className="text-lg font-semibold text-foreground">Reviews after your event</h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               To keep reviews trustworthy, you can leave a rating after you have a completed booking
               with this vendor through MyWedding.lk. Book a service first, then return here once your
               event is done.
@@ -106,7 +106,7 @@ export function VendorDetailAuthProvider({ children }: { children: React.ReactNo
             <button
               type="button"
               onClick={() => setReviewNoticeOpen(false)}
-              className="mt-5 w-full rounded-lg bg-primary py-2.5 text-sm font-semibold text-white"
+              className="mt-5 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
             >
               Got it
             </button>

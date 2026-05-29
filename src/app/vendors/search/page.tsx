@@ -1,15 +1,16 @@
-// src/app/vendors/search/page.tsx
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
-import Header from '@/shared/components/layout/Header';
-import AuthModal from '@/modules/identity/AuthModal';
-import VendorCard from '@/modules/vendors/components/VendorCard';
-import { Filter } from 'lucide-react';
-import FilterModal from '@/modules/vendors/components/FilterModal';
-import { getVendors, Vendor } from '@/shared/lib/api/vendors';
-import { mapVendorToCardProps } from '@/shared/lib/vendorMedia';
-import { useSearchParams } from 'next/navigation';
+import React, { useState, useEffect, useMemo } from "react";
+import Header from "@/shared/components/layout/Header";
+import AuthModal from "@/modules/identity/AuthModal";
+import VendorCard from "@/modules/vendors/components/VendorCard";
+import { Filter, Loader2 } from "lucide-react";
+import FilterModal from "@/modules/vendors/components/FilterModal";
+import { getVendors, Vendor } from "@/shared/lib/api/vendors";
+import { mapVendorToCardProps } from "@/shared/lib/vendorMedia";
+import { useSearchParams } from "next/navigation";
+import { Button, PageLoadingSkeleton } from "@/shared/components/ui";
+import Footer from "@/shared/components/layout/Footer";
 
 const VENDORS_PER_LOAD = 9;
 
@@ -17,21 +18,17 @@ const SearchResultsPage = () => {
   const searchParams = useSearchParams();
   const [isAuthModalOpen, setAuthModalOpen] = useState(false);
   const [isFilterModalOpen, setFilterModalOpen] = useState(false);
-  
-  // State for all vendors fetched from the API
+
   const [allVendors, setAllVendors] = useState<Vendor[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Filtering state
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedRatings, setSelectedRatings] = useState<number[]>([]);
   const [priceRange, setPriceRange] = useState<number>(1500000);
 
-  // Pagination state
   const [displayedVendors, setDisplayedVendors] = useState<Vendor[]>([]);
   const [hasMore, setHasMore] = useState(true);
 
-  // Fetch data from the API
   useEffect(() => {
     const fetchVendors = async () => {
       try {
@@ -45,7 +42,7 @@ const SearchResultsPage = () => {
       }
     };
 
-    fetchVendors();
+    void fetchVendors();
   }, []);
 
   useEffect(() => {
@@ -60,82 +57,99 @@ const SearchResultsPage = () => {
     setSelectedCategories([titleCategory]);
   }, [searchParams]);
 
-  // Get all categories from fetched vendors
   const allCategories = useMemo(() => {
     if (allVendors.length === 0) return [];
-    return Array.from(new Set(allVendors.map(v => v.categoryName)));
+    return Array.from(new Set(allVendors.map((v) => v.categoryName)));
   }, [allVendors]);
 
-  // Filter handlers
-  const handleCategoryChange = (category: string) => setSelectedCategories(prev => prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]);
-  const handleRatingChange = (rating: number) => setSelectedRatings(prev => prev.includes(rating) ? prev.filter(r => r !== rating) : [...prev, rating]);
+  const handleCategoryChange = (category: string) =>
+    setSelectedCategories((prev) =>
+      prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category]
+    );
+  const handleRatingChange = (rating: number) =>
+    setSelectedRatings((prev) =>
+      prev.includes(rating) ? prev.filter((r) => r !== rating) : [...prev, rating]
+    );
 
-  // Memoized filtering logic
   const filteredVendors = useMemo(() => {
-    return allVendors.filter(vendor => {
-      const categoryMatch = selectedCategories.length === 0 || selectedCategories.includes(vendor.categoryName);
-      const ratingMatch = selectedRatings.length === 0 || selectedRatings.includes(Math.floor(vendor.averageRating));
+    return allVendors.filter((vendor) => {
+      const categoryMatch =
+        selectedCategories.length === 0 || selectedCategories.includes(vendor.categoryName);
+      const ratingMatch =
+        selectedRatings.length === 0 ||
+        selectedRatings.includes(Math.floor(vendor.averageRating));
       return categoryMatch && ratingMatch;
     });
   }, [allVendors, selectedCategories, selectedRatings]);
 
-  // Effect to handle loading vendors when filters change
   useEffect(() => {
     setDisplayedVendors(filteredVendors.slice(0, VENDORS_PER_LOAD));
     setHasMore(filteredVendors.length > VENDORS_PER_LOAD);
   }, [filteredVendors]);
 
-  // Function to load more vendors
   const loadMoreVendors = () => {
     const currentLength = displayedVendors.length;
     const nextVendors = filteredVendors.slice(currentLength, currentLength + VENDORS_PER_LOAD);
-    setDisplayedVendors(prev => [...prev, ...nextVendors]);
+    setDisplayedVendors((prev) => [...prev, ...nextVendors]);
     setHasMore(filteredVendors.length > currentLength + VENDORS_PER_LOAD);
   };
 
-  // URL for the map on this page
   const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   const mapUrl = `https://www.google.com/maps/embed/v1/search?key=${googleMapsApiKey}&q=wedding+vendors+in+Colombo+Sri+Lanka`;
 
   return (
     <>
-      <main className="bg-white">
+      <main className="min-h-screen bg-background font-roboto">
         <Header onLoginClick={() => setAuthModalOpen(true)} />
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold" style={{ color: 'var(--color-charcoal)' }}>
-              {isLoading ? "Searching for vendors..." : `${filteredVendors.length} Vendors Found`}
-            </h1>
-            <button onClick={() => setFilterModalOpen(true)} className="flex items-center gap-2 border rounded-full px-5 py-3 font-semibold hover:shadow-lg transition-shadow">
-              <Filter size={18}/> Show Filters
-            </button>
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-primary">
+                Search
+              </p>
+              <h1 className="font-playfair text-2xl font-bold text-foreground sm:text-3xl">
+                {isLoading
+                  ? "Searching for vendors…"
+                  : `${filteredVendors.length} vendors found`}
+              </h1>
+            </div>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => setFilterModalOpen(true)}
+            >
+              <Filter size={18} aria-hidden />
+              Filters
+            </Button>
           </div>
 
-          <div className="flex">
-            <div className="w-full md:w-3/5 lg:w-7/12 md:pr-8">
+          <div className="flex flex-col gap-8 lg:flex-row">
+            <div className="w-full lg:w-7/12">
               {isLoading ? (
-                <p className="text-gray-600">Loading vendors...</p>
+                <PageLoadingSkeleton />
+              ) : displayedVendors.length === 0 ? (
+                <p className="rounded-3xl border border-dashed border-border bg-card px-6 py-12 text-center text-muted-foreground">
+                  No vendors match your filters. Try adjusting categories or ratings.
+                </p>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10">
-                  {displayedVendors.map(vendor => (
-                    <VendorCard
-                      key={vendor.userId}
-                      vendor={mapVendorToCardProps(vendor)}
-                    />
+                <div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 xl:grid-cols-3">
+                  {displayedVendors.map((vendor) => (
+                    <VendorCard key={vendor.userId} vendor={mapVendorToCardProps(vendor)} />
                   ))}
                 </div>
               )}
-              
+
               {hasMore && !isLoading && (
-                <div className="text-center py-10 col-span-full">
-                  <button onClick={loadMoreVendors} className="px-8 py-3 bg-primary text-white font-semibold rounded-lg shadow-md hover:bg-opacity-90 transition-all duration-300" style={{ backgroundColor: 'var(--color-primary)' }}>
-                    Show More
-                  </button>
+                <div className="py-10 text-center">
+                  <Button type="button" variant="primary" onClick={loadMoreVendors}>
+                    Show more
+                  </Button>
                 </div>
               )}
             </div>
-            <div className="hidden md:block w-2/5 lg:w-5/12">
-              <div className="sticky top-28 h-[80vh] bg-gray-200 rounded-xl overflow-hidden">
+            <div className="hidden lg:block lg:w-5/12">
+              <div className="sticky top-28 h-[min(70vh,720px)] overflow-hidden rounded-3xl border border-border bg-muted">
                 <iframe
                   src={mapUrl}
                   width="100%"
@@ -144,14 +158,28 @@ const SearchResultsPage = () => {
                   allowFullScreen={false}
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
-                ></iframe>
+                  title="Map of wedding vendors in Sri Lanka"
+                />
               </div>
             </div>
           </div>
         </div>
+        <Footer />
       </main>
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setAuthModalOpen(false)} />
-      <FilterModal isOpen={isFilterModalOpen} onClose={() => setFilterModalOpen(false)} allCategories={allCategories} selectedCategories={selectedCategories} handleCategoryChange={handleCategoryChange} selectedRatings={selectedRatings} handleRatingChange={handleRatingChange} priceRange={priceRange} setPriceRange={setPriceRange} vendorCount={filteredVendors.length} onShowResults={() => setFilterModalOpen(false)} />
+      <FilterModal
+        isOpen={isFilterModalOpen}
+        onClose={() => setFilterModalOpen(false)}
+        allCategories={allCategories}
+        selectedCategories={selectedCategories}
+        handleCategoryChange={handleCategoryChange}
+        selectedRatings={selectedRatings}
+        handleRatingChange={handleRatingChange}
+        priceRange={priceRange}
+        setPriceRange={setPriceRange}
+        vendorCount={filteredVendors.length}
+        onShowResults={() => setFilterModalOpen(false)}
+      />
     </>
   );
 };

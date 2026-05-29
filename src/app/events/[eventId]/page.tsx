@@ -2,6 +2,7 @@ import React from 'react';
 import MiniChecklist from '@/modules/tasks/MiniChecklist';
 import MiniBudget from '@/modules/budget/MiniBudget';
 import RecentActivitiesHub from '@/modules/collaboration/RecentActivitiesHub';
+import { MiniVendorProposals } from '@/modules/procurement/MiniVendorProposals';
 
 export default async function EventOverviewPage({
   params,
@@ -19,8 +20,8 @@ export default async function EventOverviewPage({
       </div>
 
       {/* Sidebar Column - 4/12 span */}
-      <div className="lg:col-span-4 h-full min-h-0">
-        {/* We keep Recent Activities on the dashboard to make it feel alive */}
+      <div className="lg:col-span-4 flex h-full min-h-0 flex-col gap-6">
+        <MiniVendorProposals eventId={eventId} />
         <RecentActivitiesHub eventId={eventId} />
       </div>
     </div>

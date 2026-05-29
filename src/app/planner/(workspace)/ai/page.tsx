@@ -1,102 +1,260 @@
 "use client";
 
-import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { ArrowRight, Bot, Sparkles, Wand2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  ArrowRight,
+  Bot,
+  CalendarRange,
+  MessageSquare,
+  Sparkles,
+  Store,
+  Wand2,
+} from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
 import { getPlannerEvents, PlannerEventListItem } from "@/shared/lib/api/planner";
+import { ErrorBanner } from "@/modules/planner/components/ui";
 import {
+  Badge,
+  Button,
+  Card,
   EmptyState,
-  EventHubCard,
-  LoadingState,
   PageHeader,
+  PageLoadingSkeleton,
+  QuickActionLink,
   SectionCard,
-} from "@/modules/planner/components/ui";
+  StatCard,
+} from "@/shared/components/ui";
+import { cn } from "@/shared/lib/cn";
+
+const COPILOT_TOOLS = [
+  {
+    title: "AI planning workspace",
+    description: "Chat, vendor recommendations, and day-of itinerary generation.",
+    href: "/ai",
+    icon: Bot,
+  },
+  {
+    title: "Timeline auto-schedule",
+    description: "Reschedule task bars on the 16-week master Gantt.",
+    href: "/planner/tasks",
+    icon: CalendarRange,
+  },
+  {
+    title: "Vendor directory",
+    description: "Browse Sri Lankan vendors to shortlist for clients.",
+    href: "/vendors",
+    icon: Store,
+  },
+];
 
 export default function PlannerAiPage() {
   const { user } = useAuth();
   const [events, setEvents] = useState<PlannerEventListItem[]>([]);
+  const [showAllEvents, setShowAllEvents] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!user) return;
     try {
       setLoading(true);
       const token = await user.getIdToken();
-      const data = await getPlannerEvents(token, "Active");
+      const data = await getPlannerEvents(token, showAllEvents ? undefined : "Active");
       setEvents(data);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load events.");
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, showAllEvents]);
 
   useEffect(() => {
-    load();
+    void load();
   }, [load]);
 
+  const activeCount = useMemo(
+    () => events.filter((e) => e.status === "Active").length,
+    [events]
+  );
+
+  if (loading && events.length === 0) {
+    return <PageLoadingSkeleton />;
+  }
+
   return (
-    <section className="space-y-8">
+    <div className="space-y-8 pb-4">
       <PageHeader
-        title="AI Assistant"
-        description="Smart vendor matchmaking and itinerary generation for your active weddings."
+        title="AI Copilot"
+        description="Plan faster with chat, vendor matchmaking, and itinerary tools — scoped to each wedding you manage."
+        badge="Automation"
+        action={
+          <Button href="/ai" size="sm">
+            <Sparkles size={16} aria-hidden />
+            Launch workspace
+          </Button>
+        }
       />
 
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-charcoal via-slate-800 to-primary p-8 text-white shadow-xl"
+      {error && <ErrorBanner message={error} />}
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <StatCard
+          label="Events in view"
+          value={events.length}
+          sub={!showAllEvents ? "Active weddings" : "All statuses"}
+          icon={MessageSquare}
+          iconTheme="primary"
+          index={0}
+        />
+        <StatCard
+          label="Active weddings"
+          value={activeCount}
+          icon={Wand2}
+          iconTheme="accent"
+          index={1}
+        />
+        <StatCard
+          label="Quick links"
+          value={3}
+          icon={Sparkles}
+          iconTheme="success"
+          index={2}
+        />
+      </div>
+
+      <Card
+        className={cn(
+          "relative overflow-hidden border-primary/20 bg-gradient-to-br from-primary via-primary/95 to-sidebar p-6 text-primary-foreground md:p-8",
+          "shadow-lg shadow-primary/20"
+        )}
+        padding
       >
+        <div
+          className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-accent/20 blur-2xl"
+          aria-hidden
+        />
         <div className="relative z-10 flex flex-wrap items-center justify-between gap-6">
-          <div className="max-w-lg">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-wider">
-              <Sparkles size={14} />
-              Powered by AI
-            </div>
-            <h2 className="font-playfair text-2xl font-bold">Open full AI workspace</h2>
-            <p className="mt-2 text-sm text-white/80">
-              Chat with your planning copilot, get vendor recommendations, and generate day-of itineraries.
+          <div className="max-w-xl">
+            <h2 className="font-playfair text-2xl font-bold md:text-3xl">
+              Your planning copilot
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-primary-foreground/85">
+              Open the full AI workspace for chat, vendor scoring, and itinerary drafts. Pick a
+              wedding below to keep recommendations in context.
             </p>
           </div>
-          <Link
+          <Button
             href="/ai"
-            className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-charcoal shadow-lg transition hover:bg-white/95"
+            variant="accent"
+            size="lg"
+            className="shrink-0 shadow-md"
           >
-            <Bot size={18} />
-            Launch AI
-            <ArrowRight size={16} />
-          </Link>
+            <Bot size={18} aria-hidden />
+            Open AI workspace
+            <ArrowRight size={16} aria-hidden />
+          </Button>
         </div>
-        <Wand2 className="pointer-events-none absolute -bottom-4 -right-4 h-32 w-32 text-white/5" />
-      </motion.div>
+      </Card>
 
-      <SectionCard title="Per-event AI" subtitle="Select a wedding to apply recommendations in context">
+      <SectionCard title="Quick tools" subtitle="Jump into the workflows planners use most">
+        <div className="grid gap-3 sm:grid-cols-3">
+          {COPILOT_TOOLS.map((tool) => (
+            <QuickActionLink
+              key={tool.href}
+              href={tool.href}
+              label={tool.title}
+              description={tool.description}
+              icon={<tool.icon size={18} />}
+            />
+          ))}
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        title="By wedding"
+        subtitle="Run AI in the context of a client celebration"
+        action={
+          <button
+            type="button"
+            onClick={() => setShowAllEvents((v) => !v)}
+            className={cn(
+              "rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
+              showAllEvents
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:text-foreground"
+            )}
+          >
+            {showAllEvents ? "Showing all" : "Active only"}
+          </button>
+        }
+      >
         {loading ? (
-          <LoadingState label="Loading events…" />
+          <p className="py-8 text-center text-sm text-muted-foreground">Loading weddings…</p>
         ) : events.length === 0 ? (
           <EmptyState
-            title="No active events"
-            description="AI tools work best when tied to a specific client wedding."
+            title="No weddings to assist"
+            description="AI tools work best when tied to an active client event."
+            action={
+              <Button href="/planner/events" size="sm">
+                Create event
+              </Button>
+            }
+            className="border-0 bg-transparent shadow-none"
           />
         ) : (
-          <div className="space-y-4">
+          <ul className="space-y-4" role="list">
             {events.map((event) => (
-              <EventHubCard
+              <li
                 key={event.eventId}
-                eventName={event.eventName}
-                clientEmail={event.clientEmail}
-                href={`/events/${event.eventId}`}
-                actionLabel="Open event"
-                badges={
-                  <span className="rounded-lg bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-                    Itinerary & vendors
-                  </span>
-                }
-              />
+                className="rounded-2xl border border-border bg-background/80 p-5 transition-all duration-200 hover:border-primary/25 hover:shadow-md"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="flex min-w-0 gap-4">
+                    <div
+                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-accent/15 text-accent"
+                      aria-hidden
+                    >
+                      <Sparkles size={20} />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="truncate text-base font-semibold text-foreground">
+                        {event.eventName}
+                      </h3>
+                      <p className="mt-0.5 truncate text-sm text-muted-foreground">
+                        {event.clientEmail || "No client email"}
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {event.status && (
+                          <Badge variant="status" status={event.status}>
+                            {event.status}
+                          </Badge>
+                        )}
+                        <Badge variant="accent" className="normal-case tracking-normal">
+                          Itinerary & vendors
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button href={`/ai?eventId=${event.eventId}`} size="sm">
+                      Run AI
+                      <ArrowRight size={14} aria-hidden />
+                    </Button>
+                    <Button
+                      href={`/events/${event.eventId}`}
+                      variant="secondary"
+                      size="sm"
+                    >
+                      Event hub
+                    </Button>
+                  </div>
+                </div>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </SectionCard>
-    </section>
+    </div>
   );
 }

@@ -27,12 +27,12 @@ export default function ListingPreviewPanel({ form, primaryPreview }: ListingPre
 
   return (
     <div className="space-y-3 lg:sticky lg:top-28">
-      <div className="rounded-xl border border-primary/15 bg-cream/80 px-4 py-3">
+      <div className="rounded-xl border border-primary/15 bg-background/80 px-4 py-3">
         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/80">Live preview</p>
-        <p className="mt-0.5 text-xs text-charcoal/60">How couples see your listing</p>
+        <p className="mt-0.5 text-xs text-foreground/60">How couples see your listing</p>
       </div>
       <div className="listing-editor-preview-card overflow-hidden">
-        <div className="grid h-48 grid-cols-4 grid-rows-2 gap-1 bg-accent-light/20 p-1">
+        <div className="grid h-48 grid-cols-4 grid-rows-2 gap-1 bg-accent/15/20 p-1">
           <div className="relative col-span-2 row-span-2 overflow-hidden rounded-lg">
             <Image src={hero} alt="" fill className="object-cover" unoptimized />
           </div>
@@ -49,18 +49,18 @@ export default function ListingPreviewPanel({ form, primaryPreview }: ListingPre
           </div>
         </div>
 
-        <div className="space-y-4 bg-gradient-to-b from-white to-cream/30 p-5">
+        <div className="space-y-4 bg-gradient-to-b from-card to-background p-5">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-wider text-accent">
               {form.categoryName || "Category"}
             </p>
-            <h3 className="font-playfair text-xl font-bold text-charcoal">
+            <h3 className="font-playfair text-xl font-bold text-foreground">
               {form.name || "Your service name"}
             </h3>
             {form.tagline && <p className="mt-1 text-sm font-medium text-primary/90">{form.tagline}</p>}
           </div>
 
-          <div className="flex items-center gap-2 text-sm text-charcoal/60">
+          <div className="flex items-center gap-2 text-sm text-foreground/60">
             <Star size={14} className="text-accent" fill="currentColor" />
             <span>New listing</span>
           </div>
@@ -68,13 +68,13 @@ export default function ListingPreviewPanel({ form, primaryPreview }: ListingPre
           {(form.listingDetails.durationLabel || form.listingDetails.capacityNote) && (
             <div className="flex flex-wrap gap-2 text-sm">
               {form.listingDetails.durationLabel && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-light/60 px-3 py-1 text-charcoal/80">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-3 py-1 text-foreground/80">
                   <Clock size={14} className="text-primary" />
                   {form.listingDetails.durationLabel}
                 </span>
               )}
               {form.listingDetails.capacityNote && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-accent-light/60 px-3 py-1 text-charcoal/80">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-accent/15 px-3 py-1 text-foreground/80">
                   <Users size={14} className="text-primary" />
                   {form.listingDetails.capacityNote}
                 </span>
@@ -87,7 +87,7 @@ export default function ListingPreviewPanel({ form, primaryPreview }: ListingPre
               {form.listingDetails.highlights.slice(0, 4).map((item, index) => (
                 <span
                   key={`highlight-${index}-${item}`}
-                  className="rounded-full border border-primary/15 bg-cream px-2.5 py-0.5 text-xs font-medium text-charcoal/80"
+                  className="rounded-full border border-primary/15 bg-background px-2.5 py-0.5 text-xs font-medium text-foreground/80"
                 >
                   {item}
                 </span>
@@ -96,16 +96,16 @@ export default function ListingPreviewPanel({ form, primaryPreview }: ListingPre
           )}
 
           <div className="border-t border-primary/10 pt-4">
-            <p className="text-lg font-bold text-charcoal">
+            <p className="text-lg font-bold text-foreground">
               {form.basePrice ? formatLKR(parseFloat(form.basePrice)) : "LKR —"}
-              <span className="text-sm font-normal text-charcoal/55">
+              <span className="text-sm font-normal text-foreground/55">
                 {pricingTypeLabel(form.pricingType)}
               </span>
             </p>
           </div>
 
           {form.description && (
-            <p className="line-clamp-4 text-sm leading-relaxed text-charcoal/70">{form.description}</p>
+            <p className="line-clamp-4 text-sm leading-relaxed text-foreground/70">{form.description}</p>
           )}
 
           {form.listingDetails.includedItems.length > 0 && (
@@ -115,7 +115,7 @@ export default function ListingPreviewPanel({ form, primaryPreview }: ListingPre
               </p>
               <ul className="space-y-1.5">
                 {form.listingDetails.includedItems.slice(0, 5).map((item, index) => (
-                  <li key={`included-${index}-${item}`} className="flex items-start gap-2 text-sm text-charcoal/75">
+                  <li key={`included-${index}-${item}`} className="flex items-start gap-2 text-sm text-foreground/75">
                     <Check size={14} className="mt-0.5 flex-shrink-0 text-primary" />
                     {item}
                   </li>
@@ -128,7 +128,7 @@ export default function ListingPreviewPanel({ form, primaryPreview }: ListingPre
             className={`rounded-xl px-4 py-3 text-center text-sm font-bold ${
               form.isActive
                 ? "bg-primary/10 text-primary"
-                : "bg-charcoal/5 text-charcoal/50"
+                : "bg-muted text-muted-foreground"
             }`}
           >
             {form.isActive ? "Visible to couples" : "Draft — not published"}

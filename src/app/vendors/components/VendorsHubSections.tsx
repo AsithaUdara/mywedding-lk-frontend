@@ -1,11 +1,12 @@
 "use client";
 
-import React from "react";
 import Link from "next/link";
 import VendorCard from "@/modules/vendors/components/VendorCard";
 import HorizontalScrollSection from "@/shared/components/ui/HorizontalScrollSection";
+import { Button, EmptyState } from "@/shared/components/ui";
 import { Vendor } from "@/shared/lib/api/vendors";
 import { mapVendorToCardProps } from "@/shared/lib/vendorMedia";
+import { Package } from "lucide-react";
 
 interface Props {
   vendors: Vendor[];
@@ -14,7 +15,9 @@ interface Props {
 
 export function VendorsHubTopRated({ vendors, loading }: Props) {
   if (loading) {
-    return <p className="py-8 text-center text-slate-500">Loading top vendors...</p>;
+    return (
+      <p className="py-8 text-center text-sm text-muted-foreground">Loading top vendors…</p>
+    );
   }
 
   if (vendors.length === 0) {
@@ -39,34 +42,35 @@ export function VendorsHubTopRated({ vendors, loading }: Props) {
 
 export function VendorsHubAllGrid({ vendors, loading }: Props) {
   if (loading) {
-    return <p className="py-8 text-center text-slate-500">Loading vendors...</p>;
+    return (
+      <p className="py-8 text-center text-sm text-muted-foreground">Loading vendors…</p>
+    );
   }
 
   if (vendors.length === 0) {
     return (
-      <section className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-12 text-center">
-        <h2 className="text-2xl font-bold text-charcoal">No verified vendors yet</h2>
-        <p className="mt-2 text-slate-600">
-          Vendors appear here after admin verification and at least one active service.
-        </p>
-      </section>
+      <EmptyState
+        title="No verified vendors yet"
+        description="Vendors appear here after admin verification and at least one active service."
+        icon={Package}
+      />
     );
   }
 
   return (
     <section>
-      <h2 className="mb-8 text-4xl font-bold text-charcoal">All Vendors in Sri Lanka</h2>
+      <h2 className="mb-8 font-playfair text-3xl font-bold text-foreground sm:text-4xl">
+        All vendors in Sri Lanka
+      </h2>
       <div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
         {vendors.slice(0, 8).map((vendor) => (
           <VendorCard key={vendor.userId} vendor={mapVendorToCardProps(vendor)} />
         ))}
       </div>
       <div className="mt-12 text-center">
-        <Link href="/vendors/search">
-          <button className="rounded-lg border-2 border-charcoal px-8 py-4 font-bold text-charcoal transition-colors hover:bg-cream">
-            Show all {vendors.length} vendors
-          </button>
-        </Link>
+        <Button href="/vendors/search" variant="secondary" size="lg">
+          Show all {vendors.length} vendors
+        </Button>
       </div>
     </section>
   );

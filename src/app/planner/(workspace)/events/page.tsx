@@ -1,21 +1,36 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
-import { CalendarPlus, Filter, PiggyBank, TrendingDown } from "lucide-react";
-import { useAuth } from "@/shared/context/AuthContext";
-import { createPlannerEvent, getPlannerEvents, PlannerEventListItem } from "@/shared/lib/api/planner";
 import {
-  ErrorBanner,
-  formatLKR,
-  inputClass,
-  LoadingState,
+  ArrowRight,
+  CalendarDays,
+  CalendarPlus,
+  CircleDollarSign,
+  Filter,
+  PiggyBank,
+  TrendingUp,
+  Users,
+} from "lucide-react";
+import { useAuth } from "@/shared/context/AuthContext";
+import {
+  createPlannerEvent,
+  EventLifecycleStage,
+  getPlannerEvents,
+  PlannerEventListItem,
+} from "@/shared/lib/api/planner";
+import { ErrorBanner } from "@/modules/planner/components/ui";
+import {
+  Badge,
+  Button,
+  EmptyState,
   PageHeader,
+  PageLoadingSkeleton,
   SectionCard,
   StatCard,
-  StatusBadge,
-} from "@/modules/planner/components/ui";
+  formatLKR,
+  inputClass,
+} from "@/shared/components/ui";
+import { cn } from "@/shared/lib/cn";
 
 const DEFAULT_FORM = {
   eventName: "",
@@ -24,10 +39,42 @@ const DEFAULT_FORM = {
   clientEmail: "",
 };
 
+type StatusFilter = "all" | "Active" | "OnHold" | "Completed" | "Archived";
+
+const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "Active", label: "Active" },
+  { value: "OnHold", label: "On hold" },
+  { value: "Completed", label: "Completed" },
+  { value: "Archived", label: "Archived" },
+];
+
+const LIFECYCLE_VARIANT: Record<
+  EventLifecycleStage,
+  "default" | "accent" | "muted" | "destructive"
+> = {
+  Lead: "muted",
+  Onboarding: "accent",
+  Planning: "default",
+  Execution: "default",
+  Archived: "muted",
+};
+
+function daysUntilWedding(eventDate: string): number {
+  return Math.ceil(
+    (new Date(eventDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+  );
+}
+
+function budgetUtilization(spent: number, total: number): number {
+  if (total <= 0) return 0;
+  return Math.min(100, Math.round((spent / total) * 100));
+}
+
 export default function PlannerEventsPage() {
   const { user } = useAuth();
   const [events, setEvents] = useState<PlannerEventListItem[]>([]);
-  const [statusFilter, setStatusFilter] = useState<"all" | "Active" | "OnHold" | "Completed" | "Archived">("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [form, setForm] = useState(DEFAULT_FORM);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -49,7 +96,7 @@ export default function PlannerEventsPage() {
   }, [user, statusFilter]);
 
   useEffect(() => {
-    fetchEvents();
+    void fetchEvents();
   }, [fetchEvents]);
 
   const totals = useMemo(
@@ -58,12 +105,15 @@ export default function PlannerEventsPage() {
         (acc, item) => {
           acc.totalBudget += item.totalBudget;
           acc.totalSpent += item.spentBudget;
+          if (item.status === "Active") acc.active += 1;
           return acc;
         },
-        { totalBudget: 0, totalSpent: 0 }
+        { totalBudget: 0, totalSpent: 0, active: 0 }
       ),
     [events]
   );
+
+  const portfolioUtilization = budgetUtilization(totals.totalSpent, totals.totalBudget);
 
   const onCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,6 +124,7 @@ export default function PlannerEventsPage() {
       await createPlannerEvent(token, form);
       setForm(DEFAULT_FORM);
       await fetchEvents();
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create event.");
     } finally {
@@ -81,181 +132,298 @@ export default function PlannerEventsPage() {
     }
   };
 
+  const scrollToCreate = () => {
+    document.getElementById("create-event")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  if (loading && events.length === 0) {
+    return <PageLoadingSkeleton />;
+  }
+
   return (
-    <section className="space-y-8">
+    <div className="space-y-8 pb-4">
       <PageHeader
-        title="Events"
-        description="Create and manage all client weddings from one place."
-        badge={`${events.length} shown`}
+        title="Wedding events"
+        description="Create client weddings, track budgets and bookings, and open each event hub for day-to-day planning."
+        badge="Portfolio"
+        action={
+          <Button type="button" size="sm" onClick={scrollToCreate}>
+            <CalendarPlus size={16} aria-hidden />
+            New event
+          </Button>
+        }
       />
 
       {error && <ErrorBanner message={error} />}
 
-      <div className="grid gap-6 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
+          label="Events shown"
+          value={events.length}
+          sub={totals.active > 0 ? `${totals.active} active` : undefined}
+          icon={Users}
+          iconTheme="primary"
           index={0}
-          label="Total Budget"
-          value={formatLKR(totals.totalBudget)}
-          icon={<PiggyBank size={22} />}
-          color="bg-gradient-to-br from-primary to-primary/80"
         />
         <StatCard
+          label="Portfolio budget"
+          value={formatLKR(totals.totalBudget)}
+          icon={PiggyBank}
+          iconTheme="accent"
           index={1}
-          label="Total Spent"
+        />
+        <StatCard
+          label="Total spent"
           value={formatLKR(totals.totalSpent)}
-          sub={
-            totals.totalBudget > 0
-              ? `${Math.round((totals.totalSpent / totals.totalBudget) * 100)}% of portfolio`
-              : undefined
-          }
-          icon={<TrendingDown size={22} />}
-          color="bg-gradient-to-br from-rose-500 to-pink-600"
+          icon={CircleDollarSign}
+          iconTheme="rose"
+          index={2}
+        />
+        <StatCard
+          label="Budget utilization"
+          value={`${portfolioUtilization}%`}
+          icon={TrendingUp}
+          iconTheme="success"
+          index={3}
         />
       </div>
 
       <SectionCard
         title="Wedding portfolio"
-        subtitle="Filter by lifecycle status"
+        subtitle="Filter by operational status · open any event for tasks, budget, and team"
         action={
-          <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-            <Filter size={14} className="text-slate-400" />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-              className="bg-transparent text-sm font-medium outline-none"
-            >
-              <option value="all">All statuses</option>
-              <option value="Active">Active</option>
-              <option value="OnHold">On hold</option>
-              <option value="Completed">Completed</option>
-              <option value="Archived">Archived</option>
-            </select>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Filter size={14} className="text-muted-foreground" aria-hidden />
+            {STATUS_FILTERS.map((f) => (
+              <button
+                key={f.value}
+                type="button"
+                onClick={() => setStatusFilter(f.value)}
+                className={cn(
+                  "rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-200",
+                  statusFilter === f.value
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+                )}
+                aria-pressed={statusFilter === f.value}
+              >
+                {f.label}
+              </button>
+            ))}
           </div>
         }
       >
         {loading ? (
-          <LoadingState label="Loading events…" />
+          <p className="py-8 text-center text-sm text-muted-foreground">Refreshing events…</p>
         ) : events.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-slate-200 py-10 text-center text-sm text-slate-500">
-            No client weddings found. Create one below to get started.
-          </p>
+          <EmptyState
+            title="No weddings in this view"
+            description={
+              statusFilter === "all"
+                ? "Create your first client event below to start managing budgets and bookings."
+                : `No events with status “${statusFilter}”. Try another filter or create a new event.`
+            }
+            action={
+              <Button type="button" size="sm" onClick={scrollToCreate}>
+                <CalendarPlus size={16} aria-hidden />
+                Create event
+              </Button>
+            }
+            className="border-0 bg-transparent shadow-none"
+          />
         ) : (
-          <div className="space-y-4">
-            {events.map((event, i) => (
-              <motion.div
-                key={event.plannerClientEventId}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.04 }}
-                className="rounded-2xl border border-slate-100 bg-slate-50/40 p-5 transition hover:border-primary/20 hover:shadow-sm"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div className="flex gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white text-lg font-bold text-primary shadow-sm">
-                      {event.eventName.charAt(0)}
+          <ul className="space-y-4" role="list">
+            {events.map((event) => {
+              const stage = (event.eventLifecycleStage ?? "Planning") as EventLifecycleStage;
+              const utilization = budgetUtilization(event.spentBudget, event.totalBudget);
+              const days = daysUntilWedding(event.eventDate);
+
+              return (
+                <li
+                  key={event.plannerClientEventId}
+                  className="rounded-2xl border border-border bg-background/80 p-5 transition-all duration-200 hover:border-primary/25 hover:shadow-md"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="flex min-w-0 gap-4">
+                      <div
+                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 font-playfair text-lg font-bold text-primary"
+                        aria-hidden
+                      >
+                        {event.eventName.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="truncate text-base font-semibold text-foreground">
+                          {event.eventName}
+                        </h3>
+                        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-muted-foreground">
+                          <span className="inline-flex items-center gap-1">
+                            <CalendarDays size={14} aria-hidden />
+                            {new Date(event.eventDate).toLocaleDateString(undefined, {
+                              month: "long",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
+                          </span>
+                          <span aria-hidden>·</span>
+                          <span className="truncate">{event.clientEmail || "No client email"}</span>
+                        </p>
+                        <p className="mt-1 text-xs font-medium text-muted-foreground">
+                          {days > 0
+                            ? `${days} days until wedding`
+                            : days === 0
+                              ? "Wedding day"
+                              : `${Math.abs(days)} days ago`}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold text-charcoal">{event.eventName}</p>
-                      <p className="text-sm text-slate-500">
-                        {new Date(event.eventDate).toLocaleDateString(undefined, {
-                          month: "long",
-                          day: "numeric",
-                          year: "numeric",
-                        })}{" "}
-                        · {event.clientEmail || "No client email"}
-                      </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="status" status={event.status}>
+                        {event.status}
+                      </Badge>
+                      <Badge variant={LIFECYCLE_VARIANT[stage]} className="normal-case tracking-normal">
+                        {stage}
+                      </Badge>
                     </div>
                   </div>
-                  <StatusBadge status={event.status} />
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2 text-xs">
-                  <span className="rounded-lg bg-white px-3 py-1.5 font-medium text-slate-600 shadow-sm">
-                    Budget {formatLKR(event.totalBudget)}
-                  </span>
-                  <span className="rounded-lg bg-white px-3 py-1.5 font-medium text-slate-600 shadow-sm">
-                    Spent {formatLKR(event.spentBudget)}
-                  </span>
-                  <span className="rounded-lg bg-amber-50 px-3 py-1.5 font-medium text-amber-800">
-                    Pending {event.requestedBookings}
-                  </span>
-                  <span className="rounded-lg bg-blue-50 px-3 py-1.5 font-medium text-blue-800">
-                    Confirmed {event.confirmedBookings}
-                  </span>
-                  <span className="rounded-lg bg-emerald-50 px-3 py-1.5 font-medium text-emerald-800">
-                    Done {event.completedBookings}
-                  </span>
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Link
-                    href={`/events/${event.eventId}`}
-                    className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-primary/25"
-                  >
-                    Open event
-                  </Link>
-                  <Link
-                    href={`/events/${event.eventId}/budget`}
-                    className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium hover:border-primary/30"
-                  >
-                    Budget
-                  </Link>
-                  <Link
-                    href={`/events/${event.eventId}/team`}
-                    className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium hover:border-primary/30"
-                  >
-                    Team
-                  </Link>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+
+                  <div className="mt-4 space-y-1.5">
+                    <div className="flex justify-between text-xs">
+                      <span className="font-medium text-muted-foreground">Budget spent</span>
+                      <span className="font-semibold tabular-nums text-foreground">
+                        {formatLKR(event.spentBudget)}
+                        <span className="font-normal text-muted-foreground">
+                          {" "}
+                          / {formatLKR(event.totalBudget)} ({utilization}%)
+                        </span>
+                      </span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-muted">
+                      <div
+                        className={cn(
+                          "h-full rounded-full transition-all duration-300",
+                          utilization >= 90
+                            ? "bg-destructive"
+                            : utilization >= 70
+                              ? "bg-warning"
+                              : "bg-primary"
+                        )}
+                        style={{ width: `${Math.max(utilization, 4)}%` }}
+                        role="progressbar"
+                        aria-valuenow={utilization}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-label={`${utilization}% of budget spent`}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Badge variant="muted" className="normal-case tracking-normal">
+                      Pending {event.requestedBookings}
+                    </Badge>
+                    <Badge variant="default" className="normal-case tracking-normal">
+                      Confirmed {event.confirmedBookings}
+                    </Badge>
+                    <Badge variant="accent" className="normal-case tracking-normal">
+                      Completed {event.completedBookings}
+                    </Badge>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-4">
+                    <Button href={`/events/${event.eventId}`} size="sm">
+                      Open event
+                      <ArrowRight size={14} aria-hidden />
+                    </Button>
+                    <Button href={`/events/${event.eventId}/budget`} variant="secondary" size="sm">
+                      Budget
+                    </Button>
+                    <Button href={`/events/${event.eventId}/team`} variant="secondary" size="sm">
+                      Team
+                    </Button>
+                    <Button href="/planner/tasks" variant="ghost" size="sm">
+                      Timeline
+                    </Button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </SectionCard>
 
-      <SectionCard title="Create new client event" subtitle="Link a couple and set the wedding budget">
-        <form onSubmit={onCreateEvent} className="space-y-4">
+      <div id="create-event" className="scroll-mt-6">
+      <SectionCard
+        title="Create new client event"
+        subtitle="Link a registered couple by email and set the wedding date and budget"
+      >
+        <form onSubmit={onCreateEvent} className="space-y-5">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <input
-              required
-              placeholder="Event name"
-              value={form.eventName}
-              onChange={(e) => setForm((f) => ({ ...f, eventName: e.target.value }))}
-              className={inputClass}
-            />
-            <input
-              required
-              type="date"
-              value={form.eventDate}
-              onChange={(e) => setForm((f) => ({ ...f, eventDate: e.target.value }))}
-              className={inputClass}
-            />
-            <input
-              required
-              type="number"
-              min={0}
-              placeholder="Total budget (LKR)"
-              value={form.totalBudget || ""}
-              onChange={(e) => setForm((f) => ({ ...f, totalBudget: Number(e.target.value) }))}
-              className={inputClass}
-            />
-            <input
-              required
-              type="email"
-              placeholder="Client email (registered user)"
-              value={form.clientEmail}
-              onChange={(e) => setForm((f) => ({ ...f, clientEmail: e.target.value }))}
-              className={inputClass}
-            />
+            <div>
+              <label htmlFor="event-name" className="mb-1.5 block text-sm font-semibold text-foreground">
+                Event name
+              </label>
+              <input
+                id="event-name"
+                required
+                placeholder="e.g. Nimal & Priya — Colombo"
+                value={form.eventName}
+                onChange={(e) => setForm((f) => ({ ...f, eventName: e.target.value }))}
+                className={inputClass}
+                autoComplete="off"
+              />
+            </div>
+            <div>
+              <label htmlFor="event-date" className="mb-1.5 block text-sm font-semibold text-foreground">
+                Wedding date
+              </label>
+              <input
+                id="event-date"
+                required
+                type="date"
+                value={form.eventDate}
+                onChange={(e) => setForm((f) => ({ ...f, eventDate: e.target.value }))}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label htmlFor="event-budget" className="mb-1.5 block text-sm font-semibold text-foreground">
+                Total budget (LKR)
+              </label>
+              <input
+                id="event-budget"
+                required
+                type="number"
+                min={0}
+                step={1000}
+                placeholder="2500000"
+                value={form.totalBudget || ""}
+                onChange={(e) => setForm((f) => ({ ...f, totalBudget: Number(e.target.value) }))}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label htmlFor="client-email" className="mb-1.5 block text-sm font-semibold text-foreground">
+                Client email
+              </label>
+              <input
+                id="client-email"
+                required
+                type="email"
+                placeholder="couple@example.com"
+                value={form.clientEmail}
+                onChange={(e) => setForm((f) => ({ ...f, clientEmail: e.target.value }))}
+                className={inputClass}
+                autoComplete="email"
+              />
+            </div>
           </div>
-          <button
-            type="submit"
-            disabled={creating}
-            className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/25 disabled:opacity-60"
-          >
-            <CalendarPlus size={18} />
+          <Button type="submit" disabled={creating}>
+            <CalendarPlus size={18} aria-hidden />
             {creating ? "Creating…" : "Create client event"}
-          </button>
+          </Button>
         </form>
       </SectionCard>
-    </section>
+      </div>
+    </div>
   );
 }

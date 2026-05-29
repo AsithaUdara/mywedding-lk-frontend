@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
 import {
   ArrowRight,
   CalendarClock,
   CalendarDays,
   CheckCircle2,
   Clock4,
+  Plus,
   Sparkles,
   TrendingUp,
   Users,
@@ -20,22 +20,42 @@ import {
   getPlannerOverview,
   PlannerEventListItem,
   PlannerOverviewResponse,
+  type EventLifecycleStage,
 } from "@/shared/lib/api/planner";
 import {
   BudgetBarChart,
   ErrorBanner,
   formatLKR,
-  LoadingState,
-  ProgressBar,
   StatusBadge,
 } from "@/modules/planner/components/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  PageHeader,
+  PageLoadingSkeleton,
+  ProgressBar,
+  QuickActionLink,
+  SectionCard,
+  StatCard,
+} from "@/shared/components/ui";
 
-const glassCard =
-  "rounded-[2rem] border border-white/20 bg-white/80 p-6 shadow-sm backdrop-blur-md transition-all duration-300 ease-in-out hover:shadow-xl hover:shadow-primary/10 sm:p-8";
-const linkMuted =
-  "text-sm font-semibold text-slate-600 underline-offset-2 transition-all duration-300 ease-in-out hover:text-charcoal hover:underline";
-const pillBtn =
-  "inline-flex items-center gap-2 rounded-full bg-charcoal px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-300 ease-in-out hover:scale-[1.02] hover:bg-neutral-900 hover:shadow-xl hover:shadow-primary/10";
+const LIFECYCLE_ORDER: EventLifecycleStage[] = [
+  "Lead",
+  "Onboarding",
+  "Planning",
+  "Execution",
+  "Archived",
+];
+
+const LIFECYCLE_BAR: Record<EventLifecycleStage, string> = {
+  Lead: "bg-muted-foreground/40",
+  Onboarding: "bg-warning",
+  Planning: "bg-accent",
+  Execution: "bg-primary",
+  Archived: "bg-muted",
+};
 
 export default function PlannerDashboardPage() {
   const { user } = useAuth();
@@ -75,16 +95,18 @@ export default function PlannerDashboardPage() {
     return { pending, confirmed, completed, total };
   }, [overview, events]);
 
-  const budgetSummary = useMemo(() => {
-    return events.reduce(
-      (acc, e) => {
-        acc.total += e.totalBudget;
-        acc.spent += e.spentBudget;
-        return acc;
-      },
-      { total: 0, spent: 0 }
-    );
-  }, [events]);
+  const budgetSummary = useMemo(
+    () =>
+      events.reduce(
+        (acc, e) => {
+          acc.total += e.totalBudget;
+          acc.spent += e.spentBudget;
+          return acc;
+        },
+        { total: 0, spent: 0 }
+      ),
+    [events]
+  );
 
   const chartData = useMemo(
     () =>
@@ -97,309 +119,326 @@ export default function PlannerDashboardPage() {
   );
 
   const utilizationPct =
-    budgetSummary.total > 0
-      ? Math.round((budgetSummary.spent / budgetSummary.total) * 100)
-      : 0;
+    budgetSummary.total > 0 ? Math.round((budgetSummary.spent / budgetSummary.total) * 100) : 0;
 
-  const stats = [
-    {
-      label: "Active weddings",
-      value: overview?.activeWeddings ?? 0,
-      sub: `of ${overview?.maxConcurrentEvents ?? 0} plan limit`,
-      icon: Users,
-      tone: "bg-violet-100/80 text-violet-900/90",
-    },
-    {
-      label: "Pending bookings",
-      value: overview?.pendingBookings ?? 0,
-      sub: "Awaiting vendor confirmation",
-      icon: Clock4,
-      tone: "bg-amber-100/80 text-amber-900/90",
-    },
-    {
-      label: "Confirmed",
-      value: overview?.confirmedBookings ?? 0,
-      sub: "Ready to execute",
-      icon: CheckCircle2,
-      tone: "bg-emerald-100/80 text-emerald-900/90",
-    },
-    {
-      label: "Portfolio budget",
-      value: formatLKR(budgetSummary.total),
-      sub: `${utilizationPct}% utilized`,
-      icon: Wallet,
-      tone: "bg-rose-100/80 text-rose-900/90",
-    },
-  ];
+  const lifecycleCounts = useMemo(() => {
+    const counts: Record<EventLifecycleStage, number> = {
+      Lead: 0,
+      Onboarding: 0,
+      Planning: 0,
+      Execution: 0,
+      Archived: 0,
+    };
+    for (const e of events) {
+      const stage = e.eventLifecycleStage ?? "Planning";
+      if (stage in counts) counts[stage as EventLifecycleStage] += 1;
+    }
+    return counts;
+  }, [events]);
+
+  const lifecycleTotal = events.length || 1;
+
+  const clientsNeedingAttention = useMemo(
+    () =>
+      events.filter(
+        (e) =>
+          e.eventLifecycleStage === "Lead" ||
+          e.eventLifecycleStage === "Onboarding" ||
+          e.requestedBookings > e.confirmedBookings
+      ).length,
+    [events]
+  );
+
+  const upcomingSorted = useMemo(() => {
+    if (!overview?.upcomingEvents?.length) return [];
+    return [...overview.upcomingEvents].sort(
+      (a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime()
+    );
+  }, [overview]);
 
   if (loading && !overview) {
-    return <LoadingState label="Loading your workspace…" />;
+    return <PageLoadingSkeleton />;
   }
 
-  return (
-    <section className="relative space-y-8 lg:space-y-10">
-      <div
-        className="pointer-events-none absolute -right-8 top-0 h-72 w-72 rounded-full bg-violet-200/25 blur-3xl"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute left-0 top-48 h-56 w-56 rounded-full bg-amber-100/35 blur-3xl"
-        aria-hidden
-      />
+  const planLabel = overview?.activePlanTier ?? "Free";
 
-      <header className={`relative ${glassCard}`}>
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-2xl space-y-3">
-            <p className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/60 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-slate-500 shadow-sm backdrop-blur-md">
-              <Sparkles size={14} className="text-violet-500/90" />
-              Planner workspace
-            </p>
-            <h1 className="font-playfair text-4xl font-bold tracking-tight text-charcoal md:text-5xl">
-              {overview?.businessName || "Planner dashboard"}
-            </h1>
-            <p className="text-base leading-relaxed text-slate-500 sm:text-lg">
-              {overview
-                ? `${overview.activePlanTier} plan · up to ${overview.maxConcurrentEvents} concurrent weddings`
-                : "Your command center for every client celebration"}
-            </p>
+  return (
+    <div className="space-y-8 pb-4 lg:space-y-10">
+      <PageHeader
+        title={overview?.businessName || "Command center"}
+        description={
+          overview
+            ? `${overview.plannerName ? `${overview.plannerName} · ` : ""}${planLabel} plan · up to ${overview.maxConcurrentEvents} concurrent weddings`
+            : "Your agency overview — clients, bookings, and revenue at a glance"
+        }
+        badge={<Badge variant="accent">{planLabel}</Badge>}
+        action={
+          <div className="flex flex-wrap gap-2">
+            <Button href="/planner/clients" variant="secondary" size="sm">
+              <Users size={16} aria-hidden />
+              Clients
+            </Button>
+            <Button href="/planner/events" size="sm">
+              <Plus size={16} aria-hidden />
+              New event
+            </Button>
           </div>
-          {overview?.activePlanTier && (
-            <span className="inline-flex shrink-0 rounded-full border border-violet-200/80 bg-violet-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-violet-900/90">
-              {overview.activePlanTier}
-            </span>
-          )}
-        </div>
-      </header>
+        }
+      />
 
       {error && <ErrorBanner message={error} />}
 
-      <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4 xl:gap-8">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <motion.article
-              key={stat.label}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.06 }}
-              className={glassCard}
-            >
-              <div className={`mb-4 inline-flex rounded-2xl p-3 ${stat.tone}`}>
-                <Icon size={22} strokeWidth={2} />
-              </div>
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                {stat.label}
-              </p>
-              <p className="mt-2 font-playfair text-3xl font-bold tracking-tight text-charcoal tabular-nums">
-                {stat.value}
-              </p>
-              <p className="mt-2 text-sm text-slate-500">{stat.sub}</p>
-            </motion.article>
-          );
-        })}
+      {/* KPI bento */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          label="Active weddings"
+          value={overview?.activeWeddings ?? 0}
+          sub={`of ${overview?.maxConcurrentEvents ?? 0} limit`}
+          icon={Users}
+          iconTheme="primary"
+          index={0}
+        />
+        <StatCard
+          label="Pending bookings"
+          value={overview?.pendingBookings ?? 0}
+          sub="Awaiting vendor"
+          icon={Clock4}
+          iconTheme="warning"
+          trend={bookingTotals.pending > 0 ? "Action needed" : undefined}
+          trendTone="attention"
+          index={1}
+        />
+        <StatCard
+          label="Confirmed"
+          value={overview?.confirmedBookings ?? 0}
+          sub="Ready to execute"
+          icon={CheckCircle2}
+          iconTheme="success"
+          index={2}
+        />
+        <StatCard
+          label="Portfolio budget"
+          value={formatLKR(budgetSummary.total)}
+          sub={`${utilizationPct}% utilized`}
+          icon={Wallet}
+          iconTheme="accent"
+          index={3}
+        />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3 lg:gap-8">
-        <article className={glassCard}>
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="font-playfair text-xl font-bold tracking-tight text-charcoal">
-                Booking pipeline
-              </h2>
-              <p className="mt-1 text-sm text-slate-500">Across all managed weddings</p>
-            </div>
-            <Link href="/planner/bookings" className={linkMuted}>
+      {/* Pipeline + budget + quick actions */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <SectionCard
+          title="Booking pipeline"
+          subtitle="Procurement across all weddings"
+          action={
+            <Link
+              href="/planner/bookings"
+              className="text-sm font-semibold text-primary hover:underline"
+            >
               View all
             </Link>
-          </div>
-          <div className="space-y-6">
+          }
+        >
+          <div className="space-y-5">
             <ProgressBar
               label="Pending"
               count={bookingTotals.pending}
               total={bookingTotals.total}
-              color="bg-amber-500/80"
+              barClassName="bg-warning"
             />
             <ProgressBar
               label="Confirmed"
               count={bookingTotals.confirmed}
               total={bookingTotals.total}
-              color="bg-violet-600/80"
+              barClassName="bg-primary"
             />
             <ProgressBar
               label="Completed"
               count={bookingTotals.completed}
               total={bookingTotals.total}
-              color="bg-emerald-600/80"
+              barClassName="bg-success"
             />
           </div>
-        </article>
+        </SectionCard>
 
-        <article className={glassCard}>
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="font-playfair text-xl font-bold tracking-tight text-charcoal">
-                Budget by event
-              </h2>
-              <p className="mt-1 text-sm text-slate-500">Top weddings by allocation</p>
-            </div>
-            <Link href="/planner/budget" className={linkMuted}>
-              Full report
+        <SectionCard
+          title="Budget by event"
+          subtitle="Top allocations in your portfolio"
+          action={
+            <Link href="/planner/budget" className="text-sm font-semibold text-primary hover:underline">
+              Revenue
             </Link>
-          </div>
+          }
+        >
           {chartData.length === 0 ? (
-            <p className="py-8 text-center text-sm text-slate-500">No budget data yet</p>
+            <EmptyState
+              title="No budget data yet"
+              description="Create a client event to start tracking spend vs plan."
+              action={
+                <Button href="/planner/events" size="sm">
+                  Add event
+                </Button>
+              }
+            />
           ) : (
-            <BudgetBarChart data={chartData} />
+            <>
+              <BudgetBarChart data={chartData} />
+              <div className="mt-6 flex justify-between border-t border-border pt-4 text-sm">
+                <span className="text-muted-foreground">Total spent</span>
+                <span className="font-bold tabular-nums text-foreground">
+                  {formatLKR(budgetSummary.spent)}
+                </span>
+              </div>
+            </>
           )}
-          <div className="mt-6 flex justify-between border-t border-slate-100/80 pt-5 text-sm">
-            <span className="text-slate-500">Total spent</span>
-            <span className="font-bold tabular-nums text-charcoal">
-              {formatLKR(budgetSummary.spent)}
-            </span>
-          </div>
-        </article>
+        </SectionCard>
 
-        <article className={glassCard}>
-          <div className="mb-6">
-            <h2 className="font-playfair text-xl font-bold tracking-tight text-charcoal">
-              Quick actions
-            </h2>
-            <p className="mt-1 text-sm text-slate-500">Jump to common workflows</p>
+        <SectionCard title="Quick actions" subtitle="Common workflows">
+          <div className="space-y-2">
+            <QuickActionLink
+              href="/planner/events"
+              label="Manage weddings"
+              description="Create & assign client events"
+              icon={<CalendarDays size={18} />}
+            />
+            <QuickActionLink
+              href="/planner/tasks"
+              label="Timeline & tasks"
+              description="Gantt and Kanban views"
+              icon={<CalendarClock size={18} />}
+            />
+            <QuickActionLink
+              href="/planner/ai"
+              label="AI copilot"
+              description="Draft emails & summaries"
+              icon={<Sparkles size={18} />}
+            />
+            <QuickActionLink
+              href="/planner/billing"
+              label="Upgrade plan"
+              description="More concurrent events"
+              icon={<TrendingUp size={18} />}
+            />
           </div>
-          <div className="space-y-3">
-            {[
-              {
-                href: "/planner/events",
-                label: "Manage weddings",
-                description: "Create & assign client events",
-                icon: CalendarDays,
-              },
-              {
-                href: "/planner/ai",
-                label: "AI copilot",
-                description: "Itineraries & vendor match",
-                icon: Sparkles,
-              },
-              {
-                href: "/planner/billing",
-                label: "Upgrade plan",
-                description: "Unlock more concurrent events",
-                icon: TrendingUp,
-              },
-            ].map((action) => (
-              <Link
-                key={action.href}
-                href={action.href}
-                className="group flex items-center gap-4 rounded-2xl border border-white/30 bg-white/50 p-4 transition-all duration-300 ease-in-out hover:scale-[1.01] hover:border-white/50 hover:bg-white hover:shadow-md"
-              >
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-charcoal text-white shadow-sm transition-all duration-300 ease-in-out group-hover:scale-105">
-                  <action.icon size={18} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold tracking-tight text-charcoal">{action.label}</p>
-                  <p className="text-sm text-slate-500">{action.description}</p>
-                </div>
-                <ArrowRight
-                  size={16}
-                  className="text-slate-300 transition-all duration-300 ease-in-out group-hover:translate-x-0.5 group-hover:text-charcoal"
-                />
-              </Link>
+        </SectionCard>
+      </div>
+
+      {/* Client health + upcoming */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <SectionCard
+          className="lg:col-span-1"
+          title="Client health"
+          subtitle={`${clientsNeedingAttention} need attention`}
+        >
+          <div className="space-y-4">
+            {LIFECYCLE_ORDER.map((stage) => (
+              <ProgressBar
+                key={stage}
+                label={stage}
+                count={lifecycleCounts[stage]}
+                total={lifecycleTotal}
+                barClassName={LIFECYCLE_BAR[stage]}
+              />
             ))}
           </div>
-        </article>
-      </div>
+          <Link
+            href="/planner/clients"
+            className="mt-6 inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
+          >
+            Open CRM
+            <ArrowRight size={14} aria-hidden />
+          </Link>
+        </SectionCard>
 
-      <div className="grid gap-6 lg:grid-cols-3 lg:gap-8">
-        <article className={`lg:col-span-2 ${glassCard}`}>
-          <div className="mb-6">
-            <h2 className="font-playfair text-xl font-bold tracking-tight text-charcoal">
-              Upcoming weddings
-            </h2>
-            <p className="mt-1 text-sm text-slate-500">Next celebrations on your calendar</p>
-          </div>
-          {!overview?.upcomingEvents.length ? (
-            <p className="rounded-3xl border border-dashed border-slate-200/80 bg-slate-50/50 py-12 text-center text-sm text-slate-500">
-              No upcoming client weddings yet.{" "}
-              <Link
-                href="/planner/events"
-                className="font-semibold text-charcoal underline-offset-2 transition-all duration-300 ease-in-out hover:underline"
-              >
-                Create your first event
-              </Link>
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {overview.upcomingEvents.map((event, i) => (
-                <motion.div
-                  key={event.eventId}
-                  initial={{ opacity: 0, x: -12 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-white/30 bg-white/60 p-5 backdrop-blur-sm transition-all duration-300 ease-in-out hover:scale-[1.01] hover:border-white/50 hover:bg-white hover:shadow-md"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-charcoal text-sm font-bold text-white shadow-sm">
-                      {event.eventName.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="font-semibold tracking-tight text-charcoal">{event.eventName}</p>
-                      <p className="mt-1 text-sm text-slate-500">
-                        <CalendarClock size={12} className="mr-1 inline" />
-                        {new Date(event.eventDate).toLocaleDateString(undefined, {
-                          weekday: "short",
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                        {event.clientEmail && ` · ${event.clientEmail}`}
-                      </p>
-                      <p className="mt-1 text-xs text-slate-400">
-                        Budget {formatLKR(event.totalBudget)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <StatusBadge status={event.status} />
-                    <Link href={`/events/${event.eventId}`} className={pillBtn}>
-                      Open
-                      <ArrowRight size={14} />
-                    </Link>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </article>
-
-        <motion.aside
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="relative overflow-hidden rounded-[2rem] border border-charcoal/10 bg-charcoal p-8 text-white shadow-xl shadow-charcoal/20 transition-all duration-300 ease-in-out hover:scale-[1.01] hover:shadow-2xl"
-        >
-          <div className="relative z-10">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">
-              Planner pro tip
-            </p>
-            <h3 className="mt-3 font-playfair text-2xl font-bold tracking-tight">
-              Scale your studio
-            </h3>
-            <p className="mt-3 text-sm leading-relaxed text-white/80">
-              Upgrade to run more concurrent weddings, unlock AI workflows, and keep every client on
-              track.
-            </p>
-            <Link
-              href="/planner/billing"
-              className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-bold text-charcoal shadow-lg transition-all duration-300 ease-in-out hover:scale-[1.02] hover:bg-white/95"
-            >
-              View plans
-              <ArrowRight size={16} />
+        <SectionCard
+          className="lg:col-span-2"
+          title="Upcoming weddings"
+          subtitle="Next celebrations on your calendar"
+          action={
+            <Link href="/planner/events" className="text-sm font-semibold text-primary hover:underline">
+              All events
             </Link>
-          </div>
-          <div className="pointer-events-none absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/10" />
-          <div className="pointer-events-none absolute -bottom-12 -left-8 h-32 w-32 rounded-full bg-white/5" />
-        </motion.aside>
+          }
+        >
+          {upcomingSorted.length === 0 ? (
+            <EmptyState
+              title="No upcoming weddings"
+              description="When you onboard clients, their next dates appear here."
+              action={
+                <Button href="/planner/events" size="sm">
+                  Create event
+                </Button>
+              }
+            />
+          ) : (
+            <ul className="space-y-3">
+              {upcomingSorted.map((event) => (
+                <li key={event.eventId}>
+                  <Card padding={false} className="overflow-hidden p-0">
+                    <div className="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-5">
+                      <div className="flex min-w-0 items-center gap-4">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-lg font-bold text-primary">
+                          {event.eventName.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-foreground">{event.eventName}</p>
+                          <p className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
+                            <CalendarClock size={14} className="shrink-0" aria-hidden />
+                            {new Date(event.eventDate).toLocaleDateString(undefined, {
+                              weekday: "short",
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
+                            {event.clientEmail && (
+                              <span className="truncate">· {event.clientEmail}</span>
+                            )}
+                          </p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Budget {formatLKR(event.totalBudget)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <StatusBadge status={event.status} />
+                        <Button href={`/events/${event.eventId}`} size="sm" variant="secondary">
+                          Open
+                          <ArrowRight size={14} aria-hidden />
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                </li>
+              ))}
+            </ul>
+          )}
+        </SectionCard>
       </div>
-    </section>
+
+      {/* Upgrade CTA */}
+      <Card className="border-primary/20 bg-primary text-primary-foreground">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="max-w-xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary-foreground/70">
+              Planner Pro
+            </p>
+            <h3 className="mt-2 font-playfair text-2xl font-bold">Scale your studio</h3>
+            <p className="mt-2 text-sm leading-relaxed text-primary-foreground/85">
+              Run more concurrent weddings, unlock AI workflows, and keep every client on track with
+              one workspace.
+            </p>
+          </div>
+          <Button
+            href="/planner/billing"
+            variant="secondary"
+            className="shrink-0 border-0 bg-card text-primary hover:opacity-95"
+          >
+            View plans
+            <ArrowRight size={16} aria-hidden />
+          </Button>
+        </div>
+      </Card>
+    </div>
   );
 }

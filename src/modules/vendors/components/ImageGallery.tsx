@@ -20,8 +20,7 @@ const ImageGallery = ({ images, vendorName }: ImageGalleryProps) => {
 
   return (
     <>
-      {/* Mobile: single hero image */}
-      <div className="relative aspect-[4/3] overflow-hidden rounded-xl sm:hidden">
+      <div className="relative aspect-[4/3] overflow-hidden rounded-2xl sm:hidden">
         <Image
           src={primary}
           alt={`${vendorName} — cover photo`}
@@ -32,14 +31,13 @@ const ImageGallery = ({ images, vendorName }: ImageGalleryProps) => {
           unoptimized
         />
         {unique.length > 1 && (
-          <div className="absolute bottom-3 right-3 rounded-lg bg-white/95 px-3 py-1.5 text-xs font-semibold text-charcoal shadow-sm">
+          <div className="absolute bottom-3 right-3 rounded-lg bg-card/95 px-3 py-1.5 text-xs font-semibold text-foreground shadow-sm backdrop-blur-sm">
             1 / {unique.length} photos
           </div>
         )}
       </div>
 
-      {/* Tablet+: Airbnb-style mosaic */}
-      <div className="hidden h-[min(55vh,480px)] grid-cols-4 grid-rows-2 gap-2 overflow-hidden rounded-xl sm:grid">
+      <div className="hidden h-[min(55vh,480px)] grid-cols-4 grid-rows-2 gap-2 overflow-hidden rounded-2xl sm:grid">
         <div className="relative col-span-2 row-span-2 cursor-pointer overflow-hidden">
           <Image
             src={primary}
@@ -73,7 +71,7 @@ const ImageGallery = ({ images, vendorName }: ImageGalleryProps) => {
             unoptimized
           />
           {unique.length > 1 && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/25 text-sm font-semibold text-white transition hover:bg-black/35">
+            <div className="absolute inset-0 flex items-center justify-center bg-foreground/30 text-sm font-semibold text-primary-foreground transition hover:bg-foreground/40">
               Show all photos
             </div>
           )}

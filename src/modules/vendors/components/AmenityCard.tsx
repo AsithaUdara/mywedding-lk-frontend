@@ -1,13 +1,17 @@
-// src/features/vendor-discovery/components/AmenityCard.tsx
-import React from 'react';
+import React from "react";
 
-interface AmenityCardProps { title: string; icon: React.ReactNode; }
+interface AmenityCardProps {
+  title: string;
+  icon: React.ReactNode;
+}
 
 const AmenityCard = ({ title, icon }: AmenityCardProps) => {
   return (
-    <div className="p-6 border rounded-xl flex items-center space-x-4 hover:shadow-lg transition-shadow cursor-pointer">
-      {icon}
-      <span className="font-semibold text-charcoal">{title}</span>
+    <div className="flex cursor-pointer items-center gap-4 rounded-2xl border border-border bg-card p-6 text-primary transition-shadow hover:shadow-md">
+      <span className="flex-shrink-0" aria-hidden>
+        {icon}
+      </span>
+      <span className="font-semibold text-foreground">{title}</span>
     </div>
   );
 };

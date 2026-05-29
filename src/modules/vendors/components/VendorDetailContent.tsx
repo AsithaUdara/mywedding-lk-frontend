@@ -10,6 +10,9 @@ import ReviewCard from "./ReviewCard";
 import { VENDOR_IMAGE_PLACEHOLDER } from "@/shared/lib/vendorMedia";
 import type { VendorDetail } from "@/shared/lib/api/vendors";
 import { useVendorDetailAuth } from "@/modules/vendors/context/VendorDetailAuthContext";
+import { formatLKR } from "@/shared/components/ui";
+import { cn } from "@/shared/lib/cn";
+import { pv } from "@/modules/vendors/public-theme";
 
 interface VendorDetailContentProps {
   vendor: VendorDetail;
@@ -53,52 +56,50 @@ export default function VendorDetailContent({ vendor, mapUrl }: VendorDetailCont
 
   const isVerified = vendor.verificationStatus === "Verified";
   const reviewCount = vendor.reviews.length;
-
   const locationLabel = [vendor.city, vendor.province, "Sri Lanka"].filter(Boolean).join(", ");
 
   return (
-    <div className="bg-white font-roboto text-charcoal">
+    <div className={pv.page}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Breadcrumb */}
-        <nav className="border-b border-slate-100 py-4">
+        <nav className="border-b border-border py-4">
           <Link
             href="/vendors"
-            className="inline-flex items-center gap-1 text-sm font-medium text-slate-600 transition hover:text-primary"
+            className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground transition hover:text-primary"
           >
-            <ChevronLeft size={16} />
+            <ChevronLeft size={16} aria-hidden />
             Back to vendors
           </Link>
         </nav>
 
-        {/* Title block — Airbnb-style header */}
-        <header className="border-b border-slate-100 py-6">
-          <h1 className="font-playfair text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">
+        <header className="border-b border-border py-6">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-primary">Vendor profile</p>
+          <h1 className="mt-1 font-playfair text-2xl font-bold tracking-tight text-foreground sm:text-3xl lg:text-4xl">
             {vendor.businessName}
           </h1>
-          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-slate-600">
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted-foreground">
             {reviewCount > 0 ? (
-              <span className="inline-flex items-center gap-1 font-semibold text-charcoal">
-                <Star size={15} className="fill-amber-400 text-amber-400" />
+              <span className="inline-flex items-center gap-1 font-semibold text-foreground">
+                <Star size={15} className="fill-accent text-accent" aria-hidden />
                 {vendor.averageRating.toFixed(1)}
-                <span className="font-normal text-slate-500">({reviewCount} reviews)</span>
+                <span className="font-normal text-muted-foreground">({reviewCount} reviews)</span>
               </span>
             ) : (
-              <span className="text-slate-500">New listing · No reviews yet</span>
+              <span>New listing · No reviews yet</span>
             )}
-            <span className="hidden text-slate-300 sm:inline" aria-hidden>
+            <span className="hidden text-border sm:inline" aria-hidden>
               ·
             </span>
             <span className="inline-flex items-center gap-1">
-              <MapPin size={15} className="text-slate-400" />
+              <MapPin size={15} className="text-primary" aria-hidden />
               {locationLabel}
             </span>
             {isVerified && (
               <>
-                <span className="hidden text-slate-300 sm:inline" aria-hidden>
+                <span className="hidden text-border sm:inline" aria-hidden>
                   ·
                 </span>
-                <span className="inline-flex items-center gap-1 font-medium text-emerald-700">
-                  <Award size={15} />
+                <span className="inline-flex items-center gap-1 font-medium text-success">
+                  <Award size={15} aria-hidden />
                   Verified vendor
                 </span>
               </>
@@ -110,37 +111,33 @@ export default function VendorDetailContent({ vendor, mapUrl }: VendorDetailCont
                 href={vendor.websiteUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-charcoal transition hover:border-primary/30 hover:text-primary"
+                className={pv.linkBtn}
               >
-                <Globe size={14} />
+                <Globe size={14} aria-hidden />
                 Visit website
               </a>
             </div>
           )}
         </header>
 
-        {/* Photo gallery */}
         <section className="py-6">
           <ImageGallery images={displayImages} vendorName={vendor.businessName} />
         </section>
 
-        {/* Main two-column layout */}
         <div className="grid gap-12 pb-16 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-16">
           <div className="min-w-0 space-y-10">
-            {/* About */}
             {vendor.businessDescription && (
-              <section className="border-b border-slate-100 pb-10">
-                <h2 className="text-xl font-semibold text-charcoal">About this vendor</h2>
-                <p className="mt-4 whitespace-pre-line text-base leading-relaxed text-slate-600">
+              <section className={pv.sectionDivide}>
+                <h2 className={pv.sectionTitle}>About this vendor</h2>
+                <p className="mt-4 whitespace-pre-line text-base leading-relaxed text-muted-foreground">
                   {vendor.businessDescription}
                 </p>
               </section>
             )}
 
-            {/* Services */}
-            <section className="border-b border-slate-100 pb-10">
-              <h2 className="text-xl font-semibold text-charcoal">Services & packages</h2>
-              <p className="mt-1 text-sm text-slate-500">
+            <section className={pv.sectionDivide}>
+              <h2 className={pv.sectionTitle}>Services & packages</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
                 Select a service to see pricing in the booking panel.
               </p>
               <div className="mt-6">
@@ -154,32 +151,33 @@ export default function VendorDetailContent({ vendor, mapUrl }: VendorDetailCont
               </div>
             </section>
 
-            {/* Reviews */}
-            <section className="border-b border-slate-100 pb-10">
+            <section className={pv.sectionDivide}>
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-xl font-semibold text-charcoal">
+                <h2 className={pv.sectionTitle}>
                   Reviews
                   {reviewCount > 0 && (
-                    <span className="ml-2 text-base font-normal text-slate-500">({reviewCount})</span>
+                    <span className="ml-2 text-base font-normal text-muted-foreground">
+                      ({reviewCount})
+                    </span>
                   )}
                 </h2>
                 <button
                   type="button"
                   onClick={() => requireAuth("review", () => undefined)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-semibold text-charcoal transition hover:border-primary/30 hover:text-primary"
+                  className={pv.linkBtn}
                 >
-                  <PenLine size={14} />
+                  <PenLine size={14} aria-hidden />
                   Write a review
                 </button>
               </div>
               {reviewCount > 0 ? (
-                <div className="mt-6 grid gap-8 sm:grid-cols-2">
+                <div className="mt-6 grid gap-6 sm:grid-cols-2">
                   {vendor.reviews.map((review) => (
                     <ReviewCard
                       key={review.id}
                       review={{
                         name: review.reviewerName,
-                        date: new Date(review.createdAt).toLocaleDateString("en-US", {
+                        date: new Date(review.createdAt).toLocaleDateString(undefined, {
                           month: "long",
                           year: "numeric",
                         }),
@@ -190,15 +188,16 @@ export default function VendorDetailContent({ vendor, mapUrl }: VendorDetailCont
                   ))}
                 </div>
               ) : (
-                <p className="mt-4 text-sm text-slate-500">No reviews yet. Be the first to book and share feedback.</p>
+                <p className="mt-4 text-sm text-muted-foreground">
+                  No reviews yet. Be the first to book and share feedback.
+                </p>
               )}
             </section>
 
-            {/* Location */}
             <section>
-              <h2 className="text-xl font-semibold text-charcoal">Location</h2>
-              <p className="mt-2 text-sm text-slate-600">{locationLabel}</p>
-              <div className="mt-4 overflow-hidden rounded-xl border border-slate-200">
+              <h2 className={pv.sectionTitle}>Location</h2>
+              <p className="mt-2 text-sm text-muted-foreground">{locationLabel}</p>
+              <div className="mt-4 overflow-hidden rounded-2xl border border-border">
                 <iframe
                   src={mapUrl}
                   width="100%"
@@ -213,7 +212,6 @@ export default function VendorDetailContent({ vendor, mapUrl }: VendorDetailCont
             </section>
           </div>
 
-          {/* Sticky booking panel — desktop */}
           <aside className="hidden lg:block">
             <div className="sticky top-24">
               <BookingPanel
@@ -232,16 +230,15 @@ export default function VendorDetailContent({ vendor, mapUrl }: VendorDetailCont
         </div>
       </div>
 
-      {/* Mobile booking bar */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] lg:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card p-4 shadow-[0_-4px_20px_rgba(128,0,32,0.08)] lg:hidden">
         <div className="mx-auto flex max-w-lg items-center justify-between gap-4">
-          <div>
-            <p className="text-lg font-bold text-charcoal">
-              LKR {(selectedService?.basePrice ?? 0).toLocaleString()}
-              <span className="text-sm font-normal text-slate-500"> / event</span>
+          <div className="min-w-0">
+            <p className="text-lg font-bold text-primary">
+              {formatLKR(selectedService?.basePrice ?? 0)}
+              <span className="text-sm font-normal text-muted-foreground"> / event</span>
             </p>
             {selectedService && (
-              <p className="truncate text-xs text-slate-500">{selectedService.serviceName}</p>
+              <p className="truncate text-xs text-muted-foreground">{selectedService.serviceName}</p>
             )}
           </div>
           <BookingPanel
