@@ -1,12 +1,20 @@
 "use client";
 
-import React, { useState } from 'react';
-import { useAuth } from '@/shared/context/AuthContext';
-import { postComment } from '@/shared/lib/api/feed';
+import React, { useState } from "react";
+import { useAuth } from "@/shared/context/AuthContext";
+import { postComment } from "@/shared/lib/api/feed";
+import { inputClass } from "@/shared/components/ui";
+import { cn } from "@/shared/lib/cn";
 
-const PostCommentForm = ({ eventId, onCommentPosted }: { eventId: string; onCommentPosted: () => void; }) => {
+const PostCommentForm = ({
+  eventId,
+  onCommentPosted,
+}: {
+  eventId: string;
+  onCommentPosted: () => void;
+}) => {
   const { user } = useAuth();
-  const [content, setContent] = useState('');
+  const [content, setContent] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -18,7 +26,7 @@ const PostCommentForm = ({ eventId, onCommentPosted }: { eventId: string; onComm
     try {
       const token = await user.getIdToken();
       await postComment(token, eventId, content);
-      setContent('');
+      setContent("");
       setIsFocused(false);
       onCommentPosted();
     } catch (error) {
@@ -30,8 +38,8 @@ const PostCommentForm = ({ eventId, onCommentPosted }: { eventId: string; onComm
 
   return (
     <form onSubmit={handleSubmit} className="flex items-start gap-4">
-      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/20 text-primary font-bold flex items-center justify-center">
-        {user?.displayName?.charAt(0).toUpperCase() || 'U'}
+      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 font-bold text-primary">
+        {user?.displayName?.charAt(0).toUpperCase() || "U"}
       </div>
       <div className="flex-grow">
         <textarea
@@ -40,23 +48,26 @@ const PostCommentForm = ({ eventId, onCommentPosted }: { eventId: string; onComm
           onFocus={() => setIsFocused(true)}
           placeholder="Start a conversation, ask a question..."
           rows={isFocused ? 3 : 1}
-          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent outline-none transition-all duration-300"
+          className={cn(inputClass, "resize-none transition-all duration-300")}
         />
         {isFocused && (
-          <div className="flex justify-end gap-3 mt-2">
+          <div className="mt-2 flex justify-end gap-3">
             <button
               type="button"
-              onClick={() => { setIsFocused(false); setContent(''); }}
-              className="px-4 py-2 text-sm font-semibold text-gray-600 rounded-lg hover:bg-gray-200"
+              onClick={() => {
+                setIsFocused(false);
+                setContent("");
+              }}
+              className="rounded-lg px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading || !content.trim()}
-              className="px-4 py-2 text-sm font-semibold text-white bg-primary rounded-lg hover:bg-opacity-90 disabled:opacity-50"
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
-              {loading ? 'Posting...' : 'Post'}
+              {loading ? "Posting..." : "Post"}
             </button>
           </div>
         )}
@@ -66,4 +77,3 @@ const PostCommentForm = ({ eventId, onCommentPosted }: { eventId: string; onComm
 };
 
 export default PostCommentForm;
-

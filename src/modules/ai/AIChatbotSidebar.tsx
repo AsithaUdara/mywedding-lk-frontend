@@ -75,17 +75,17 @@ const AIChatbotSidebar = () => {
             animate={{ x: '0%' }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="fixed top-0 right-0 h-full w-full max-w-md bg-white z-[60] flex flex-col shadow-2xl"
+            className="fixed top-0 right-0 z-[60] flex h-full w-full max-w-md flex-col bg-card shadow-2xl"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-primary/10 to-accent/10">
+            <div className="flex items-center justify-between border-b border-border bg-gradient-to-r from-primary/10 to-accent/10 p-6">
               <div className="flex items-center gap-2">
-                <Sparkles className="text-primary" size={24} />
-                <h2 className="text-xl font-bold text-charcoal">AI Wedding Assistant</h2>
+                <Sparkles className="text-primary" size={24} aria-hidden />
+                <h2 className="font-playfair text-xl font-bold text-foreground">AI Wedding Assistant</h2>
               </div>
               <button
                 onClick={closeChat}
-                className="p-2 rounded-full hover:bg-gray-200 transition-colors"
+                className="rounded-full p-2 transition-colors hover:bg-muted"
               >
                 <X size={20} />
               </button>
@@ -99,14 +99,14 @@ const AIChatbotSidebar = () => {
                   <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">
                     AI
                   </div>
-                  <div className="bg-blue-50 p-4 rounded-lg rounded-tl-none flex-1">
-                    <p className="text-charcoal text-sm leading-relaxed">
+                  <div className="flex-1 rounded-lg rounded-tl-none bg-primary/5 p-4">
+                    <p className="text-sm leading-relaxed text-foreground">
                       Hi <span className="font-semibold">{user?.displayName?.split(' ')[0] || 'there'}</span>! 👋 I&apos;m your AI Wedding Assistant. Based on your style preferences, I can help you find the perfect vendors, plan your budget, and create an unforgettable celebration.
                     </p>
-                    <p className="text-charcoal text-sm leading-relaxed mt-3">
+                    <p className="mt-3 text-sm leading-relaxed text-foreground">
                       What would you like help with? I can suggest:
                     </p>
-                    <ul className="text-charcoal text-sm mt-2 space-y-1 ml-3">
+                    <ul className="ml-3 mt-2 space-y-1 text-sm text-foreground">
                       <li>✨ Photography & Videography</li>
                       <li>🎂 Catering & Cakes</li>
                       <li>🎭 Decorations & Theme</li>
@@ -128,8 +128,8 @@ const AIChatbotSidebar = () => {
                     )}
                     <div
                       className={`p-3 rounded-lg max-w-xs text-sm ${message.sender === 'user'
-                          ? 'bg-primary text-white rounded-tr-none'
-                          : 'bg-blue-50 text-charcoal rounded-tl-none'
+                          ? "rounded-tr-none bg-primary text-primary-foreground"
+                          : "rounded-tl-none bg-muted text-foreground"
                         }`}
                     >
                       {message.content}
@@ -143,17 +143,17 @@ const AIChatbotSidebar = () => {
                   <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">
                     AI
                   </div>
-                  <div className="bg-blue-50 p-3 rounded-lg rounded-tl-none flex gap-1">
-                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></span>
-                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></span>
-                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
+                  <div className="flex gap-1 rounded-lg rounded-tl-none bg-muted p-3">
+                    <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground" />
+                    <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground" style={{ animationDelay: "0.1s" }} />
+                    <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground" style={{ animationDelay: "0.2s" }} />
                   </div>
                 </div>
               )}
             </div>
 
             {/* Input Footer */}
-            <div className="p-4 border-t border-gray-200 bg-gray-50">
+            <div className="border-t border-border bg-muted/30 p-4">
               <div className="relative flex gap-2">
                 <input
                   type="text"
@@ -161,13 +161,13 @@ const AIChatbotSidebar = () => {
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder="Ask me anything..."
-                  className="flex-1 py-3 pl-4 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent outline-none text-sm"
+                  className="flex-1 rounded-lg border border-border py-3 pl-4 pr-4 text-sm outline-none focus:ring-2 focus:ring-ring"
                   disabled={isLoading}
                 />
                 <button
                   onClick={handleSendMessage}
                   disabled={isLoading || !inputValue.trim()}
-                  className="p-3 rounded-lg bg-primary text-white hover:bg-opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="rounded-lg bg-primary p-3 text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Send size={18} />
                 </button>

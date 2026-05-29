@@ -1,9 +1,12 @@
 "use client";
 
-import React, { useState } from 'react';
-import { useAuth } from '@/shared/context/AuthContext';
-import { sendInvitation } from '@/shared/lib/api/invitations';
-import { X, Mail, ChevronDown } from 'lucide-react';
+import React, { useState } from "react";
+import { useAuth } from "@/shared/context/AuthContext";
+import { sendInvitation } from "@/shared/lib/api/invitations";
+import { X, Mail, ChevronDown } from "lucide-react";
+import { Button, ErrorBanner, inputClass } from "@/shared/components/ui";
+import { pv } from "@/modules/vendors/public-theme";
+import { cn } from "@/shared/lib/cn";
 
 interface InviteMemberModalProps {
   isOpen: boolean;
@@ -14,8 +17,8 @@ interface InviteMemberModalProps {
 
 const InviteMemberModal = ({ isOpen, onClose, eventId, onInviteSuccess }: InviteMemberModalProps) => {
   const { user } = useAuth();
-  const [email, setEmail] = useState('');
-  const [permissionLevel, setPermissionLevel] = useState('Viewer');
+  const [email, setEmail] = useState("");
+  const [permissionLevel, setPermissionLevel] = useState("Viewer");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -32,36 +35,44 @@ const InviteMemberModal = ({ isOpen, onClose, eventId, onInviteSuccess }: Invite
 
     try {
       const token = await user.getIdToken();
-
-      await sendInvitation(token, {
-        eventId,
-        email,
-        permissionLevel
-      });
-
-      onInviteSuccess(); // This calls the function from the parent to refresh the list
-
+      await sendInvitation(token, { eventId, email, permissionLevel });
+      onInviteSuccess();
     } catch (err: unknown) {
-      const error = err as { message?: string };
-      setError(error.message || "An unexpected error occurred.");
+      const firebaseErr = err as { message?: string };
+      setError(firebaseErr.message || "An unexpected error occurred.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
-      <div className="relative w-full max-w-lg p-8 rounded-xl shadow-2xl bg-[#FFFDF9]" onClick={(e) => e.stopPropagation()}>
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-charcoal transition-colors"><X size={24} /></button>
-        <h2 className="text-3xl font-bold font-playfair text-charcoal text-center mb-6">Invite a Team Member</h2>
+    <div className={pv.modalOverlay} onClick={onClose}>
+      <div className={pv.modalPanel} onClick={(e) => e.stopPropagation()}>
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-4 top-4 rounded-lg p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+          aria-label="Close"
+        >
+          <X size={22} />
+        </button>
+        <h2 className="mb-6 text-center font-playfair text-2xl font-bold text-foreground sm:text-3xl">
+          Invite a team member
+        </h2>
 
-        {error && <p className="text-red-500 bg-red-100 p-3 rounded-lg text-center mb-4 text-sm">{error}</p>}
+        {error && <ErrorBanner message={error} className="mb-4" />}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={(e) => void handleSubmit(e)} className="space-y-5">
           <div>
-            <label htmlFor="inviteEmail" className="block text-sm font-medium text-charcoal mb-2">Member&apos;s Email</label>
+            <label htmlFor="inviteEmail" className={cn("mb-1.5 block", pv.label)}>
+              Member&apos;s email
+            </label>
             <div className="relative">
-              <Mail size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Mail
+                size={18}
+                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+                aria-hidden
+              />
               <input
                 id="inviteEmail"
                 type="email"
@@ -69,37 +80,39 @@ const InviteMemberModal = ({ isOpen, onClose, eventId, onInviteSuccess }: Invite
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full py-3 pl-12 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                className={cn(inputClass, "pl-10")}
               />
             </div>
-            <p className="mt-2 text-xs text-slate-500">
-              We will send an invitation email with a link for them to join this event.
+            <p className="mt-2 text-xs text-muted-foreground">
+              We will send an invitation email with a link to join this event.
             </p>
           </div>
 
           <div>
-            <label htmlFor="invitePermission" className="block text-sm font-medium text-charcoal mb-2">Permission</label>
+            <label htmlFor="invitePermission" className={cn("mb-1.5 block", pv.label)}>
+              Permission
+            </label>
             <div className="relative">
               <select
                 id="invitePermission"
                 value={permissionLevel}
                 onChange={(e) => setPermissionLevel(e.target.value)}
-                className="w-full appearance-none py-3 px-4 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                className={cn(inputClass, "appearance-none pr-10")}
               >
                 <option value="Viewer">Viewer</option>
                 <option value="Editor">Editor</option>
               </select>
-              <ChevronDown size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <ChevronDown
+                size={18}
+                className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground"
+                aria-hidden
+              />
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full mt-8 py-3 rounded-lg text-white font-semibold shadow-lg transition-transform hover:scale-[1.02] disabled:opacity-70 disabled:cursor-not-allowed bg-primary"
-          >
-            {loading ? 'Sending Invite...' : 'Send Invitation'}
-          </button>
+          <Button type="submit" variant="primary" className="w-full" disabled={loading}>
+            {loading ? "Sending invite…" : "Send invitation"}
+          </Button>
         </form>
       </div>
     </div>
@@ -107,4 +120,3 @@ const InviteMemberModal = ({ isOpen, onClose, eventId, onInviteSuccess }: Invite
 };
 
 export default InviteMemberModal;
-

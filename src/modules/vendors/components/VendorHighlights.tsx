@@ -15,7 +15,7 @@ const VendorHighlights = ({ rating, tags }: VendorHighlightsProps) => {
           <Award size={40} className="text-accent mr-3"/>
           <div>
             <p className="font-bold">Top-rated Vendor</p>
-            <p className="text-sm text-gray-500">One of the most loved vendors on MyWedding.lk</p>
+            <p className="text-sm text-muted-foreground">One of the most loved vendors on MyWedding.lk</p>
           </div>
         </div>
       )}
@@ -23,7 +23,7 @@ const VendorHighlights = ({ rating, tags }: VendorHighlightsProps) => {
           <Star size={40} className="text-accent mr-3"/>
           <div>
             <p className="font-bold">{rating} Star Rating</p>
-            <p className="text-sm text-gray-500">Highly ranked based on reviews and reliability.</p>
+            <p className="text-sm text-muted-foreground">Highly ranked based on reviews and reliability.</p>
           </div>
         </div>
     </div>

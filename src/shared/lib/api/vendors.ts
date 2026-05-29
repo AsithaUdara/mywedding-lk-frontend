@@ -396,8 +396,56 @@ export const sendInquiry = async (token: string, vendorId: string, message: stri
   return response.json();
 };
 
-export const getVendorInquiries = async (token: string) => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/dashboard/inquiries`;
+export interface VendorInquiryItem {
+  id: string;
+  message: string;
+  subject?: string;
+  senderEmail: string;
+  senderId: string;
+  vendorId: string;
+  sentAt: string;
+  isRead: boolean;
+  from: 'planner' | 'client';
+  senderName: string;
+  senderOrg: string;
+  eventName?: string;
+  weddingDate?: string;
+  budgetHint?: string;
+}
+
+export interface InquiryQuoteResult {
+  quoteId: string;
+  quoteReference: string;
+  amount: number;
+  currency: string;
+  suggestedReply: string;
+  pdfStorageKey?: string;
+}
+
+export interface VendorAvailabilityMonth {
+  bookedDates: number[];
+  blockedDates: number[];
+  blockedDateDetails: Array<{ date: string; reason?: string | null }>;
+}
+
+export interface WeeklyViewPoint {
+  week: string;
+  views: number;
+}
+
+export interface MonthlyCountPoint {
+  month: string;
+  count: number;
+}
+
+export interface WinRateSummary {
+  won: number;
+  pending: number;
+  lost: number;
+}
+
+export const getVendorInquiries = async (token: string): Promise<VendorInquiryItem[]> => {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/inquiries`;
   const response = await fetch(apiUrl, {
     method: 'GET',
     headers: { 'Authorization': `Bearer ${token}` },
@@ -412,10 +460,127 @@ export const getVendorInquiries = async (token: string) => {
   return (Array.isArray(data) ? data : []).map((item: Record<string, unknown>) => ({
     id: String(item.id ?? item.Id ?? ''),
     message: String(item.message ?? item.Message ?? ''),
+    subject: item.subject != null ? String(item.subject ?? item.Subject) : undefined,
     senderEmail: String(item.senderEmail ?? item.SenderEmail ?? ''),
+    senderId: String(item.senderId ?? item.SenderId ?? ''),
+    vendorId: String(item.vendorId ?? item.VendorId ?? ''),
     sentAt: String(item.sentAt ?? item.SentAt ?? ''),
     isRead: Boolean(item.isRead ?? item.IsRead),
+    from: (String(item.from ?? item.From ?? 'client').toLowerCase() === 'planner' ? 'planner' : 'client') as 'planner' | 'client',
+    senderName: String(item.senderName ?? item.SenderName ?? ''),
+    senderOrg: String(item.senderOrg ?? item.SenderOrg ?? 'Direct inquiry'),
+    eventName: item.eventName != null ? String(item.eventName ?? item.EventName) : undefined,
+    weddingDate: item.weddingDate != null ? String(item.weddingDate ?? item.WeddingDate) : undefined,
+    budgetHint: item.budgetHint != null ? String(item.budgetHint ?? item.BudgetHint) : undefined,
   }));
+};
+
+export const generateInquiryQuote = async (
+  token: string,
+  inquiryId: string,
+  proposedAmount?: number
+): Promise<InquiryQuoteResult> => {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/inquiries/${inquiryId}/quote`;
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ proposedAmount }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || errorData.detail || 'Failed to generate quote.');
+  }
+  const item = await response.json();
+  return {
+    quoteId: String(item.quoteId ?? item.QuoteId ?? ''),
+    quoteReference: String(item.quoteReference ?? item.QuoteReference ?? ''),
+    amount: Number(item.amount ?? item.Amount ?? 0),
+    currency: String(item.currency ?? item.Currency ?? 'LKR'),
+    suggestedReply: String(item.suggestedReply ?? item.SuggestedReply ?? ''),
+    pdfStorageKey: item.pdfStorageKey != null ? String(item.pdfStorageKey ?? item.PdfStorageKey) : undefined,
+  };
+};
+
+export const getVendorAvailability = async (token: string, month: string): Promise<VendorAvailabilityMonth> => {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/availability?month=${encodeURIComponent(month)}`;
+  const response = await fetch(apiUrl, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Failed to load availability.');
+  }
+  const data = await response.json();
+  return {
+    bookedDates: (data.bookedDates ?? data.BookedDates ?? []) as number[],
+    blockedDates: (data.blockedDates ?? data.BlockedDates ?? []) as number[],
+    blockedDateDetails: (data.blockedDateDetails ?? data.BlockedDateDetails ?? []) as VendorAvailabilityMonth['blockedDateDetails'],
+  };
+};
+
+export const blockVendorDate = async (token: string, date: string, reason?: string) => {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/availability/block`;
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ date, reason }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Failed to block date.');
+  }
+};
+
+export const unblockVendorDate = async (token: string, date: string) => {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/availability/block/${date}`;
+  const response = await fetch(apiUrl, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || 'Failed to unblock date.');
+  }
+};
+
+export const getVendorProfileViews = async (token: string, weeks = 6): Promise<WeeklyViewPoint[]> => {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/analytics/profile-views?weeks=${weeks}`;
+  const response = await fetch(apiUrl, { headers: { Authorization: `Bearer ${token}` } });
+  if (!response.ok) throw new Error('Failed to load profile views.');
+  const data = await response.json();
+  return (Array.isArray(data) ? data : []).map((item: Record<string, unknown>) => ({
+    week: String(item.week ?? item.Week ?? ''),
+    views: Number(item.views ?? item.Views ?? 0),
+  }));
+};
+
+export const getVendorInquiryTrend = async (token: string, months = 6): Promise<MonthlyCountPoint[]> => {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/analytics/inquiries?months=${months}`;
+  const response = await fetch(apiUrl, { headers: { Authorization: `Bearer ${token}` } });
+  if (!response.ok) throw new Error('Failed to load inquiry trend.');
+  const data = await response.json();
+  return (Array.isArray(data) ? data : []).map((item: Record<string, unknown>) => ({
+    month: String(item.month ?? item.Month ?? ''),
+    count: Number(item.count ?? item.Count ?? 0),
+  }));
+};
+
+export const getVendorWinRate = async (token: string): Promise<WinRateSummary> => {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/analytics/win-rate`;
+  const response = await fetch(apiUrl, { headers: { Authorization: `Bearer ${token}` } });
+  if (!response.ok) throw new Error('Failed to load win rate.');
+  const data = await response.json();
+  return {
+    won: Number(data.won ?? data.Won ?? 0),
+    pending: Number(data.pending ?? data.Pending ?? 0),
+    lost: Number(data.lost ?? data.Lost ?? 0),
+  };
 };
 
 export const markInquiryAsRead = async (token: string, inquiryId: string) => {

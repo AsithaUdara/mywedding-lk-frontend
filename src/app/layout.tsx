@@ -2,6 +2,7 @@ import { Roboto, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/shared/context/AuthContext";
 import { UIProvider } from "@/shared/context/UIContext";
+import { NotificationProvider } from "@/shared/context/NotificationContext";
 
 
 const roboto = Roboto({
@@ -18,8 +19,8 @@ const playfairDisplay = Playfair_Display({
 });
 
 export const metadata = {
-  title: "MyWedding.lk - Your Dream Wedding, Simplified",
-  description: "Discover the best vendors, venues, and inspiration for your perfect day in Sri Lanka.",
+  title: "MyWedding.lk — Scale your planning agency",
+  description: "B2B wedding planning SaaS for Sri Lankan agencies. Manage clients, vendors, timelines, and payments in one workspace.",
 };
 
 export default function RootLayout({
@@ -31,10 +32,11 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning={true}>
       <body className={`${roboto.variable} ${playfairDisplay.variable} antialiased`} suppressHydrationWarning={true}>
         <AuthProvider>
-          <UIProvider>
-            {children}
-
-          </UIProvider>
+          <NotificationProvider>
+            <UIProvider>
+              {children}
+            </UIProvider>
+          </NotificationProvider>
         </AuthProvider>
       </body>
     </html>

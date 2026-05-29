@@ -1,20 +1,22 @@
-/** Luxury SaaS design tokens for vendor workspace dashboards */
+/**
+ * @deprecated Use `vd` from `vendor-dashboard-theme.ts` instead.
+ * Kept as a thin alias for any legacy imports.
+ */
+import { vd } from "./vendor-dashboard-theme";
+
 export const bento = {
   page: "space-y-8 lg:space-y-10",
-  card:
-    "rounded-[2rem] border border-white/20 bg-white/80 p-6 shadow-sm backdrop-blur-md transition-all duration-300 ease-in-out hover:shadow-xl hover:shadow-primary/10 sm:p-8",
-  cardCompact:
-    "rounded-3xl border border-white/20 bg-white/80 p-6 shadow-sm backdrop-blur-md transition-all duration-300 ease-in-out hover:shadow-xl hover:shadow-primary/10 sm:p-8",
-  glassPanel:
-    "rounded-[2rem] border border-white/20 bg-white/80 shadow-sm backdrop-blur-md transition-all duration-300 ease-in-out",
-  label: "text-xs font-semibold uppercase tracking-[0.14em] text-slate-500",
-  title: "font-playfair text-2xl font-bold tracking-tight text-charcoal sm:text-3xl",
-  sectionTitle: "font-playfair text-xl font-bold tracking-tight text-charcoal",
-  subtitle: "text-sm leading-relaxed text-slate-500 sm:text-base",
+  card: vd.cardPad,
+  cardCompact: vd.cardCompact,
+  glassPanel: vd.card,
+  label: vd.label,
+  title: `font-playfair ${vd.title}`,
+  sectionTitle: `font-playfair text-xl font-bold tracking-tight text-foreground`,
+  subtitle: vd.subtitle,
   pillBtn:
-    "inline-flex items-center gap-2 rounded-full bg-charcoal px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-300 ease-in-out hover:scale-[1.02] hover:bg-neutral-900 hover:shadow-xl hover:shadow-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-charcoal/30",
+    "inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-all duration-300 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
   pillBtnOutline:
-    "inline-flex items-center gap-2 rounded-full border border-slate-200/80 bg-white/80 px-5 py-2.5 text-sm font-medium text-slate-700 shadow-sm backdrop-blur-sm transition-all duration-300 ease-in-out hover:scale-[1.02] hover:border-slate-300 hover:bg-white hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300/50",
+    "inline-flex items-center gap-2 rounded-full border border-border bg-card px-5 py-2.5 text-sm font-medium text-foreground shadow-sm transition-all duration-300 hover:border-primary/30 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
   iconWrap: (color: string) =>
     `flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl ${color}`,
 } as const;

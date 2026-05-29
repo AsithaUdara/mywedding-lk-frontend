@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState } from 'react';
-import { useAuth } from '@/shared/context/AuthContext';
-import { type Task, updateTaskStatus } from '@/shared/lib/api/tasks';
-import { postComment } from '@/shared/lib/api/feed';
-import { Check } from 'lucide-react';
+import React, { useState } from "react";
+import { useAuth } from "@/shared/context/AuthContext";
+import { type Task, updateTaskStatus } from "@/shared/lib/api/tasks";
+import { postComment } from "@/shared/lib/api/feed";
+import { Check } from "lucide-react";
+import { cn } from "@/shared/lib/cn";
+import { StatusBadge } from "@/shared/components/ui";
 
 interface TaskItemProps {
   task: Task;
@@ -24,59 +26,68 @@ const TaskItem = ({ task, eventId, onStatusChange }: TaskItemProps) => {
 
     try {
       const token = await user.getIdToken();
-      const newStatus = task.status === 'Completed' ? 'ToDo' : 'Completed';
+      const newStatus = task.status === "Completed" ? "ToDo" : "Completed";
       await updateTaskStatus(token, task.id, newStatus);
-      
-      // Auto-trigger activity feed
+
       try {
         await postComment(token, eventId, `Marked task "${task.title}" as ${newStatus}`);
       } catch (feedError) {
         console.error("Failed to post to activity feed", feedError);
       }
-      
+
       onStatusChange();
     } catch (error) {
-      console.error('Failed to update task status:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unable to update task right now. Please try again.';
-      setErrorMessage(errorMessage);
+      const message =
+        error instanceof Error ? error.message : "Unable to update task right now. Please try again.";
+      setErrorMessage(message);
     } finally {
       setIsUpdating(false);
     }
   };
 
-  const isCompleted = task.status === 'Completed';
+  const isCompleted = task.status === "Completed";
 
   return (
-    <div className={`group flex flex-col gap-2 p-4 rounded-xl border transition-all duration-300 bg-white ${isCompleted ? 'border-gray-100 shadow-sm opacity-75' : 'border-gray-100 shadow-sm hover:shadow-md hover:border-primary/20'}`}>
+    <div
+      className={cn(
+        "group flex flex-col gap-2 rounded-xl border bg-card p-4 transition-all",
+        isCompleted
+          ? "border-border opacity-75"
+          : "border-border shadow-sm hover:border-primary/25 hover:shadow-md"
+      )}
+    >
       <div className="flex items-center gap-4">
         <button
-          onClick={handleCheckboxChange}
+          type="button"
+          onClick={() => void handleCheckboxChange()}
           disabled={isUpdating}
-          className={`flex-shrink-0 w-6 h-6 rounded-full border-2 transition-all flex items-center justify-center cursor-pointer ${
-            isCompleted 
-              ? 'bg-primary border-primary scale-95' 
-              : 'border-gray-300 hover:border-primary bg-white group-hover:scale-105'
-          } ${isUpdating ? 'opacity-50 cursor-wait' : ''}`}
+          className={cn(
+            "flex h-6 w-6 flex-shrink-0 cursor-pointer items-center justify-center rounded-full border-2 transition-all",
+            isCompleted
+              ? "scale-95 border-primary bg-primary"
+              : "border-border bg-card hover:border-primary group-hover:scale-105",
+            isUpdating && "cursor-wait opacity-50"
+          )}
+          aria-label={isCompleted ? "Mark incomplete" : "Mark complete"}
         >
-          {isCompleted && <Check size={14} strokeWidth={3} className="text-white" />}
+          {isCompleted && <Check size={14} strokeWidth={3} className="text-primary-foreground" />}
         </button>
 
-        <div className="flex-grow">
-          <p className={`text-[15px] font-medium transition-all duration-300 ${isCompleted ? 'line-through text-gray-400' : 'text-charcoal'}`}>
+        <div className="min-w-0 flex-grow">
+          <p
+            className={cn(
+              "text-[15px] font-medium transition-all",
+              isCompleted ? "text-muted-foreground line-through" : "text-foreground"
+            )}
+          >
             {task.title}
           </p>
         </div>
 
-        <span className={`text-[11px] uppercase tracking-wider font-bold px-3 py-1.5 rounded-full transition-colors ${
-          isCompleted 
-            ? 'bg-gray-100 text-gray-500' 
-            : 'bg-primary/5 text-primary'
-        }`}>
-          {task.status}
-        </span>
+        <StatusBadge status={task.status} />
       </div>
       {errorMessage && (
-        <p className="text-xs text-red-500 font-medium pl-10 mt-1">{errorMessage}</p>
+        <p className="mt-1 pl-10 text-xs font-medium text-destructive">{errorMessage}</p>
       )}
     </div>
   );

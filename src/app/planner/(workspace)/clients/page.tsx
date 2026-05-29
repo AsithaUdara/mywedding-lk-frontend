@@ -1,9 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowRight, CalendarClock, CircleDollarSign, GripVertical, UserRoundPlus, Users } from "lucide-react";
-
-type EventLifecycleStage = "Lead" | "Onboarding" | "Planning" | "Execution" | "Archived";
+import { useAuth } from "@/shared/context/AuthContext";
+import {
+  EventLifecycleStage,
+  getPlannerEvents,
+  PlannerEventListItem,
+  updatePlannerEventStage,
+} from "@/shared/lib/api/planner";
+import { ErrorBanner, LoadingState } from "@/modules/planner/components/ui";
 
 type ClientCard = {
   id: string;
@@ -19,73 +25,77 @@ type ClientCard = {
 
 const STAGES: EventLifecycleStage[] = ["Lead", "Onboarding", "Planning", "Execution", "Archived"];
 
-const MOCK_CLIENTS: ClientCard[] = [
-  {
-    id: "evt-1",
-    title: "Perera Wedding",
-    couple: "Kavindu & Naduni",
-    email: "perera.family@email.com",
-    weddingDate: "2026-09-14",
-    budget: 4650000,
-    completion: 15,
-    stage: "Lead",
-    priority: "High",
-  },
-  {
-    id: "evt-2",
-    title: "Fernando Garden Reception",
-    couple: "Rivon & Shanya",
-    email: "rivon.shanya@email.com",
-    weddingDate: "2026-11-02",
-    budget: 6200000,
-    completion: 28,
-    stage: "Onboarding",
-    priority: "High",
-  },
-  {
-    id: "evt-3",
-    title: "Jayasuriya Destination Wedding",
-    couple: "Dilan & Minoli",
-    email: "jayasuriya@email.com",
-    weddingDate: "2027-01-18",
-    budget: 8100000,
-    completion: 56,
-    stage: "Planning",
-    priority: "Medium",
-  },
-  {
-    id: "evt-4",
-    title: "Silva Temple Ceremony",
-    couple: "Hasara & Ramesh",
-    email: "hasara.r@email.com",
-    weddingDate: "2026-07-29",
-    budget: 3850000,
-    completion: 78,
-    stage: "Execution",
-    priority: "High",
-  },
-  {
-    id: "evt-5",
-    title: "De Alwis Micro Wedding",
-    couple: "Sahan & Dulani",
-    email: "sahan.d@email.com",
-    weddingDate: "2026-05-03",
-    budget: 2450000,
-    completion: 100,
-    stage: "Archived",
-    priority: "Low",
-  },
-];
-
 const priorityStyles: Record<ClientCard["priority"], string> = {
   High: "bg-orange-100 text-orange-700",
   Medium: "bg-fuchsia-100 text-fuchsia-700",
   Low: "bg-emerald-100 text-emerald-700",
 };
 
+function completionForStage(stage: EventLifecycleStage): number {
+  switch (stage) {
+    case "Lead":
+      return 12;
+    case "Onboarding":
+      return 25;
+    case "Planning":
+      return 45;
+    case "Execution":
+      return 70;
+    case "Archived":
+      return 100;
+    default:
+      return 0;
+  }
+}
+
+function priorityForEvent(event: PlannerEventListItem): ClientCard["priority"] {
+  const daysUntil = (new Date(event.eventDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+  if (daysUntil <= 90) return "High";
+  if (daysUntil <= 180) return "Medium";
+  return "Low";
+}
+
+function mapEventToCard(event: PlannerEventListItem): ClientCard {
+  const stage = (event.eventLifecycleStage ?? "Lead") as EventLifecycleStage;
+  return {
+    id: event.eventId,
+    title: event.eventName,
+    couple: event.clientEmail.split("@")[0] || "Client",
+    email: event.clientEmail,
+    weddingDate: event.eventDate,
+    budget: event.totalBudget,
+    completion: completionForStage(stage),
+    stage,
+    priority: priorityForEvent(event),
+  };
+}
+
 export default function PlannerClientsPage() {
-  const [clients, setClients] = useState<ClientCard[]>(MOCK_CLIENTS);
+  const { user } = useAuth();
+  const [clients, setClients] = useState<ClientCard[]>([]);
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [savingId, setSavingId] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    if (!user) return;
+    try {
+      setLoading(true);
+      const token = await user.getIdToken();
+      const events = await getPlannerEvents(token);
+      setClients(events.map(mapEventToCard));
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load clients.");
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const totalValue = useMemo(() => clients.reduce((sum, c) => sum + c.budget, 0), [clients]);
   const activeCount = useMemo(
@@ -97,31 +107,42 @@ export default function PlannerClientsPage() {
     return Math.round(clients.reduce((sum, c) => sum + c.completion, 0) / clients.length);
   }, [clients]);
 
-  const moveCard = (cardId: string, targetStage: EventLifecycleStage) => {
+  const moveCard = async (cardId: string, targetStage: EventLifecycleStage) => {
+    const previous = clients;
     setClients((prev) =>
       prev.map((client) =>
         client.id === cardId
           ? {
               ...client,
               stage: targetStage,
-              completion:
-                targetStage === "Lead"
-                  ? 12
-                  : targetStage === "Onboarding"
-                  ? Math.max(client.completion, 25)
-                  : targetStage === "Planning"
-                  ? Math.max(client.completion, 45)
-                  : targetStage === "Execution"
-                  ? Math.max(client.completion, 70)
-                  : 100,
+              completion: completionForStage(targetStage),
             }
           : client
       )
     );
+
+    if (!user) return;
+    try {
+      setSavingId(cardId);
+      const token = await user.getIdToken();
+      await updatePlannerEventStage(token, cardId, targetStage);
+      setError(null);
+    } catch (err) {
+      setClients(previous);
+      setError(err instanceof Error ? err.message : "Failed to update stage.");
+    } finally {
+      setSavingId(null);
+    }
   };
+
+  if (loading) {
+    return <LoadingState label="Loading client pipeline…" />;
+  }
 
   return (
     <section className="space-y-6">
+      {error && <ErrorBanner message={error} />}
+
       <div className="rounded-[1.5rem] bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -168,7 +189,9 @@ export default function PlannerClientsPage() {
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Active / Progress</p>
-              <p className="text-2xl font-bold tracking-tight text-slate-900">{activeCount} · {weightedProgress}%</p>
+              <p className="text-2xl font-bold tracking-tight text-slate-900">
+                {activeCount} · {weightedProgress}%
+              </p>
             </div>
           </div>
         </article>
@@ -183,7 +206,7 @@ export default function PlannerClientsPage() {
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
                 const cardId = e.dataTransfer.getData("text/plain");
-                if (cardId) moveCard(cardId, stage);
+                if (cardId) void moveCard(cardId, stage);
                 setDraggingId(null);
               }}
               className="rounded-[1.5rem] border border-slate-200/70 bg-white/95 p-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)]"
@@ -204,14 +227,14 @@ export default function PlannerClientsPage() {
                 {stageItems.map((client) => (
                   <article
                     key={client.id}
-                    draggable
+                    draggable={savingId !== client.id}
                     onDragStart={(e) => {
                       e.dataTransfer.setData("text/plain", client.id);
                       setDraggingId(client.id);
                     }}
                     onDragEnd={() => setDraggingId(null)}
                     className={`cursor-grab rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_8px_24px_rgb(0,0,0,0.04)] transition active:cursor-grabbing ${
-                      draggingId === client.id ? "opacity-60" : "opacity-100"
+                      draggingId === client.id || savingId === client.id ? "opacity-60" : "opacity-100"
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">

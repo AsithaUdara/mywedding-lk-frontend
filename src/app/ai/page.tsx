@@ -5,6 +5,8 @@ import { useAuth } from "@/shared/context/AuthContext";
 import { getEvents } from "@/shared/lib/api/events";
 import { generateAiItinerary, getAiItinerary, getAiVendorRecommendations, saveAiItinerary } from "@/shared/lib/api/ai";
 import AIChatWidget from "@/modules/ai/AIChatWidget";
+import { Button, Card, ErrorBanner, inputClass } from "@/shared/components/ui";
+import { cn } from "@/shared/lib/cn";
 
 interface EventSummary {
   id: string;
@@ -76,17 +78,19 @@ export default function AiPlanningPage() {
   };
 
   return (
-    <main className="min-h-screen bg-cream px-4 py-10">
+    <main className="min-h-screen bg-background px-4 py-10 font-roboto">
       <section className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-3">
-        <div className="rounded-2xl bg-white p-6 shadow lg:col-span-2">
-          <h1 className="text-2xl font-bold text-charcoal">AI Wedding Intelligence</h1>
-          <p className="mt-2 text-sm text-slate-600">Get smart vendor matchmaking and auto-generated wedding day timelines.</p>
+        <Card className="lg:col-span-2 sm:p-8">
+          <h1 className="font-playfair text-2xl font-bold text-foreground">AI Wedding Intelligence</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Get smart vendor matchmaking and auto-generated wedding day timelines.
+          </p>
 
           <div className="mt-5 flex flex-col gap-3 md:flex-row">
             <select
               value={eventId}
               onChange={(e) => setEventId(e.target.value)}
-              className="rounded-xl border border-slate-200 px-4 py-3 outline-none focus:border-primary"
+              className={cn(inputClass, "md:min-w-[220px]")}
             >
               {events.map((event) => (
                 <option key={event.id} value={event.id}>
@@ -94,25 +98,29 @@ export default function AiPlanningPage() {
                 </option>
               ))}
             </select>
-            <button onClick={runAi} disabled={loading || !eventId} className="rounded-xl bg-primary px-4 py-3 font-semibold text-white disabled:opacity-60">
-              {loading ? "Analyzing..." : "Run AI Matchmaking"}
-            </button>
+            <Button onClick={() => void runAi()} disabled={loading || !eventId} variant="primary">
+              {loading ? "Analyzing…" : "Run AI matchmaking"}
+            </Button>
           </div>
 
-          {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+          {error && (
+            <div className="mt-4">
+              <ErrorBanner message={error} />
+            </div>
+          )}
 
           <div className="mt-6 grid gap-6 md:grid-cols-2">
             <div>
-              <h2 className="text-lg font-bold text-charcoal">Recommended Vendors</h2>
+              <h2 className="text-lg font-bold text-foreground">Recommended Vendors</h2>
               <div className="mt-3 space-y-2">
                 {recommendations.length === 0 ? (
-                  <p className="text-sm text-slate-500">No recommendations yet.</p>
+                  <p className="text-sm text-muted-foreground">No recommendations yet.</p>
                 ) : (
                   recommendations.map((item) => (
-                    <div key={item.vendorId} className="rounded-xl border border-slate-200 p-3">
-                      <p className="font-semibold text-charcoal">{item.businessName}</p>
-                      <p className="text-xs text-slate-500">Score: {item.score.toFixed(2)}</p>
-                      <p className="text-sm text-slate-600">{item.reason}</p>
+                    <div key={item.vendorId} className="rounded-xl border border-border p-3">
+                      <p className="font-semibold text-foreground">{item.businessName}</p>
+                      <p className="text-xs text-muted-foreground">Score: {item.score.toFixed(2)}</p>
+                      <p className="text-sm text-muted-foreground">{item.reason}</p>
                     </div>
                   ))
                 )}
@@ -120,14 +128,14 @@ export default function AiPlanningPage() {
             </div>
 
             <div>
-              <h2 className="text-lg font-bold text-charcoal">Generated Itinerary</h2>
+              <h2 className="text-lg font-bold text-foreground">Generated Itinerary</h2>
               <div className="mt-3 space-y-2">
                 {itinerary.length === 0 ? (
-                  <p className="text-sm text-slate-500">No itinerary generated yet.</p>
+                  <p className="text-sm text-muted-foreground">No itinerary generated yet.</p>
                 ) : (
                   <>
                     {itinerary.map((item, index) => (
-                      <div key={item.id} className="rounded-xl border border-slate-200 p-3">
+                      <div key={item.id} className="rounded-xl border border-border p-3">
                         <input
                           value={item.title}
                           onChange={(e) =>
@@ -135,7 +143,7 @@ export default function AiPlanningPage() {
                               prev.map((x, i) => (i === index ? { ...x, title: e.target.value } : x))
                             )
                           }
-                          className="w-full border-b border-slate-200 pb-1 font-semibold text-charcoal outline-none"
+                          className="w-full border-b border-border pb-1 font-semibold text-foreground outline-none"
                         />
                         <div className="mt-2 grid grid-cols-2 gap-2">
                           <input
@@ -146,7 +154,7 @@ export default function AiPlanningPage() {
                                 prev.map((x, i) => (i === index ? { ...x, startsAt: new Date(e.target.value).toISOString() } : x))
                               )
                             }
-                            className="rounded border border-slate-200 px-2 py-1 text-xs"
+                            className="rounded border border-border px-2 py-1 text-xs"
                           />
                           <input
                             type="datetime-local"
@@ -156,26 +164,28 @@ export default function AiPlanningPage() {
                                 prev.map((x, i) => (i === index ? { ...x, endsAt: new Date(e.target.value).toISOString() } : x))
                               )
                             }
-                            className="rounded border border-slate-200 px-2 py-1 text-xs"
+                            className="rounded border border-border px-2 py-1 text-xs"
                           />
                         </div>
                       </div>
                     ))}
-                    <button onClick={saveItinerary} className="rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-white">
-                      Save Itinerary
-                    </button>
+                    <Button onClick={() => void saveItinerary()} variant="primary" className="text-sm">
+                      Save itinerary
+                    </Button>
                   </>
                 )}
               </div>
             </div>
           </div>
-        </div>
+        </Card>
 
-        <div className="rounded-2xl bg-white p-4 shadow">
-          <h2 className="mb-3 text-lg font-bold text-charcoal">AI Assistant</h2>
-          <p className="mb-2 text-xs text-slate-500">Use the floating chat to ask style, vendor, and budget questions.</p>
+        <Card className="relative min-h-[200px] sm:p-8">
+          <h2 className="mb-3 text-lg font-bold text-foreground">AI Assistant</h2>
+          <p className="mb-2 text-xs text-muted-foreground">
+            Use the floating chat to ask style, vendor, and budget questions.
+          </p>
           <AIChatWidget />
-        </div>
+        </Card>
       </section>
     </main>
   );

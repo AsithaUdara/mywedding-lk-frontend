@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/shared/context/AuthContext";
 import {
   getPendingVendors,
@@ -10,9 +10,15 @@ import {
 } from "@/shared/lib/api/admin";
 import { Loader2 } from "lucide-react";
 import { ApproveButton, RejectButton } from "@/modules/admin/dashboard/components";
-import { AdminDataTable, AdminPanel, AdminTableShell, AdminTd, AdminTh } from "./tables";
+import {
+  Badge,
+  DataTable,
+  type DataTableColumn,
+  EmptyState,
+  ErrorBanner,
+} from "@/shared/components/ui";
+import { ad } from "@/modules/admin/admin-theme";
 
-/** Fallback rows when API is empty — demo KYB queue for local dev. */
 const MOCK_PENDING: PendingVendor[] = [
   {
     userId: "mock-v-1",
@@ -46,15 +52,26 @@ const MOCK_PENDING: PendingVendor[] = [
   },
 ];
 
+type Row = PendingVendor & { id: string };
+
 type ActionState = { id: string; type: "approve" | "reject" } | null;
 
 type VendorApprovalQueueProps = {
-  /** Use mock data only (no API). */
   mockOnly?: boolean;
+  /** Dashboard embed — fewer rows, compact columns */
+  embedded?: boolean;
+  /** @deprecated Use embedded */
   compact?: boolean;
+  onPendingCount?: (count: number) => void;
 };
 
-export function VendorApprovalQueue({ mockOnly = false, compact = false }: VendorApprovalQueueProps) {
+export function VendorApprovalQueue({
+  mockOnly = false,
+  embedded = false,
+  compact = false,
+  onPendingCount,
+}: VendorApprovalQueueProps) {
+  const isEmbedded = embedded || compact;
   const { user } = useAuth();
   const [vendors, setVendors] = useState<PendingVendor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -92,8 +109,17 @@ export function VendorApprovalQueue({ mockOnly = false, compact = false }: Vendo
   }, [user, mockOnly]);
 
   useEffect(() => {
-    loadVendors();
+    void loadVendors();
   }, [loadVendors]);
+
+  useEffect(() => {
+    onPendingCount?.(vendors.length);
+  }, [vendors.length, onPendingCount]);
+
+  const rows: Row[] = useMemo(() => {
+    const mapped = vendors.map((v) => ({ ...v, id: v.userId }));
+    return isEmbedded ? mapped.slice(0, 4) : mapped;
+  }, [vendors, isEmbedded]);
 
   const removeVendor = (vendorId: string) => {
     setVendors((prev) => prev.filter((v) => v.userId !== vendorId));
@@ -119,7 +145,9 @@ export function VendorApprovalQueue({ mockOnly = false, compact = false }: Vendo
   };
 
   const handleReject = async (vendorId: string, businessName: string) => {
-    const confirmed = window.confirm(`Reject "${businessName}"? Vendor will not appear in the directory.`);
+    const confirmed = window.confirm(
+      `Reject "${businessName}"? Vendor will not appear in the directory.`
+    );
     if (!confirmed) return;
 
     if (useMock && vendorId.startsWith("mock-")) {
@@ -140,122 +168,128 @@ export function VendorApprovalQueue({ mockOnly = false, compact = false }: Vendo
     }
   };
 
+  const columns = useMemo((): DataTableColumn<Row>[] => {
+    const base: DataTableColumn<Row>[] = [
+      {
+        key: "business",
+        header: "Business",
+        render: (vendor) => (
+          <div className="min-w-[200px]">
+            <p className="font-semibold text-foreground">{vendor.businessName}</p>
+            {!isEmbedded && (
+              <p className="mt-1 line-clamp-2 max-w-sm text-sm text-muted-foreground">
+                {vendor.businessDescription ?? "—"}
+              </p>
+            )}
+          </div>
+        ),
+      },
+      {
+        key: "owner",
+        header: "Owner",
+        render: (vendor) => <span className="text-foreground">{vendor.ownerName ?? "—"}</span>,
+      },
+    ];
+
+    if (!isEmbedded) {
+      base.push(
+        {
+          key: "email",
+          header: "Email",
+          render: (vendor) =>
+            vendor.ownerEmail ? (
+              <a
+                href={`mailto:${vendor.ownerEmail}`}
+                className="font-medium text-primary hover:underline"
+              >
+                {vendor.ownerEmail}
+              </a>
+            ) : (
+              "—"
+            ),
+        },
+        {
+          key: "city",
+          header: "City",
+          render: (vendor) => vendor.city ?? "—",
+        },
+        {
+          key: "category",
+          header: "Category",
+          render: (vendor) => (
+            <Badge variant="muted">{vendor.categoryName ?? "Uncategorized"}</Badge>
+          ),
+        }
+      );
+    }
+
+    base.push(
+      {
+        key: "status",
+        header: "Status",
+        render: (vendor) => <Badge variant="accent">{vendor.verificationStatus}</Badge>,
+      },
+      {
+        key: "actions",
+        header: "",
+        className: "text-right",
+        render: (vendor) => {
+          const isActing = actionState?.id === vendor.userId;
+          const isApproving = isActing && actionState?.type === "approve";
+          const isRejecting = isActing && actionState?.type === "reject";
+          return (
+            <div className="flex items-center justify-end gap-1.5">
+              <ApproveButton
+                onClick={() => void handleApprove(vendor.userId)}
+                loading={isApproving}
+                disabled={isActing && !isApproving}
+              />
+              <RejectButton
+                onClick={() => void handleReject(vendor.userId, vendor.businessName)}
+                loading={isRejecting}
+                disabled={isActing && !isRejecting}
+              />
+            </div>
+          );
+        },
+      }
+    );
+
+    return base;
+  }, [isEmbedded, actionState]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
+        <Loader2 size={16} className="animate-spin" aria-hidden />
+        Loading KYB queue…
+      </div>
+    );
+  }
+
   return (
-    <AdminPanel
-      title="Vendor approval queue (KYB)"
-      subtitle={
-        compact
-          ? "Know-your-business verification before directory listing"
-          : "Review business details, portfolio, and web presence — approve to verify or reject application"
-      }
-      action={
-        !loading && vendors.length > 0 ? (
-          <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900/90 transition-all duration-300 ease-in-out">
-            {vendors.length} pending
-          </span>
-        ) : null
-      }
-    >
-      {error && (
-        <div className="border-b border-amber-200/80 bg-amber-50/90 px-6 py-3 text-sm text-amber-900/90 sm:px-8">
-          {error}
-        </div>
-      )}
+    <div className="space-y-4">
+      {error && <ErrorBanner message={error} />}
       {useMock && !mockOnly && !error && (
-        <div className="border-b border-slate-100/80 bg-slate-50/80 px-6 py-2.5 text-sm text-slate-500 sm:px-8">
-          Demo data — connect backend or submit real vendor signups to populate live queue.
-        </div>
+        <p className={cnDemoBanner()}>Demo data — connect backend or submit real vendor signups.</p>
       )}
 
-      {loading ? (
-        <div className="flex items-center justify-center gap-2 py-16 text-sm text-slate-500">
-          <Loader2 size={16} className="animate-spin" />
-          Loading KYB queue…
-        </div>
-      ) : vendors.length === 0 ? (
-        <div className="px-8 py-16 text-center text-sm text-slate-500">
-          No vendors awaiting KYB review.
-        </div>
-      ) : (
-        <div className="px-4 pb-6 pt-2 sm:px-6 sm:pb-8">
-          <AdminTableShell>
-            <AdminDataTable>
-            <thead>
-              <tr>
-                <AdminTh>Business</AdminTh>
-                <AdminTh>Owner</AdminTh>
-                <AdminTh>Email</AdminTh>
-                <AdminTh>City</AdminTh>
-                <AdminTh>Category</AdminTh>
-                <AdminTh>Status</AdminTh>
-                <AdminTh align="right">Actions</AdminTh>
-              </tr>
-            </thead>
-            <tbody>
-              {vendors.map((vendor) => {
-                const isActing = actionState?.id === vendor.userId;
-                const isApproving = isActing && actionState?.type === "approve";
-                const isRejecting = isActing && actionState?.type === "reject";
+      <DataTable
+        columns={columns}
+        rows={rows}
+        emptyTitle="No vendors awaiting review"
+        emptyDescription="New vendor applications will appear here for KYB approval."
+      />
 
-                return (
-                  <tr
-                    key={vendor.userId}
-                    className="transition-colors duration-300 ease-in-out hover:bg-slate-50/80"
-                  >
-                    <AdminTd>
-                      <p className="font-semibold text-charcoal">{vendor.businessName}</p>
-                      <p className="mt-1 line-clamp-2 max-w-xs text-sm leading-relaxed text-slate-500">
-                        {vendor.businessDescription ?? "—"}
-                      </p>
-                    </AdminTd>
-                    <AdminTd>
-                      <span className="text-charcoal">{vendor.ownerName ?? "—"}</span>
-                    </AdminTd>
-                    <AdminTd>
-                      {vendor.ownerEmail ? (
-                        <a
-                          href={`mailto:${vendor.ownerEmail}`}
-                          className="text-violet-800/90 underline-offset-2 transition-all duration-300 ease-in-out hover:text-violet-950 hover:underline"
-                        >
-                          {vendor.ownerEmail}
-                        </a>
-                      ) : (
-                        "—"
-                      )}
-                    </AdminTd>
-                    <AdminTd>{vendor.city ?? "—"}</AdminTd>
-                    <AdminTd>
-                      <span className="inline-block rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
-                        {vendor.categoryName ?? "Uncategorized"}
-                      </span>
-                    </AdminTd>
-                    <AdminTd>
-                      <span className="inline-block rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-amber-900/90">
-                        {vendor.verificationStatus}
-                      </span>
-                    </AdminTd>
-                    <AdminTd align="right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <ApproveButton
-                          onClick={() => handleApprove(vendor.userId)}
-                          loading={isApproving}
-                          disabled={isActing && !isApproving}
-                        />
-                        <RejectButton
-                          onClick={() => handleReject(vendor.userId, vendor.businessName)}
-                          loading={isRejecting}
-                          disabled={isActing && !isRejecting}
-                        />
-                      </div>
-                    </AdminTd>
-                  </tr>
-                );
-              })}
-            </tbody>
-            </AdminDataTable>
-          </AdminTableShell>
-        </div>
+      {isEmbedded && vendors.length > 4 && (
+        <p className="text-center text-sm text-muted-foreground">
+          Showing 4 of {vendors.length} pending — open the full queue to review all.
+        </p>
       )}
-    </AdminPanel>
+    </div>
   );
+}
+
+function cnDemoBanner() {
+  return `${ad.demoBanner} rounded-xl border border-border px-4 py-2.5`;
 }

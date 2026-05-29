@@ -67,11 +67,11 @@ function AcceptInvitationContent() {
     }, [user, authLoading, token, router]);
 
     return (
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 font-roboto">
+        <div className="flex min-h-screen items-center justify-center bg-background p-4 font-roboto">
             <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="bg-white max-w-md w-full p-8 rounded-3xl shadow-xl shadow-slate-200/60 border border-slate-100 text-center"
+                className="w-full max-w-md rounded-3xl border border-border bg-card p-8 text-center shadow-xl shadow-primary/5"
             >
                 {status === 'loading' && (
                     <div className="space-y-6">
@@ -82,8 +82,8 @@ function AcceptInvitationContent() {
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <h1 className="text-2xl font-bold text-charcoal font-playfair">Processing Invitation</h1>
-                            <p className="text-slate-500 font-medium">{message}</p>
+                            <h1 className="font-playfair text-2xl font-bold text-foreground">Processing invitation</h1>
+                            <p className="font-medium text-muted-foreground">{message}</p>
                         </div>
                     </div>
                 )}
@@ -94,8 +94,8 @@ function AcceptInvitationContent() {
                             <CheckCircle2 className="w-12 h-12" />
                         </div>
                         <div className="space-y-2">
-                            <h1 className="text-2xl font-bold text-charcoal font-playfair">Join Successful!</h1>
-                            <p className="text-slate-600 font-medium">{message}</p>
+                            <h1 className="font-playfair text-2xl font-bold text-foreground">Join successful!</h1>
+                            <p className="font-medium text-muted-foreground">{message}</p>
                         </div>
                         <div className="pt-4 space-y-4">
                             <div className="flex items-center justify-center gap-2 text-primary font-bold animate-pulse">
@@ -103,7 +103,7 @@ function AcceptInvitationContent() {
                             </div>
                             <Link
                                 href="/dashboard"
-                                className="block w-full py-3 bg-primary text-white font-bold rounded-xl hover:bg-opacity-90 transition-all shadow-lg shadow-primary/20"
+                                className="block w-full rounded-xl bg-primary py-3 font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90"
                             >
                                 Go to Dashboard Now
                             </Link>
@@ -113,17 +113,17 @@ function AcceptInvitationContent() {
 
                 {status === 'error' && (
                     <div className="space-y-6">
-                        <div className="mx-auto w-20 h-20 bg-red-100 rounded-full flex items-center justify-center text-red-600">
+                        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-destructive/10 text-destructive">
                             <XCircle className="w-12 h-12" />
                         </div>
                         <div className="space-y-2">
-                            <h1 className="text-2xl font-bold text-charcoal font-playfair">Invitation Error</h1>
-                            <p className="text-red-500 font-medium">{message}</p>
+                            <h1 className="font-playfair text-2xl font-bold text-foreground">Invitation error</h1>
+                            <p className="font-medium text-destructive">{message}</p>
                         </div>
                         <div className="pt-4">
                             <Link
                                 href="/"
-                                className="block w-full py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-all"
+                                className="block w-full rounded-xl bg-muted py-3 font-bold text-muted-foreground transition-all hover:bg-muted/80"
                             >
                                 Back to Homepage
                             </Link>
@@ -133,23 +133,23 @@ function AcceptInvitationContent() {
 
                 {status === 'already_member' && (
                     <div className="space-y-6">
-                        <div className="mx-auto w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
+                        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-primary">
                             <CheckCircle2 className="w-12 h-12" />
                         </div>
                         <div className="space-y-2">
-                            <h1 className="text-2xl font-bold text-charcoal font-playfair">Already a Member!</h1>
-                            <p className="text-slate-600 font-medium">{message}</p>
+                            <h1 className="font-playfair text-2xl font-bold text-foreground">Already a member!</h1>
+                            <p className="font-medium text-muted-foreground">{message}</p>
                         </div>
                         <div className="pt-4 space-y-3">
                             <Link
                                 href="/dashboard"
-                                className="block w-full py-3 bg-primary text-white font-bold rounded-xl hover:bg-opacity-90 transition-all shadow-lg shadow-primary/20"
+                                className="block w-full rounded-xl bg-primary py-3 font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90"
                             >
                                 Go to Dashboard
                             </Link>
                             <Link
                                 href="/"
-                                className="block w-full py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-all"
+                                className="block w-full rounded-xl bg-muted py-3 font-bold text-muted-foreground transition-all hover:bg-muted/80"
                             >
                                 Back to Homepage
                             </Link>
@@ -164,7 +164,7 @@ function AcceptInvitationContent() {
 export default function AcceptInvitationPage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-slate-50 flex items-center justify-center font-roboto">
+            <div className="flex min-h-screen items-center justify-center bg-background font-roboto">
                 <Loader2 className="w-10 h-10 text-primary animate-spin" />
             </div>
         }>

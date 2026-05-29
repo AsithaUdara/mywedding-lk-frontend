@@ -132,17 +132,19 @@ const CollaborationHubSidebar = ({ eventId }: { eventId: string }) => {
             animate={{ x: '0%' }} 
             exit={{ x: '100%' }} 
             transition={{ type: 'spring', stiffness: 300, damping: 35 }} 
-            className="fixed top-0 right-0 h-full w-full md:max-w-2xl bg-white/95 backdrop-blur-xl z-[120] flex flex-col shadow-[-20px_0_60px_-15px_rgba(0,0,0,0.1)] border-l border-white/60"
+            className="fixed top-0 right-0 z-[120] flex h-full w-full flex-col border-l border-border bg-card/95 shadow-[-20px_0_60px_-15px_rgba(0,0,0,0.1)] backdrop-blur-xl md:max-w-2xl"
           >
             {/* Premium Header */}
-            <div className="bg-gradient-to-r from-primary to-[#7a1b32] p-6 flex items-center justify-between text-white flex-shrink-0">
+            <div className="flex flex-shrink-0 items-center justify-between bg-gradient-to-r from-primary to-primary/85 p-6 text-primary-foreground">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-sm">
                   <MessageSquare size={20} />
                 </div>
                 <div>
                   <h2 className="text-xl font-bold font-playfair tracking-wide">Team Hub</h2>
-                  <p className="text-white/70 text-[10px] font-bold uppercase tracking-widest">Real-time Collaboration</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-primary-foreground/70">
+                    Real-time collaboration
+                  </p>
                 </div>
               </div>
               <button 
@@ -153,7 +155,7 @@ const CollaborationHubSidebar = ({ eventId }: { eventId: string }) => {
               </button>
             </div>
 
-            <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-end">
+            <div className="flex items-center justify-end border-b border-border bg-muted/30 px-6 py-4">
               {selectedConversation && (
                 <div className="flex items-center gap-2 text-primary font-bold text-sm bg-primary/5 px-3 py-1.5 rounded-lg border border-primary/10">
                   <Hash size={14} />
@@ -164,9 +166,11 @@ const CollaborationHubSidebar = ({ eventId }: { eventId: string }) => {
 
             <div className="flex-grow flex min-h-0 overflow-hidden">
               {/* Channel List (Sidebar within drawer) */}
-              <div className="w-[200px] border-r border-gray-100 flex flex-col bg-gray-50/30">
+              <div className="flex w-[200px] flex-col border-r border-border bg-muted/30">
                 <div className="p-4 pt-6">
-                  <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4 ml-1">Channels</h3>
+                  <h3 className="mb-4 ml-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Channels
+                  </h3>
                   <div className="space-y-1">
                     {loadingConversations ? (
                       <div className="py-4 text-center"><Loader2 size={16} className="animate-spin inline text-primary/30" /></div>
@@ -175,9 +179,16 @@ const CollaborationHubSidebar = ({ eventId }: { eventId: string }) => {
                         <button
                           key={convo.id}
                           onClick={() => setSelectedConversation(convo)}
-                          className={`w-full flex items-center gap-2 px-4 py-3 rounded-xl text-left text-sm font-bold transition-all ${selectedConversation?.id === convo.id ? 'bg-white text-primary shadow-sm border border-gray-100' : 'text-gray-500 hover:bg-white/50'}`}
+                          className={`flex w-full items-center gap-2 rounded-xl px-4 py-3 text-left text-sm font-bold transition-all ${selectedConversation?.id === convo.id ? "border border-border bg-card text-primary shadow-sm" : "text-muted-foreground hover:bg-card/50"}`}
                         >
-                          <Hash size={14} className={selectedConversation?.id === convo.id ? 'text-primary' : 'text-gray-300'} />
+                          <Hash
+                            size={14}
+                            className={
+                              selectedConversation?.id === convo.id
+                                ? "text-primary"
+                                : "text-muted-foreground"
+                            }
+                          />
                           <span className="truncate">{convo.name}</span>
                         </button>
                       ))
@@ -187,13 +198,13 @@ const CollaborationHubSidebar = ({ eventId }: { eventId: string }) => {
               </div>
 
               {/* Content Area */}
-              <div className="flex-grow flex flex-col bg-white overflow-hidden">
+              <div className="flex flex-grow flex-col overflow-hidden bg-card">
                 <div className="flex-grow p-6 overflow-y-auto custom-scrollbar">
                   <div className="space-y-6">
                       {loadingMessages ? (
                         <div className="flex flex-col items-center justify-center py-20 gap-3">
                           <Loader2 size={24} className="animate-spin text-primary/40" />
-                          <p className="text-sm text-gray-400">Loading messages...</p>
+                          <p className="text-sm text-muted-foreground">Loading messages...</p>
                         </div>
                       ) : messages.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
@@ -201,26 +212,32 @@ const CollaborationHubSidebar = ({ eventId }: { eventId: string }) => {
                             <MessageSquare size={32} className="text-primary/20" />
                           </div>
                           <div>
-                            <p className="font-bold text-gray-800 font-playfair text-lg">Empty Conversation</p>
-                            <p className="text-sm text-gray-400">Start coordinating with your team members.</p>
+                            <p className="font-playfair text-lg font-bold text-foreground">
+                              Empty conversation
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              Start coordinating with your team members.
+                            </p>
                           </div>
                         </div>
                       ) : (
                         messages.map(msg => (
                           <div key={msg.id} className={`flex items-start gap-3 ${msg.senderId === user?.uid ? 'flex-row-reverse' : ''}`}>
-                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 text-gray-600 font-bold flex items-center justify-center text-xs shadow-sm border border-white">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-muted text-xs font-bold text-muted-foreground shadow-sm">
                               {`${msg.senderFirstName?.[0] ?? ''}${msg.senderLastName?.[0] ?? ''}`.toUpperCase() || '?'}
                             </div>
                             <div className={`max-w-[80%] ${msg.senderId === user?.uid ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
                               <div className={`flex items-center gap-2 ${msg.senderId === user?.uid ? 'flex-row-reverse' : ''}`}>
-                                <span className="font-bold text-[11px] text-gray-900">
+                                <span className="text-[11px] font-bold text-foreground">
                                   {msg.senderId === user?.uid ? 'You' : `${msg.senderFirstName} ${msg.senderLastName}`}
                                 </span>
-                                <span className="text-[9px] text-gray-400 font-bold tracking-tight">
+                                <span className="text-[9px] font-bold tracking-tight text-muted-foreground">
                                   {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                               </div>
-                              <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm ${msg.senderId === user?.uid ? 'bg-primary text-white rounded-tr-none' : 'bg-gray-100 text-gray-700 rounded-tl-none border border-gray-50'}`}>
+                              <div
+                                className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed shadow-sm ${msg.senderId === user?.uid ? "rounded-tr-none bg-primary text-primary-foreground" : "rounded-tl-none border border-border bg-muted text-foreground"}`}
+                              >
                                 {msg.content}
                               </div>
                             </div>
@@ -231,7 +248,10 @@ const CollaborationHubSidebar = ({ eventId }: { eventId: string }) => {
                     </div>
                 </div>
 
-                <form onSubmit={handlePostMessage} className="p-6 bg-white border-t border-gray-100 shadow-[0_-10px_30px_rgba(0,0,0,0.02)]">
+                <form
+                  onSubmit={handlePostMessage}
+                  className="border-t border-border bg-card p-6 shadow-[0_-10px_30px_rgba(0,0,0,0.02)]"
+                >
                   <div className="relative group">
                     <input
                       type="text"
@@ -240,12 +260,12 @@ const CollaborationHubSidebar = ({ eventId }: { eventId: string }) => {
                       onKeyDown={handleKeyDown}
                       placeholder={selectedConversation ? `Message #${selectedConversation.name}...` : 'Select a channel'}
                       disabled={!selectedConversation || sendingMessage}
-                      className="w-full py-4 pl-6 pr-14 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary/40 focus:bg-white transition-all text-sm placeholder:text-gray-400"
+                      className="w-full rounded-2xl border border-border bg-muted/30 py-4 pl-6 pr-14 text-sm outline-none transition-all placeholder:text-muted-foreground focus:border-primary/40 focus:bg-card focus:ring-4 focus:ring-primary/10"
                     />
                     <button
                       type="submit"
                       disabled={!newMessage.trim() || !selectedConversation || sendingMessage}
-                      className="absolute top-1/2 right-2.5 -translate-y-1/2 w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-30"
+                      className="absolute right-2.5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95 disabled:opacity-30"
                     >
                       {sendingMessage ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
                     </button>

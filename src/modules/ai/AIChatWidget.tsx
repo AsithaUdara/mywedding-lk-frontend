@@ -129,11 +129,11 @@ const AIChatWidget = () => {
               initial={{ opacity: 0, scale: 0.8, x: 20 }}
               animate={{ opacity: 1, scale: 1, x: 0 }}
               exit={{ opacity: 0, scale: 0.8, x: 20 }}
-              className="bg-white px-4 py-2 rounded-2xl shadow-xl border border-primary/10 text-xs font-bold text-charcoal flex items-center gap-2 whitespace-nowrap mb-1"
+              className="bg-card px-4 py-2 rounded-2xl shadow-xl border border-primary/10 text-xs font-bold text-foreground flex items-center gap-2 whitespace-nowrap mb-1"
             >
               <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
               Ask AI for Recommendations
-              <button onClick={() => setShowTooltip(false)} className="ml-1 text-gray-400 hover:text-gray-600">
+              <button onClick={() => setShowTooltip(false)} className="ml-1 text-muted-foreground hover:text-foreground">
                 <X size={12} />
               </button>
             </motion.div>
@@ -142,7 +142,7 @@ const AIChatWidget = () => {
 
         <motion.button
           onClick={isChatOpen ? closeChat : openChat}
-          className="relative w-12 h-12 rounded-full bg-gradient-to-r from-primary to-[#7a1b32] text-white shadow-[0_8px_25px_rgba(139,26,55,0.3)] flex items-center justify-center transition-all hover:scale-110 active:scale-95 group"
+          className="group relative flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-primary to-primary/85 text-primary-foreground shadow-[0_8px_25px_rgba(139,26,55,0.3)] transition-all hover:scale-110 active:scale-95"
           whileHover={{ y: -4 }}
         >
           {/* Subtle pulse effect */}
@@ -154,7 +154,7 @@ const AIChatWidget = () => {
             {isChatOpen ? (
               <X size={20} />
             ) : (
-              <Sparkles size={22} fill="currentColor" className="text-white" />
+              <Sparkles size={22} fill="currentColor" className="text-primary-foreground" />
             )}
           </div>
         </motion.button>
@@ -185,17 +185,17 @@ const AIChatWidget = () => {
             }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
             transition={{ type: "spring", stiffness: 500, damping: 35 }}
-            className={`fixed z-[110] bg-white shadow-[0_20px_60px_-15px_rgb(0,0,0,0.15)] border border-gray-100 flex flex-col overflow-hidden`}
+            className={`fixed z-[110] bg-card shadow-[0_20px_60px_-15px_rgb(0,0,0,0.15)] border border-border flex flex-col overflow-hidden`}
           >
             {/* Header */}
-            <div className="bg-gradient-to-r from-primary to-[#7a1b32] p-5 flex items-center justify-between text-white flex-shrink-0">
+            <div className="flex flex-shrink-0 items-center justify-between bg-gradient-to-r from-primary to-primary/85 p-5 text-primary-foreground">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                <div className="w-10 h-10 rounded-full bg-card/20 flex items-center justify-center backdrop-blur-sm">
                   <Bot size={20} />
                 </div>
                 <div>
                   <h3 className="font-bold font-playfair tracking-wide text-lg">AI Assistant</h3>
-                  <p className="text-white/70 text-xs font-medium flex items-center gap-1">
+                  <p className="flex items-center gap-1 text-xs font-medium text-primary-foreground/70">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span> Online
                   </p>
                 </div>
@@ -203,21 +203,21 @@ const AIChatWidget = () => {
               <div className="flex items-center gap-2">
                 <button 
                   onClick={closeChat}
-                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+                  className="w-8 h-8 rounded-full bg-card/10 flex items-center justify-center hover:bg-card/20 transition-colors"
                   title="Minimize"
                 >
                   <Minus size={18} />
                 </button>
                 <button 
                   onClick={() => setIsMaximized(!isMaximized)}
-                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+                  className="w-8 h-8 rounded-full bg-card/10 flex items-center justify-center hover:bg-card/20 transition-colors"
                   title={isMaximized ? "Restore" : "Maximize"}
                 >
                   {isMaximized ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
                 </button>
                 <button 
                   onClick={closeChat}
-                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+                  className="w-8 h-8 rounded-full bg-card/10 flex items-center justify-center hover:bg-card/20 transition-colors"
                   title="Close"
                 >
                   <X size={18} />
@@ -226,14 +226,27 @@ const AIChatWidget = () => {
             </div>
 
             {/* Chat History */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-gray-50">
+            <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-muted/30">
               {messages.map((msg) => (
                 <div key={msg.id} className={`flex gap-3 ${msg.sender === 'user' ? 'flex-row-reverse' : ''}`}>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${msg.sender === 'user' ? 'bg-charcoal text-white' : 'bg-primary/10 text-primary'}`}>
+                  <div className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full ${msg.sender === "user" ? "bg-primary/30 text-primary-foreground" : "bg-primary/10 text-primary"}`}>
                     {msg.sender === 'user' ? <User size={14} /> : <Bot size={14} />}
                   </div>
-                  <div className={`max-w-[75%] p-3 rounded-2xl text-sm leading-relaxed shadow-sm ${msg.sender === 'user' ? 'bg-charcoal text-white rounded-tr-none' : 'bg-white text-gray-800 rounded-tl-none border border-gray-100'}`}>
-                    {msg.text.split('**').map((part, i) => i % 2 === 1 ? <strong key={i} className={msg.sender === 'user' ? 'text-white' : 'text-primary'}>{part}</strong> : part)}
+                  <div
+                    className={`max-w-[75%] rounded-2xl p-3 text-sm leading-relaxed shadow-sm ${msg.sender === "user" ? "rounded-tr-none bg-primary text-primary-foreground" : "rounded-tl-none border border-border bg-card text-foreground"}`}
+                  >
+                    {msg.text.split("**").map((part, i) =>
+                      i % 2 === 1 ? (
+                        <strong
+                          key={i}
+                          className={msg.sender === "user" ? "text-primary-foreground" : "text-primary"}
+                        >
+                          {part}
+                        </strong>
+                      ) : (
+                        part
+                      )
+                    )}
                   </div>
                 </div>
               ))}
@@ -244,7 +257,7 @@ const AIChatWidget = () => {
                   <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
                     <Bot size={14} />
                   </div>
-                  <div className="bg-white border border-gray-100 p-4 rounded-2xl rounded-tl-none shadow-sm flex gap-1 items-center">
+                  <div className="bg-card border border-border p-4 rounded-2xl rounded-tl-none shadow-sm flex gap-1 items-center">
                     <motion.div className="w-1.5 h-1.5 bg-primary/40 rounded-full" animate={{ y: [0, -5, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0 }} />
                     <motion.div className="w-1.5 h-1.5 bg-primary/60 rounded-full" animate={{ y: [0, -5, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }} />
                     <motion.div className="w-1.5 h-1.5 bg-primary/80 rounded-full" animate={{ y: [0, -5, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }} />
@@ -255,7 +268,7 @@ const AIChatWidget = () => {
             </div>
 
             {/* Input Area */}
-            <div className="p-4 bg-white border-t border-gray-100 flex-shrink-0">
+            <div className="p-4 bg-card border-t border-border flex-shrink-0">
               {/* Quick Chips */}
               <div className="flex gap-2 overflow-x-auto no-scrollbar mb-3 pb-1">
                 {suggestedChips.map(chip => (
@@ -277,12 +290,12 @@ const AIChatWidget = () => {
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleKeyDown}
                   disabled={isTyping}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-full py-3 pl-4 pr-12 text-sm focus:outline-none focus:border-primary/50 focus:bg-white transition-colors placeholder:text-gray-400"
+                  className="w-full bg-muted/30 border border-border rounded-full py-3 pl-4 pr-12 text-sm focus:outline-none focus:border-primary/50 focus:bg-card transition-colors placeholder:text-muted-foreground"
                 />
                 <button 
                   onClick={handleSend}
                   disabled={!inputValue.trim() || isTyping}
-                  className="absolute right-2 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white disabled:opacity-50 disabled:bg-gray-300 transition-colors hover:bg-[#7a1b32]"
+                  className="absolute right-2 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:bg-muted disabled:opacity-50"
                 >
                   {isTyping ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} className="ml-0.5" />}
                 </button>

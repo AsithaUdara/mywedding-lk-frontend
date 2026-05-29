@@ -8,6 +8,7 @@ import { CheckSquare, PlusCircle } from 'lucide-react';
 import LoadingSkeleton from '@/shared/components/ui/LoadingSkeleton';
 import TaskItem from './TaskItem'; // We will create this next
 import CreateTaskForm from './CreateTaskForm'; // We will create this next
+import { Button } from '@/shared/components/ui';
 
 interface ChecklistSectionProps {
   eventId: string;
@@ -48,18 +49,22 @@ const ChecklistSection = ({ eventId }: ChecklistSectionProps) => {
   const progressPercentage = tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0;
 
   return (
-    <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 md:p-8 border border-white/60 transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 pb-6 border-b border-gray-100 gap-4">
+    <div className="rounded-3xl border border-border bg-card p-6 shadow-sm md:p-8">
+      <div className="mb-8 flex flex-col justify-between gap-4 border-b border-border pb-6 sm:flex-row sm:items-center">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <CheckSquare className="text-primary" size={24} strokeWidth={1.5} />
+          <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-primary/10">
+            <CheckSquare className="text-primary" size={24} strokeWidth={1.5} aria-hidden />
           </div>
           <div>
-            <h2 className="text-2xl font-bold font-playfair text-charcoal tracking-tight">Event Checklist</h2>
-            <div className="text-sm text-gray-500 mt-1 font-medium flex items-center gap-2">
-              <span>{completedCount} of {tasks.length} tasks completed</span>
+            <h2 className="font-playfair text-2xl font-bold tracking-tight text-foreground">
+              My tasks
+            </h2>
+            <div className="mt-1 flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <span>
+                {completedCount} of {tasks.length} tasks completed
+              </span>
               {tasks.length > 0 && (
-                <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-bold">
+                <span className="inline-flex items-center justify-center rounded-full bg-success/10 px-2 py-0.5 text-xs font-bold text-success">
                   {progressPercentage}%
                 </span>
               )}
@@ -67,13 +72,10 @@ const ChecklistSection = ({ eventId }: ChecklistSectionProps) => {
           </div>
         </div>
         {!showCreateForm && (
-          <button
-            onClick={() => setShowCreateForm(true)}
-            className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white bg-primary transition-all duration-300 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5"
-          >
-            <PlusCircle size={18} />
-            <span>Add Task</span>
-          </button>
+          <Button onClick={() => setShowCreateForm(true)} variant="primary" className="gap-2">
+            <PlusCircle size={18} aria-hidden />
+            <span>Add task</span>
+          </Button>
         )}
       </div>
 
@@ -90,7 +92,7 @@ const ChecklistSection = ({ eventId }: ChecklistSectionProps) => {
       {isLoading ? (
         <div className="space-y-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-4 p-4 rounded-xl bg-gray-50/50">
+            <div key={i} className="flex items-center gap-4 rounded-xl bg-muted/30 p-4">
               <LoadingSkeleton className="h-6 w-6 rounded-full flex-shrink-0" />
               <div className="flex-grow">
                 <LoadingSkeleton className="h-4 w-1/3 mb-2" />
@@ -100,12 +102,14 @@ const ChecklistSection = ({ eventId }: ChecklistSectionProps) => {
           ))}
         </div>
       ) : tasks.length === 0 && !showCreateForm ? (
-        <div className="text-center py-12 px-4 rounded-xl border border-dashed border-gray-200 bg-gray-50/50">
-          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-            <CheckSquare className="text-gray-400" size={24} />
+        <div className="rounded-xl border border-dashed border-border bg-muted/30 px-4 py-12 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-card shadow-sm">
+            <CheckSquare className="text-muted-foreground" size={24} aria-hidden />
           </div>
-          <h3 className="text-lg font-medium text-charcoal mb-2">No tasks yet</h3>
-          <p className="text-gray-500 max-w-sm mx-auto mb-6">Create your first task to start organizing your perfect wedding.</p>
+          <h3 className="mb-2 text-lg font-medium text-foreground">No tasks yet</h3>
+          <p className="mx-auto mb-6 max-w-sm text-muted-foreground">
+            Create your first task to start organizing your perfect wedding.
+          </p>
           <button
             onClick={() => setShowCreateForm(true)}
             className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-primary bg-primary/10 transition-colors duration-200 hover:bg-primary/20"

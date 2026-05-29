@@ -1,7 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Lock } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight, Lock, Loader2 } from "lucide-react";
+import { useAuth } from "@/shared/context/AuthContext";
+import { blockVendorDate, getVendorAvailability, unblockVendorDate } from "@/shared/lib/api/vendors";
 import { bento } from "./bento";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -50,31 +52,73 @@ function buildMonthGrid(year: number, month: number, bookedDays: number[], block
   return cells;
 }
 
-const INITIAL_BOOKED = [3, 4, 12, 18, 19, 25, 26];
-const INITIAL_BLOCKED = [7, 8, 14, 15, 21, 22];
+function monthKey(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function dateIso(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
 
 type AvailabilityCalendarProps = {
   embedded?: boolean;
 };
 
 export function AvailabilityCalendar({ embedded = false }: AvailabilityCalendarProps) {
-  const [cursor, setCursor] = useState(() => new Date(2026, 5, 1));
-  const [booked, setBooked] = useState(INITIAL_BOOKED);
-  const [blocked, setBlocked] = useState(INITIAL_BLOCKED);
+  const { user } = useAuth();
+  const [cursor, setCursor] = useState(() => new Date());
+  const [booked, setBooked] = useState<number[]>([]);
+  const [blocked, setBlocked] = useState<number[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
   const monthLabel = cursor.toLocaleString(undefined, { month: "long", year: "numeric" });
+
+  const load = useCallback(async () => {
+    if (!user) return;
+    try {
+      setLoading(true);
+      const token = await user.getIdToken();
+      const data = await getVendorAvailability(token, monthKey(cursor));
+      setBooked(data.bookedDates);
+      setBlocked(data.blockedDates);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load availability.");
+    } finally {
+      setLoading(false);
+    }
+  }, [user, cursor]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const grid = useMemo(
     () => buildMonthGrid(year, month, booked, blocked),
     [year, month, booked, blocked]
   );
 
-  const toggleBlock = (day: CalendarDay) => {
-    if (day.state === "outside" || day.state === "booked") return;
-    const d = day.date.getDate();
-    setBlocked((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d].sort((a, b) => a - b)));
+  const toggleBlock = async (day: CalendarDay) => {
+    if (!user || day.state === "outside" || day.state === "booked" || saving) return;
+    const iso = dateIso(day.date);
+    try {
+      setSaving(true);
+      const token = await user.getIdToken();
+      if (day.state === "blocked") {
+        await unblockVendorDate(token, iso);
+      } else {
+        await blockVendorDate(token, iso);
+      }
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update availability.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const prevMonth = () => setCursor(new Date(year, month - 1, 1));
@@ -93,6 +137,8 @@ export function AvailabilityCalendar({ embedded = false }: AvailabilityCalendarP
     }
   };
 
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
   return (
     <div className={embedded ? "space-y-4" : "space-y-6"}>
       {!embedded && (
@@ -100,9 +146,13 @@ export function AvailabilityCalendar({ embedded = false }: AvailabilityCalendarP
           <p className={bento.label}>Scheduling</p>
           <h2 className={`mt-2 ${bento.title}`}>Availability Calendar</h2>
           <p className={`mt-1 ${bento.subtitle}`}>
-            Block dates you cannot serve. Planners see availability before shortlisting you (mock UI).
+            Block dates you cannot serve. Booked days come from confirmed vendor bookings.
           </p>
         </header>
+      )}
+
+      {error && (
+        <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">{error}</div>
       )}
 
       <article className={bento.card}>
@@ -112,6 +162,7 @@ export function AvailabilityCalendar({ embedded = false }: AvailabilityCalendarP
             <p className="text-xl font-bold tracking-tight text-slate-900">{monthLabel}</p>
           </div>
           <div className="flex items-center gap-2">
+            {loading && <Loader2 size={18} className="animate-spin text-slate-400" />}
             <button
               type="button"
               onClick={prevMonth}
@@ -141,8 +192,8 @@ export function AvailabilityCalendar({ embedded = false }: AvailabilityCalendarP
             <button
               key={`${day.date.toISOString()}-${idx}`}
               type="button"
-              disabled={day.state === "outside" || day.state === "booked"}
-              onClick={() => toggleBlock(day)}
+              disabled={day.state === "outside" || day.state === "booked" || saving}
+              onClick={() => void toggleBlock(day)}
               className={`relative flex min-h-[72px] flex-col items-center justify-center rounded-2xl border p-2 text-sm font-semibold transition ${dayClass(
                 day.state
               )}`}
@@ -183,7 +234,7 @@ export function AvailabilityCalendar({ embedded = false }: AvailabilityCalendarP
         <div className={`${bento.cardCompact} text-center`}>
           <p className={bento.label}>Open days</p>
           <p className="mt-1 text-2xl font-bold text-slate-700">
-            {new Date(year, month + 1, 0).getDate() - booked.length - blocked.length}
+            {Math.max(0, daysInMonth - booked.length - blocked.length)}
           </p>
         </div>
       </div>

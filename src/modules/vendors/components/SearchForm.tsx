@@ -36,7 +36,11 @@ const SearchForm = ({ type }: SearchFormProps) => {
   return (
     <div className="bg-white p-6 rounded-2xl shadow-2xl max-w-lg w-full">
       <h1 className="text-4xl font-bold text-charcoal">{title}</h1>
-      <p className="text-gray-500 mt-2 mb-6">Discover and book the perfect choice for your day.</p>
+      <p className="text-gray-500 mt-2 mb-6">
+        {type === 'venue'
+          ? 'Shortlist venues for your clients — inquire with your planner to proceed.'
+          : 'Browse verified vendors — inquire with your planner to request quotes.'}
+      </p>
       
       <div className="space-y-4">
         <div>
@@ -53,7 +57,7 @@ const SearchForm = ({ type }: SearchFormProps) => {
 
       <Link href="/vendors/search">
         <button type="button" className="w-full mt-6 py-4 rounded-lg text-white font-semibold flex items-center justify-center elegant-lift-button" style={{ backgroundColor: 'var(--color-primary)' }}>
-          <Search size={20} className="mr-2"/> Search
+          <Search size={20} className="mr-2"/> Inquire with Planner
         </button>
       </Link>
     </div>

@@ -1,52 +1,168 @@
 "use client";
 
-import Link from "next/link";
-import { ArrowRight, ShieldCheck, Sparkles } from "lucide-react";
-import { PlatformAnalyticsDashboard } from "@/modules/admin/PlatformAnalyticsDashboard";
+import { useMemo } from "react";
+import { ArrowRight, RefreshCw, ShieldCheck, ShieldAlert, Users } from "lucide-react";
 import { VendorApprovalQueue } from "@/modules/admin/VendorApprovalQueue";
+import { usePlatformAnalytics } from "@/modules/admin/hooks/usePlatformAnalytics";
+import { AdminPlatformKpis } from "@/modules/admin/components/AdminPlatformKpis";
+import { AdminGrowthChart } from "@/modules/admin/components/AdminGrowthChart";
+import { AdminEcosystemSnapshot } from "@/modules/admin/components/AdminEcosystemSnapshot";
+import {
+  Badge,
+  Button,
+  Card,
+  ErrorBanner,
+  PageHeader,
+  PageLoadingSkeleton,
+  QuickActionLink,
+  SectionCard,
+} from "@/shared/components/ui";
+
+const QUICK_LINKS = [
+  {
+    href: "/admin/vendors",
+    label: "KYB queue",
+    description: "Approve or reject vendor applications",
+    icon: ShieldAlert,
+  },
+  {
+    href: "/vendors",
+    label: "Public directory",
+    description: "Preview couple-facing vendor hub",
+    icon: Users,
+  },
+];
 
 export default function AdminDashboardPage() {
+  const { data, loading, refreshing, error, reload } = usePlatformAnalytics();
+
+  const growthMax = useMemo(
+    () => Math.max(...(data?.plannerGrowthByMonth.map((p) => p.count) ?? [1]), 1),
+    [data]
+  );
+
+  if (loading && !data) {
+    return <PageLoadingSkeleton />;
+  }
+
   return (
-    <div className="relative mx-auto max-w-[1400px] space-y-8 font-roboto lg:space-y-10">
-      <div
-        className="pointer-events-none absolute -right-8 top-0 h-64 w-64 rounded-full bg-violet-200/30 blur-3xl"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute left-0 top-40 h-56 w-56 rounded-full bg-amber-100/40 blur-3xl"
-        aria-hidden
+    <div className="space-y-8 pb-4 lg:space-y-10">
+      <PageHeader
+        title="Operations center"
+        description="Platform financial health, planner growth, and vendor trust & safety — live from your admin API."
+        badge={
+          <Badge variant="muted" className="inline-flex items-center gap-1.5">
+            <ShieldCheck size={12} aria-hidden />
+            Internal
+          </Badge>
+        }
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={refreshing}
+              onClick={() => void reload()}
+            >
+              <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} aria-hidden />
+              Refresh
+            </Button>
+            <Button href="/admin/vendors" size="sm">
+              <ShieldAlert size={16} aria-hidden />
+              KYB queue
+            </Button>
+          </div>
+        }
       />
 
-      <header className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-        <div className="max-w-2xl space-y-3">
-          <p className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/70 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-slate-500 shadow-sm backdrop-blur-md transition-all duration-300 ease-in-out">
-            <Sparkles size={14} className="text-violet-500/90" />
-            Platform operations
-          </p>
-          <h1 className="font-playfair text-4xl font-bold tracking-tight text-charcoal sm:text-5xl">
-            Admin dashboard
-          </h1>
-          <p className="text-base leading-relaxed text-slate-500 sm:text-lg">
-            Financial health, planner growth, and vendor KYB — curated for internal oversight.
-          </p>
+      {error && <ErrorBanner message={error} />}
+
+      {data && (
+        <>
+          <AdminPlatformKpis data={data} />
+
+          <div className="grid gap-6 lg:grid-cols-3">
+            <SectionCard
+              className="lg:col-span-2"
+              title="Planner growth"
+              subtitle="Active planners — 6 month trend"
+              action={
+                <span className="text-sm font-semibold tabular-nums text-muted-foreground">
+                  {data.activePlanners} active
+                </span>
+              }
+            >
+              <AdminGrowthChart points={data.plannerGrowthByMonth} max={growthMax} />
+              <div className="mt-6 flex flex-wrap gap-4 border-t border-border pt-4 text-sm text-muted-foreground">
+                <span>
+                  <strong className="text-foreground">{data.totalUsers}</strong> users
+                </span>
+                <span>
+                  <strong className="text-foreground">{data.totalEvents}</strong> events
+                </span>
+                <span>
+                  <strong className="text-foreground">{data.totalBookings}</strong> bookings
+                </span>
+              </div>
+            </SectionCard>
+
+            <SectionCard title="Ecosystem snapshot" subtitle="Platform scale at a glance">
+              <AdminEcosystemSnapshot data={data} />
+            </SectionCard>
+          </div>
+
+          <SectionCard title="Quick links" subtitle="Common admin workflows">
+            <div className="grid gap-3 sm:grid-cols-2">
+              {QUICK_LINKS.map((item) => (
+                <QuickActionLink
+                  key={item.href}
+                  href={item.href}
+                  label={item.label}
+                  description={item.description}
+                  icon={<item.icon size={18} aria-hidden />}
+                />
+              ))}
+            </div>
+          </SectionCard>
+        </>
+      )}
+
+      <SectionCard
+        title="Vendor approval queue"
+        subtitle="Know-your-business review before marketplace listing"
+        action={
+          <Button href="/admin/vendors" variant="secondary" size="sm">
+            Full queue
+            <ArrowRight size={14} aria-hidden />
+          </Button>
+        }
+      >
+        <VendorApprovalQueue embedded />
+      </SectionCard>
+
+      <Card className="border-primary/20 bg-primary text-primary-foreground">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="max-w-xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary-foreground/70">
+              Platform integrity
+            </p>
+            <h3 className="mt-2 font-playfair text-2xl font-bold">Keep the marketplace trustworthy</h3>
+            <p className="mt-2 text-sm leading-relaxed text-primary-foreground/85">
+              Verified vendors protect couples and planners. Review credentials, portfolio links, and
+              business details before approval.
+            </p>
+          </div>
+          <Button
+            href="/admin/vendors"
+            variant="secondary"
+            className="shrink-0 border-0 bg-card text-primary hover:opacity-95"
+          >
+            Review applications
+            <ArrowRight size={16} aria-hidden />
+          </Button>
         </div>
-
-        <Link
-          href="/admin/vendors"
-          className="group inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-charcoal px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-300 ease-in-out hover:scale-[1.02] hover:bg-neutral-900 hover:shadow-xl hover:shadow-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-charcoal/30"
-        >
-          <ShieldCheck size={16} />
-          Full KYB queue
-          <ArrowRight
-            size={16}
-            className="transition-transform duration-300 ease-in-out group-hover:translate-x-0.5"
-          />
-        </Link>
-      </header>
-
-      <PlatformAnalyticsDashboard />
-
-      <VendorApprovalQueue compact />
+      </Card>
     </div>
   );
 }

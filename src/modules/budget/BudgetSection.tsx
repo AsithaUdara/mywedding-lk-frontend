@@ -8,6 +8,7 @@ import { Wallet, PlusCircle } from 'lucide-react';
 import BudgetOverviewDisplay from './BudgetOverviewDisplay';
 import ExpenseList from './ExpenseList';
 import AddExpenseModal from './AddExpenseModal';
+import { Button } from '@/shared/components/ui';
 
 interface BudgetSectionProps {
   eventId: string;
@@ -51,30 +52,31 @@ const BudgetSection = ({ eventId }: BudgetSectionProps) => {
 
   return (
     <>
-      <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 md:p-8 border border-white/60 transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)]">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 pb-6 border-b border-gray-100 gap-4">
+      <div className="rounded-3xl border border-border bg-card p-6 shadow-sm md:p-8">
+        <div className="mb-8 flex flex-col justify-between gap-4 border-b border-border pb-6 sm:flex-row sm:items-center">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <Wallet className="text-primary" size={24} strokeWidth={1.5} />
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-primary/10">
+              <Wallet className="text-primary" size={24} strokeWidth={1.5} aria-hidden />
             </div>
             <div>
-              <h2 className="text-2xl font-bold font-playfair text-charcoal tracking-tight">Budget Tracker</h2>
-              <p className="text-sm text-gray-500 mt-1 font-medium">Keep your spending in check</p>
+              <h2 className="font-playfair text-2xl font-bold tracking-tight text-foreground">
+                Budget tracker
+              </h2>
+              <p className="mt-1 text-sm font-medium text-muted-foreground">
+                Keep your spending in check
+              </p>
             </div>
           </div>
-          <button
-            onClick={() => setModalOpen(true)}
-            className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white bg-primary transition-all duration-300 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5"
-          >
-            <PlusCircle size={18} />
-            <span>Add Expense</span>
-          </button>
+          <Button onClick={() => setModalOpen(true)} variant="primary" className="gap-2">
+            <PlusCircle size={18} aria-hidden />
+            <span>Add expense</span>
+          </Button>
         </div>
 
         {isLoading ? (
-          <p className="text-center text-gray-500 py-8">Loading budget details...</p>
+          <p className="py-8 text-center text-muted-foreground">Loading budget details…</p>
         ) : !overview ? (
-          <p className="text-center text-gray-500 py-8">Could not load budget information.</p>
+          <p className="py-8 text-center text-muted-foreground">Could not load budget information.</p>
         ) : (
           <div className="space-y-8">
             <BudgetOverviewDisplay overview={overview} />

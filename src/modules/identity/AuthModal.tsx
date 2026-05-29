@@ -1,21 +1,43 @@
-// src/features/authentication/AuthModal.tsx
 "use client";
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { X, Mail, Lock, User as UserIcon } from 'lucide-react';
-import { auth } from '@/shared/lib/firebase';
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { X, Mail, Lock, User as UserIcon } from "lucide-react";
+import { auth } from "@/shared/lib/firebase";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
   updateProfile,
-} from 'firebase/auth';
-import { resolvePostLoginPath, syncUserWithBackend } from '@/shared/lib/auth/postLoginRedirect';
+} from "firebase/auth";
+import { resolvePostLoginPath, syncUserWithBackend } from "@/shared/lib/auth/postLoginRedirect";
+import { Button, ErrorBanner, inputClass } from "@/shared/components/ui";
+import { pv } from "@/modules/vendors/public-theme";
+import { cn } from "@/shared/lib/cn";
 
-const GoogleIcon = () => ( <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="presentation" focusable="false" style={{ display: 'block', height: '20px', width: '20px' }}><g fill="none"><path d="m30.7 16.340875c0-1.0635937-.0954375-2.0863125-.2727187-3.06825h-14.1272813v5.8022813h8.0727188c-.3477188 1.8749999-1.4044688 3.4636874-2.9931563 4.527375v3.7635937h4.8477188c2.8364062-2.6113125 4.4727187-6.4568438 4.4727187-11.025z" fill="#4285f4"></path><path d="m16.3 31c4.05 0 7.4454375-1.34325 9.9271875-3.6340312l-4.8477187-3.7635938c-1.3430626.9-3.0613126 1.43175-5.0794688 1.43175-3.9068438 0-7.21363125-2.6386875-8.39323125-6.184125h-5.01135v3.8864063c2.46825 4.9022812 7.54094995 8.2635937 13.40458125 8.2635937z" fill="#34a853"></path><path d="m7.90675 18.8499062c-.3-.9-.4704-1.8613125-.4704-2.85s.1704-1.95.4704-2.85v-3.88635933h-5.01135c-1.0158 2.02504693-1.5954 4.31592183-1.5954 6.73635933 0 2.4204376.5796 4.7113126 1.5954 6.7363125z" fill="#fbbc04"></path><path d="m16.3 6.96595c2.2021875 0 4.1794688.75675 5.7340313 2.2431l4.3023749-4.3023c-2.5977187-2.4204-5.9932499-3.90675-10.0364062-3.90675-5.8636313 0-10.93633125 3.36135-13.40458125 8.26365l5.01135 3.88635c1.1796-3.5454 4.48638745-6.18405 8.39323125-6.18405z" fill="#e94235"></path></g></svg>);
-const FacebookIcon = () => ( <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="presentation" focusable="false" style={{ display: 'block', height: '20px', width: '20px', fill: '#0866ff' }}><path d="m31.9361277 15.9680639c0-8.81884234-7.1492215-15.9680639-15.9680638-15.9680639-8.81884234 0-15.9680639 7.14922156-15.9680639 15.9680639 0 7.4883832 5.15576846 13.7721357 12.1108184 15.497964v-10.6181237h-3.29261481v-4.8798403h3.29261481v-2.1026747c0-5.4348902 2.4597205-7.95401195 7.7956087-7.95401195 1.0117366 0 2.7573653.19864271 3.4714571.3966467v4.42315365c-.3768463-.0396008-1.0315369-.0594012-1.8446307-.0594012-2.6181238 0-3.6298603.9919362-3.6298603 3.5704591v1.7258284h5.2158084l-.8961277 4.8798403h-4.3196807v10.9713373c7.9067465-.9548902 14.0333733-7.6870259 14.0333733-15.8511776z"></path></svg>);
+const GoogleIcon = () => (
+  <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden className="h-5 w-5">
+    <g fill="none">
+      <path
+        d="m30.7 16.340875c0-1.0635937-.0954375-2.0863125-.2727187-3.06825h-14.1272813v5.8022813h8.0727188c-.3477188 1.8749999-1.4044688 3.4636874-2.9931563 4.527375v3.7635937h4.8477188c2.8364062-2.6113125 4.4727187-6.4568438 4.4727187-11.025z"
+        fill="#4285f4"
+      />
+      <path
+        d="m16.3 31c4.05 0 7.4454375-1.34325 9.9271875-3.6340312l-4.8477187-3.7635938c-1.3430626.9-3.0613126 1.43175-5.0794688 1.43175-3.9068438 0-7.21363125-2.6386875-8.39323125-6.184125h-5.01135v3.8864063c2.46825 4.9022812 7.54094995 8.2635937 13.40458125 8.2635937z"
+        fill="#34a853"
+      />
+      <path
+        d="m7.90675 18.8499062c-.3-.9-.4704-1.8613125-.4704-2.85s.1704-1.95.4704-2.85v-3.88635933h-5.01135c-1.0158 2.02504693-1.5954 4.31592183-1.5954 6.73635933 0 2.4204376.5796 4.7113126 1.5954 6.7363125z"
+        fill="#fbbc04"
+      />
+      <path
+        d="m16.3 6.96595c2.2021875 0 4.1794688.75675 5.7340313 2.2431l4.3023749-4.3023c-2.5977187-2.4204-5.9932499-3.90675-10.0364062-3.90675-5.8636313 0-10.93633125 3.36135-13.40458125 8.26365l5.01135 3.88635c1.1796-3.5454 4.48638745-6.18405 8.39323125-6.18405z"
+        fill="#e94235"
+      />
+    </g>
+  </svg>
+);
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -32,14 +54,13 @@ const AuthModal = ({
   onClose,
   title,
   description,
-  signUpHint,
   redirectOnSuccess = true,
   onSuccess,
 }: AuthModalProps) => {
-  const [view, setView] = useState<'signIn' | 'signUp'>('signIn');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
+  const [view, setView] = useState<"signIn" | "signUp">("signIn");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -54,7 +75,7 @@ const AuthModal = ({
       return;
     }
     const user = auth.currentUser;
-    if (!user) throw new Error('User not found after authentication.');
+    if (!user) throw new Error("User not found after authentication.");
     const path = await resolvePostLoginPath(user);
     router.push(path);
     onClose();
@@ -66,7 +87,7 @@ const AuthModal = ({
     setLoading(true);
 
     try {
-      if (view === 'signUp') {
+      if (view === "signUp") {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         if (userCredential.user) {
           await updateProfile(userCredential.user, { displayName: fullName });
@@ -76,7 +97,7 @@ const AuthModal = ({
           onSuccess?.();
           onClose();
         } else {
-          router.push('/dashboard');
+          router.push("/dashboard");
           onClose();
         }
       } else {
@@ -84,16 +105,16 @@ const AuthModal = ({
         await completeAuthFlow();
       }
     } catch (err: unknown) {
-      const error = err as { code?: string; message?: string };
-      console.error('Auth Error:', error);
-
-      if (error.code === 'auth/email-already-in-use') {
-        setError('An account already exists with this email. Please sign in instead.');
-        setView('signIn');
-      } else if (error.message === 'Failed to sync user with backend.') {
-        setError('Authenticated with Firebase, but failed to sync with our database. Please try signing in again.');
+      const firebaseError = err as { code?: string; message?: string };
+      if (firebaseError.code === "auth/email-already-in-use") {
+        setError("An account already exists with this email. Please sign in instead.");
+        setView("signIn");
+      } else if (firebaseError.message === "Failed to sync user with backend.") {
+        setError(
+          "Authenticated with Firebase, but failed to sync with our database. Please try signing in again."
+        );
       } else {
-        setError((error.message || 'An error occurred').replace('Firebase: ', ''));
+        setError((firebaseError.message || "An error occurred").replace("Firebase: ", ""));
       }
     } finally {
       setLoading(false);
@@ -108,50 +129,111 @@ const AuthModal = ({
       await signInWithPopup(auth, provider);
       await completeAuthFlow();
     } catch (err: unknown) {
-      const error = err as { message?: string };
-      setError(error.message || 'Sign-in failed');
+      const firebaseErr = err as { message?: string };
+      setError(firebaseErr.message || "Sign-in failed");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
-      <div className="relative w-full max-w-md p-8 rounded-xl shadow-2xl" style={{ backgroundColor: 'var(--color-cream)' }} onClick={(e) => e.stopPropagation()}>
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-charcoal transition-colors"><X size={24} /></button>
-        <h2 className="text-2xl font-bold text-center mb-2 text-charcoal">
-          {title ?? (view === 'signIn' ? 'Welcome back' : 'Create your account')}
+    <div className={pv.modalOverlay} onClick={onClose}>
+      <div className={pv.modalPanel} onClick={(e) => e.stopPropagation()}>
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-4 top-4 rounded-lg p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+          aria-label="Close"
+        >
+          <X size={22} />
+        </button>
+        <h2 className="text-center font-playfair text-2xl font-bold text-foreground">
+          {title ?? (view === "signIn" ? "Welcome back" : "Create your account")}
         </h2>
-        <p className="text-center text-gray-500 mb-6 text-sm leading-relaxed">
-          {description ?? (view === 'signIn' ? 'Log in to continue planning.' : 'Join to start planning your perfect day.')}
+        <p className="mb-6 mt-2 text-center text-sm leading-relaxed text-muted-foreground">
+          {description ??
+            (view === "signIn" ? "Log in to continue planning." : "Join to start planning your perfect day.")}
         </p>
-        
-        <div className="space-y-4">
-          <button onClick={handleGoogleSignIn} disabled={loading} className="w-full flex items-center justify-center py-3 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center"><GoogleIcon /></div>
-            <span className="font-semibold text-charcoal flex-grow text-center">Continue with Google</span>
-          </button>
-          <button disabled={loading} className="w-full flex items-center justify-center py-3 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center"><FacebookIcon /></div>
-            <span className="font-semibold text-charcoal flex-grow text-center">Continue with Facebook</span>
-          </button>
+
+        <div className="space-y-3">
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full"
+            disabled={loading}
+            onClick={() => void handleGoogleSignIn()}
+          >
+            <GoogleIcon />
+            Continue with Google
+          </Button>
         </div>
 
-        <div className="flex items-center my-8"><hr className="flex-grow border-gray-300" /><span className="mx-4 text-gray-400 font-semibold">OR</span><hr className="flex-grow border-gray-300" /></div>
-        
-        {error && <p className="text-red-500 text-center mb-4 text-sm font-medium">{error}</p>}
+        <div className="my-6 flex items-center gap-3">
+          <hr className="flex-grow border-border" />
+          <span className="text-xs font-semibold uppercase text-muted-foreground">or</span>
+          <hr className="flex-grow border-border" />
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {view === 'signUp' && (<div className="relative"><UserIcon size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"/><input type="text" placeholder="Full Name" value={fullName} onChange={(e) => setFullName(e.target.value)} required disabled={loading} className="w-full py-3 pl-12 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent outline-none disabled:opacity-50"/></div>)}
-          <div className="relative"><Mail size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"/><input type="email" placeholder="Email Address" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={loading} className="w-full py-3 pl-12 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent outline-none disabled:opacity-50"/></div>
-          <div className="relative"><Lock size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"/><input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required disabled={loading} className="w-full py-3 pl-12 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent outline-none disabled:opacity-50"/></div>
+        {error && <ErrorBanner message={error} className="mb-4" />}
 
-          <button type="submit" disabled={loading} className="w-full py-3 rounded-lg text-white font-semibold shadow-lg smooth-scale-button disabled:opacity-70 disabled:cursor-not-allowed" style={{ backgroundColor: 'var(--color-primary)' }}>
-            {loading ? 'Processing...' : (view === 'signIn' ? 'Sign In' : 'Create Account')}
-          </button>
+        <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
+          {view === "signUp" && (
+            <div className="relative">
+              <UserIcon
+                size={18}
+                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+                aria-hidden
+              />
+              <input
+                type="text"
+                placeholder="Full name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
+                disabled={loading}
+                className={cn(inputClass, "pl-10 disabled:opacity-50")}
+              />
+            </div>
+          )}
+          <div className="relative">
+            <Mail
+              size={18}
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+              aria-hidden
+            />
+            <input
+              type="email"
+              placeholder="Email address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={loading}
+              className={cn(inputClass, "pl-10 disabled:opacity-50")}
+            />
+          </div>
+          <div className="relative">
+            <Lock
+              size={18}
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+              aria-hidden
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              disabled={loading}
+              className={cn(inputClass, "pl-10 disabled:opacity-50")}
+            />
+          </div>
+
+          <Button type="submit" variant="primary" className="w-full" disabled={loading}>
+            {loading ? "Processing…" : view === "signIn" ? "Sign in" : "Create account"}
+          </Button>
         </form>
 
-        <p className="text-center mt-6 text-sm text-slate-600">
+        <p className="mt-6 text-center text-sm text-muted-foreground">
           {view === "signIn" ? "Don't have an account? " : "Already have an account? "}
           <button
             type="button"

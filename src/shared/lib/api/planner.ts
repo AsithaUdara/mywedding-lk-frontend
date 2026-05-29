@@ -56,6 +56,8 @@ export interface PlannerClientItem {
   lastActivityAt: string;
 }
 
+export type EventLifecycleStage = "Lead" | "Onboarding" | "Planning" | "Execution" | "Archived";
+
 export interface PlannerEventListItem {
   plannerClientEventId: string;
   eventId: string;
@@ -69,6 +71,7 @@ export interface PlannerEventListItem {
   requestedBookings: number;
   confirmedBookings: number;
   completedBookings: number;
+  eventLifecycleStage: EventLifecycleStage;
 }
 
 export interface CreatePlannerEventPayload {
@@ -166,6 +169,22 @@ export async function getPlannerEvents(token: string, status?: string): Promise<
     throw new Error(err.message || "Failed to load planner events.");
   }
   return res.json();
+}
+
+export async function updatePlannerEventStage(
+  token: string,
+  eventId: string,
+  stage: EventLifecycleStage
+): Promise<void> {
+  const res = await fetch(`${BASE}/api/planner/events/${eventId}/stage`, {
+    method: "PATCH",
+    headers: authHeaders(token),
+    body: JSON.stringify({ stage }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || err.detail || "Failed to update event stage.");
+  }
 }
 
 export async function updatePlannerProfile(

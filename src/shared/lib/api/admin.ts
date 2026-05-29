@@ -18,6 +18,21 @@ export interface PlatformStats {
   totalBookings: number;
 }
 
+export interface PlatformAnalytics {
+  mrr: number;
+  mrrDeltaPct: number;
+  tpv: number;
+  tpvDeltaPct: number;
+  takeRateRevenue: number;
+  activePlanners: number;
+  activeCouples: number;
+  registeredVendors: number;
+  totalUsers: number;
+  totalEvents: number;
+  totalBookings: number;
+  plannerGrowthByMonth: Array<{ month: string; count: number }>;
+}
+
 export interface PayoutDueItem {
   id: string;
   bookingId: string;
@@ -59,6 +74,31 @@ export async function getPlatformStats(token: string): Promise<PlatformStats> {
   const res = await fetch(`${BASE}/api/admin/stats`, { headers: authHeaders(token) });
   if (!res.ok) throw new Error('Failed to fetch platform stats');
   return res.json();
+}
+
+export async function getPlatformAnalytics(token: string): Promise<PlatformAnalytics> {
+  const res = await fetch(`${BASE}/api/admin/platform-analytics`, { headers: authHeaders(token) });
+  if (!res.ok) throw new Error('Failed to fetch platform analytics');
+  const data = await res.json();
+  return {
+    mrr: Number(data.mrr ?? data.Mrr ?? 0),
+    mrrDeltaPct: Number(data.mrrDeltaPct ?? data.MrrDeltaPct ?? 0),
+    tpv: Number(data.tpv ?? data.Tpv ?? 0),
+    tpvDeltaPct: Number(data.tpvDeltaPct ?? data.TpvDeltaPct ?? 0),
+    takeRateRevenue: Number(data.takeRateRevenue ?? data.TakeRateRevenue ?? 0),
+    activePlanners: Number(data.activePlanners ?? data.ActivePlanners ?? 0),
+    activeCouples: Number(data.activeCouples ?? data.ActiveCouples ?? 0),
+    registeredVendors: Number(data.registeredVendors ?? data.RegisteredVendors ?? 0),
+    totalUsers: Number(data.totalUsers ?? data.TotalUsers ?? 0),
+    totalEvents: Number(data.totalEvents ?? data.TotalEvents ?? 0),
+    totalBookings: Number(data.totalBookings ?? data.TotalBookings ?? 0),
+    plannerGrowthByMonth: (data.plannerGrowthByMonth ?? data.PlannerGrowthByMonth ?? []).map(
+      (p: Record<string, unknown>) => ({
+        month: String(p.month ?? p.Month ?? ''),
+        count: Number(p.count ?? p.Count ?? 0),
+      })
+    ),
+  };
 }
 
 export async function getPayoutDue(token: string): Promise<PayoutDueItem[]> {

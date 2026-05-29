@@ -1,32 +1,46 @@
-import React from 'react';
-import { type ActivityFeedItem } from '@/shared/lib/api/feed';
-import { MessageSquare, CheckCircle, UserPlus, Wallet } from 'lucide-react';
+import React from "react";
+import { type ActivityFeedItem } from "@/shared/lib/api/feed";
+import { MessageSquare, CheckCircle, UserPlus, Wallet } from "lucide-react";
 
 const ActivityItem = ({ item }: { item: ActivityFeedItem }) => {
   const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName?.[0] ?? ''}${lastName?.[0] ?? ''}`.toUpperCase() || 'U';
+    return `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.toUpperCase() || "U";
   };
 
   const renderIcon = () => {
-    if (item.itemType === 'UserComment') {
+    if (item.itemType === "UserComment") {
       return (
-        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/20 text-primary font-bold flex items-center justify-center">
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 font-bold text-primary">
           {getInitials(item.userFirstName, item.userLastName)}
         </div>
       );
     }
-    // For SystemLog, we check the content for keywords
-    if (item.content.includes('completed')) {
-      return <div className="flex-shrink-0 w-10 h-10 rounded-full bg-green-100 flex items-center justify-center"><CheckCircle className="text-green-600" /></div>;
+    if (item.content.includes("completed")) {
+      return (
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-success/10">
+          <CheckCircle className="text-success" size={18} aria-hidden />
+        </div>
+      );
     }
-    if (item.content.includes('invited')) {
-      return <div className="flex-shrink-0 w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center"><UserPlus className="text-purple-600" /></div>;
+    if (item.content.includes("invited")) {
+      return (
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-accent/15">
+          <UserPlus className="text-accent" size={18} aria-hidden />
+        </div>
+      );
     }
-    if (item.content.includes('expense')) {
-      return <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center"><Wallet className="text-red-600" /></div>;
+    if (item.content.includes("expense")) {
+      return (
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary/10">
+          <Wallet className="text-primary" size={18} aria-hidden />
+        </div>
+      );
     }
-    // Default system log icon
-    return <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center"><MessageSquare className="text-gray-500" /></div>;
+    return (
+      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-muted">
+        <MessageSquare className="text-muted-foreground" size={18} aria-hidden />
+      </div>
+    );
   };
 
   const formatTimeAgo = (dateString: string) => {
@@ -46,22 +60,28 @@ const ActivityItem = ({ item }: { item: ActivityFeedItem }) => {
   };
 
   return (
-    <div className="flex items-start gap-4 group">
+    <div className="group flex items-start gap-4">
       <div className="relative">
         {renderIcon()}
-        {/* Subtle connecting line for the feed effect (hidden on last item ideally, but handled simply here) */}
-        <div className="absolute top-10 left-1/2 -ml-[1px] w-[2px] h-full bg-gray-100 group-last:hidden" />
+        <div className="absolute left-1/2 top-10 -ml-px h-full w-0.5 bg-border group-last:hidden" />
       </div>
-      <div className="flex-grow pt-1 pb-4">
-        <p className="text-sm text-charcoal leading-snug">
-          <span className="font-bold">{item.userFirstName} {item.userLastName}</span>
-          {item.itemType === 'SystemLog' ? <span className="text-gray-600"> {item.content}</span> : <span className="text-gray-600">: {item.content}</span>}
+      <div className="flex-grow pb-4 pt-1">
+        <p className="text-sm leading-snug text-foreground">
+          <span className="font-bold">
+            {item.userFirstName} {item.userLastName}
+          </span>
+          {item.itemType === "SystemLog" ? (
+            <span className="text-muted-foreground"> {item.content}</span>
+          ) : (
+            <span className="text-muted-foreground">: {item.content}</span>
+          )}
         </p>
-        <p className="text-[11px] font-semibold tracking-wider uppercase text-gray-400 mt-1.5">{formatTimeAgo(item.createdAt)}</p>
+        <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          {formatTimeAgo(item.createdAt)}
+        </p>
       </div>
     </div>
   );
 };
 
 export default ActivityItem;
-

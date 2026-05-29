@@ -3,7 +3,10 @@ export interface Task {
     title: string;
     description: string | null;
     status: 'ToDo' | 'InProgress' | 'Completed';
+    startDate: string | null;
     dueDate: string | null;
+    dependsOnTaskId: string | null;
+    assignedToUserId: string | null;
 }
 
 export interface CreateTaskData {
@@ -37,6 +40,27 @@ export const createTask = async (token: string, eventId: string, taskData: Creat
         throw new Error(errorData.message || 'Failed to create task.');
     }
     return response.json();
+};
+
+export const patchTaskSchedule = async (
+    token: string,
+    eventId: string,
+    taskId: string,
+    payload: { startDate?: string; dueDate?: string; dependsOnTaskId?: string | null; updateDependency?: boolean }
+) => {
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/events/${eventId}/tasks/${taskId}`;
+    const response = await fetch(apiUrl, {
+        method: 'PATCH',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || errorData.detail || 'Failed to update task schedule.');
+    }
 };
 
 export const updateTaskStatus = async (token: string, taskId: string, newStatus: 'ToDo' | 'InProgress' | 'Completed') => {

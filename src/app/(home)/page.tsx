@@ -6,6 +6,7 @@ import Header from "@/shared/components/layout/Header";
 import Hero from "@/app/(home)/components/Hero";
 import BrowseByCategory from "@/app/(home)/components/BrowseByCategory";
 import HowItWorks from "@/app/(home)/components/HowItWorks";
+import PricingTiers from "@/app/(home)/components/PricingTiers";
 import FeaturedVenues from "@/modules/vendors/components/FeaturedVenues";
 import Testimonials from "@/modules/vendors/components/Testimonials";
 import Footer from "@/shared/components/layout/Footer";
@@ -22,7 +23,8 @@ export default function Home() {
       
       <Hero />
       <BrowseByCategory />
-      <HowItWorks /> 
+      <HowItWorks />
+      <PricingTiers />
       <FeaturedVenues />
       <Testimonials />
       <Footer />
