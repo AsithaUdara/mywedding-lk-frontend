@@ -28,6 +28,7 @@ import {
   formatLKR,
   StatusBadge,
 } from "@/modules/planner/components/ui";
+import { PlannerCreateEventForm } from "@/modules/planner/subscription/PlannerCreateEventForm";
 import {
   Badge,
   Button,
@@ -178,7 +179,16 @@ export default function PlannerDashboardPage() {
               <Users size={16} aria-hidden />
               Clients
             </Button>
-            <Button href="/planner/events" size="sm">
+            <Button
+              type="button"
+              size="sm"
+              onClick={() =>
+                document.getElementById("create-event-dashboard")?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "start",
+                })
+              }
+            >
               <Plus size={16} aria-hidden />
               New event
             </Button>
@@ -187,6 +197,19 @@ export default function PlannerDashboardPage() {
       />
 
       {error && <ErrorBanner message={error} />}
+
+      <div id="create-event-dashboard" className="scroll-mt-6">
+        <SectionCard
+          title="New client wedding"
+          subtitle={
+            planLabel === "Free"
+              ? "Free plan: 1 active wedding — upgrade for unlimited capacity"
+              : "Add another celebration to your portfolio"
+          }
+        >
+          <PlannerCreateEventForm onCreated={() => void load()} />
+        </SectionCard>
+      </div>
 
       {/* KPI bento */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

@@ -97,6 +97,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     register("notifyProposalReceived", "New proposal", "info");
     register("NotifyContractSigned", "Contract signed", "success");
     register("notifyContractSigned", "Contract signed", "success");
+    register("NotifyVendorBookingDeclined", "Vendor declined", "warning");
+    register("notifyVendorBookingDeclined", "Vendor declined", "warning");
 
     const start = async () => {
       try {

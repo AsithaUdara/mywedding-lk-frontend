@@ -13,7 +13,8 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
 import { getVendorBookings } from "@/shared/lib/api/vendors";
-import { acceptVendorBooking, updateBookingStatus } from "@/shared/lib/api/bookings";
+import { updateBookingStatus } from "@/shared/lib/api/bookings";
+import { acceptVendorBooking, declineVendorBooking } from "@/shared/lib/api/vendorShortlist";
 import { SearchField } from "@/modules/vendor/dashboard/components";
 import {
   Badge,
@@ -166,6 +167,20 @@ export default function VendorBookingsPage() {
       await fetchBookings();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to accept booking.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDeclineBooking = async (bookingId: string) => {
+    if (!user) return;
+    try {
+      setActionLoading(bookingId);
+      const token = await user.getIdToken();
+      await declineVendorBooking(token, bookingId);
+      await fetchBookings();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to decline booking.");
     } finally {
       setActionLoading(null);
     }
@@ -437,7 +452,7 @@ export default function VendorBookingsPage() {
                           variant="secondary"
                           size="sm"
                           className="flex-1 !text-destructive hover:!bg-destructive/10"
-                          onClick={() => void handleUpdateStatus(booking.bookingId, "Cancelled")}
+                          onClick={() => void handleDeclineBooking(booking.bookingId)}
                           disabled={actionLoading === booking.bookingId}
                         >
                           <XCircle size={16} aria-hidden />

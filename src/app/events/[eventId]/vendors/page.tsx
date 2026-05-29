@@ -1,10 +1,25 @@
 "use client";
 
-import React, { use } from "react";
+import React, { use, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { Store } from "lucide-react";
 import { VendorShortlistPanel } from "@/modules/procurement/VendorShortlistPanel";
 import { cp } from "@/modules/client/client-theme";
 import { cn } from "@/shared/lib/cn";
+
+function EventVendorsContent({ eventId }: { eventId: string }) {
+  const searchParams = useSearchParams();
+  const pollBookingId = searchParams.get("bookingId");
+  const paymentReturn = searchParams.get("payment") === "return";
+
+  return (
+    <VendorShortlistPanel
+      eventId={eventId}
+      mode="client"
+      pollBookingId={paymentReturn && pollBookingId ? pollBookingId : null}
+    />
+  );
+}
 
 export default function EventVendorsPage({
   params,
@@ -28,7 +43,15 @@ export default function EventVendorsPage({
           </div>
         </div>
 
-        <VendorShortlistPanel eventId={eventId} mode="client" />
+        <Suspense
+          fallback={
+            <div className="flex justify-center py-16">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            </div>
+          }
+        >
+          <EventVendorsContent eventId={eventId} />
+        </Suspense>
       </div>
     </div>
   );

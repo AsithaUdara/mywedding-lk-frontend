@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { ArrowRight, RefreshCw, ShieldCheck, ShieldAlert, Users } from "lucide-react";
+import { ArrowRight, RefreshCw, ShieldCheck, ShieldAlert, Users, Wallet } from "lucide-react";
 import { VendorApprovalQueue } from "@/modules/admin/VendorApprovalQueue";
 import { usePlatformAnalytics } from "@/modules/admin/hooks/usePlatformAnalytics";
 import { AdminPlatformKpis } from "@/modules/admin/components/AdminPlatformKpis";
@@ -24,6 +24,12 @@ const QUICK_LINKS = [
     label: "KYB queue",
     description: "Approve or reject vendor applications",
     icon: ShieldAlert,
+  },
+  {
+    href: "/admin/dashboard/commissions",
+    label: "Commission payouts",
+    description: "Settle vendor payouts from confirmed bookings",
+    icon: Wallet,
   },
   {
     href: "/vendors",

@@ -14,6 +14,10 @@ export function shortlistStatusLabel(status: VendorShortlistItemStatus): string 
       return "Awaiting vendor";
     case "BookingAccepted":
       return "Pay deposit";
+    case "Declined":
+      return "Vendor declined";
+    case "DepositPaid":
+      return "Deposit paid";
     default:
       return status;
   }
@@ -34,6 +38,10 @@ export function shortlistStatusBadgeKey(status: VendorShortlistItemStatus): stri
       return "Requested";
     case "BookingAccepted":
       return "AwaitingPayment";
+    case "Declined":
+      return "Rejected";
+    case "DepositPaid":
+      return "Confirmed";
     default:
       return status;
   }

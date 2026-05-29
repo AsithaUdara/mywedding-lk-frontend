@@ -15,6 +15,7 @@ import {
   Button,
   EmptyState,
   ErrorBanner,
+  SuccessBanner,
   formatLKR,
 } from "@/shared/components/ui";
 import {
@@ -23,7 +24,7 @@ import {
 } from "@/modules/procurement/shortlist-utils";
 import { AddShortlistProposalModal } from "@/modules/procurement/AddShortlistProposalModal";
 import { useAuth } from "@/shared/context/AuthContext";
-import { createDepositCheckout } from "@/shared/lib/api/vendors";
+import { createDepositCheckout, getBookingPaymentStatus } from "@/shared/lib/api/vendors";
 import { submitPayHereCheckout } from "@/shared/lib/payhereCheckout";
 
 type Mode = "planner" | "client";
@@ -31,13 +32,17 @@ type Mode = "planner" | "client";
 type Props = {
   eventId: string;
   mode: Mode;
+  /** When set (e.g. after PayHere return), poll payment status until confirmed. */
+  pollBookingId?: string | null;
 };
 
-export function VendorShortlistPanel({ eventId, mode }: Props) {
+export function VendorShortlistPanel({ eventId, mode, pollBookingId }: Props) {
   const { user } = useAuth();
   const [items, setItems] = useState<VendorShortlistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [paymentPolling, setPaymentPolling] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState<string | null>(null);
   const [actionId, setActionId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
 
@@ -59,6 +64,62 @@ export function VendorShortlistPanel({ eventId, mode }: Props) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (!pollBookingId || !user || mode !== "client") return;
+
+    let cancelled = false;
+    let attempts = 0;
+    const maxAttempts = 30;
+    const pollIntervalMs = 2000;
+
+    const isPaid = (bookingStatus: string, paymentStatus: string) =>
+      paymentStatus === "Paid" || bookingStatus === "Confirmed";
+
+    const poll = async () => {
+      try {
+        setPaymentPolling(true);
+        setError(null);
+        const token = await user.getIdToken();
+        const status = await getBookingPaymentStatus(token, pollBookingId);
+
+        if (cancelled) return;
+
+        if (isPaid(status.bookingStatus, status.paymentStatus)) {
+          setPaymentSuccess("Deposit paid successfully. Your vendor booking is confirmed.");
+          setPaymentPolling(false);
+          await load();
+          window.history.replaceState({}, "", `/events/${eventId}/vendors`);
+          return;
+        }
+
+        attempts += 1;
+        if (attempts < maxAttempts) {
+          window.setTimeout(() => void poll(), pollIntervalMs);
+        } else {
+          setPaymentPolling(false);
+          setError(
+            "Payment is still processing. Please wait a moment and refresh, or contact your planner."
+          );
+        }
+      } catch (err) {
+        if (cancelled) return;
+        attempts += 1;
+        if (attempts < maxAttempts) {
+          window.setTimeout(() => void poll(), pollIntervalMs);
+        } else {
+          setPaymentPolling(false);
+          setError(err instanceof Error ? err.message : "Could not verify payment status.");
+        }
+      }
+    };
+
+    void poll();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pollBookingId, user, mode, eventId, load]);
 
   const draftIds = items.filter((i) => i.status === "Draft").map((i) => i.id);
 
@@ -125,7 +186,7 @@ export function VendorShortlistPanel({ eventId, mode }: Props) {
     }
   };
 
-  if (loading) {
+  if (loading && !paymentPolling) {
     return (
       <div className="flex justify-center py-16">
         <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden />
@@ -135,6 +196,18 @@ export function VendorShortlistPanel({ eventId, mode }: Props) {
 
   return (
     <div className="space-y-6">
+      {paymentPolling && (
+        <div
+          className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-4"
+          role="status"
+        >
+          <Loader2 className="h-5 w-5 shrink-0 animate-spin text-primary" aria-hidden />
+          <p className="text-sm font-medium text-foreground">
+            Confirming your deposit payment with PayHere…
+          </p>
+        </div>
+      )}
+      {paymentSuccess && <SuccessBanner message={paymentSuccess} />}
       {error && <ErrorBanner message={error} />}
 
       {mode === "planner" && (
@@ -251,6 +324,11 @@ export function VendorShortlistPanel({ eventId, mode }: Props) {
                       {actionId === item.id ? "Requesting…" : "Request booking"}
                     </Button>
                   )}
+                  {mode === "client" && item.status === "DepositPaid" && (
+                    <span className="rounded-full bg-success/15 px-3 py-1.5 text-xs font-semibold text-success">
+                      Deposit paid
+                    </span>
+                  )}
                   {mode === "client" &&
                     item.vendorBookingId &&
                     item.status === "BookingAccepted" && (
@@ -259,7 +337,7 @@ export function VendorShortlistPanel({ eventId, mode }: Props) {
                         variant="accent"
                         size="sm"
                         className="gap-1"
-                        disabled={actionId === `pay-${item.vendorBookingId}`}
+                        disabled={actionId === `pay-${item.vendorBookingId}` || paymentPolling}
                         onClick={() => void handlePayDeposit(item.vendorBookingId!)}
                       >
                         <CreditCard size={14} aria-hidden />
@@ -268,6 +346,11 @@ export function VendorShortlistPanel({ eventId, mode }: Props) {
                           : "Pay deposit"}
                       </Button>
                     )}
+                  {item.status === "Declined" && (
+                    <span className="rounded-full bg-muted px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+                      Vendor unavailable
+                    </span>
+                  )}
                   {mode === "client" && item.status === "BookingRequested" && item.vendorBookingId && (
                     <span className="rounded-full bg-muted px-3 py-1.5 text-xs font-semibold text-muted-foreground">
                       Awaiting vendor response

@@ -12,8 +12,8 @@ import {
   Users,
 } from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
+import { PlannerCreateEventForm } from "@/modules/planner/subscription/PlannerCreateEventForm";
 import {
-  createPlannerEvent,
   EventLifecycleStage,
   getPlannerEvents,
   PlannerEventListItem,
@@ -28,16 +28,8 @@ import {
   SectionCard,
   StatCard,
   formatLKR,
-  inputClass,
 } from "@/shared/components/ui";
 import { cn } from "@/shared/lib/cn";
-
-const DEFAULT_FORM = {
-  eventName: "",
-  eventDate: "",
-  totalBudget: 0,
-  clientEmail: "",
-};
 
 type StatusFilter = "all" | "Active" | "OnHold" | "Completed" | "Archived";
 
@@ -75,9 +67,7 @@ export default function PlannerEventsPage() {
   const { user } = useAuth();
   const [events, setEvents] = useState<PlannerEventListItem[]>([]);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [form, setForm] = useState(DEFAULT_FORM);
   const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchEvents = useCallback(async () => {
@@ -114,23 +104,6 @@ export default function PlannerEventsPage() {
   );
 
   const portfolioUtilization = budgetUtilization(totals.totalSpent, totals.totalBudget);
-
-  const onCreateEvent = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-    try {
-      setCreating(true);
-      const token = await user.getIdToken();
-      await createPlannerEvent(token, form);
-      setForm(DEFAULT_FORM);
-      await fetchEvents();
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create event.");
-    } finally {
-      setCreating(false);
-    }
-  };
 
   const scrollToCreate = () => {
     document.getElementById("create-event")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -352,77 +325,12 @@ export default function PlannerEventsPage() {
       </SectionCard>
 
       <div id="create-event" className="scroll-mt-6">
-      <SectionCard
-        title="Create new client event"
-        subtitle="Link a registered couple by email and set the wedding date and budget"
-      >
-        <form onSubmit={onCreateEvent} className="space-y-5">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <label htmlFor="event-name" className="mb-1.5 block text-sm font-semibold text-foreground">
-                Event name
-              </label>
-              <input
-                id="event-name"
-                required
-                placeholder="e.g. Nimal & Priya — Colombo"
-                value={form.eventName}
-                onChange={(e) => setForm((f) => ({ ...f, eventName: e.target.value }))}
-                className={inputClass}
-                autoComplete="off"
-              />
-            </div>
-            <div>
-              <label htmlFor="event-date" className="mb-1.5 block text-sm font-semibold text-foreground">
-                Wedding date
-              </label>
-              <input
-                id="event-date"
-                required
-                type="date"
-                value={form.eventDate}
-                onChange={(e) => setForm((f) => ({ ...f, eventDate: e.target.value }))}
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label htmlFor="event-budget" className="mb-1.5 block text-sm font-semibold text-foreground">
-                Total budget (LKR)
-              </label>
-              <input
-                id="event-budget"
-                required
-                type="number"
-                min={0}
-                step={1000}
-                placeholder="2500000"
-                value={form.totalBudget || ""}
-                onChange={(e) => setForm((f) => ({ ...f, totalBudget: Number(e.target.value) }))}
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label htmlFor="client-email" className="mb-1.5 block text-sm font-semibold text-foreground">
-                Client email
-              </label>
-              <input
-                id="client-email"
-                required
-                type="email"
-                placeholder="couple@example.com"
-                value={form.clientEmail}
-                onChange={(e) => setForm((f) => ({ ...f, clientEmail: e.target.value }))}
-                className={inputClass}
-                autoComplete="email"
-              />
-            </div>
-          </div>
-          <Button type="submit" disabled={creating}>
-            <CalendarPlus size={18} aria-hidden />
-            {creating ? "Creating…" : "Create client event"}
-          </Button>
-        </form>
-      </SectionCard>
+        <SectionCard
+          title="Create new client event"
+          subtitle="Link a registered couple by email and set the wedding date and budget"
+        >
+          <PlannerCreateEventForm onCreated={() => void fetchEvents()} />
+        </SectionCard>
       </div>
     </div>
   );

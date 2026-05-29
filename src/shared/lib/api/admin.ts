@@ -101,10 +101,26 @@ export async function getPlatformAnalytics(token: string): Promise<PlatformAnaly
   };
 }
 
+function mapPayoutDueItem(raw: Record<string, unknown>): PayoutDueItem {
+  return {
+    id: String(raw.id ?? raw.Id ?? ''),
+    bookingId: String(raw.bookingId ?? raw.BookingId ?? ''),
+    grossAmount: Number(raw.grossAmount ?? raw.GrossAmount ?? 0),
+    commissionAmount: Number(raw.commissionAmount ?? raw.CommissionAmount ?? 0),
+    vendorNetAmount: Number(raw.vendorNetAmount ?? raw.VendorNetAmount ?? 0),
+    createdAt: String(raw.createdAt ?? raw.CreatedAt ?? ''),
+    serviceId: String(raw.serviceId ?? raw.ServiceId ?? ''),
+    eventId: String(raw.eventId ?? raw.EventId ?? ''),
+  };
+}
+
 export async function getPayoutDue(token: string): Promise<PayoutDueItem[]> {
   const res = await fetch(`${BASE}/api/admin/commissions/payout-due`, { headers: authHeaders(token) });
   if (!res.ok) throw new Error('Failed to fetch payout due items');
-  return res.json();
+  const data = await res.json();
+  return (Array.isArray(data) ? data : []).map((row) =>
+    mapPayoutDueItem(row as Record<string, unknown>)
+  );
 }
 
 export async function markPayoutSettled(token: string, settlementId: string): Promise<void> {

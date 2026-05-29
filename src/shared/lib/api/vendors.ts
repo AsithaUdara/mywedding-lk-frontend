@@ -203,7 +203,17 @@ export const createDepositCheckout = async (token: string, bookingId: string) =>
   return response.json();
 };
 
-export const getBookingPaymentStatus = async (token: string, bookingId: string) => {
+export interface BookingPaymentStatus {
+  bookingId: string;
+  bookingStatus: string;
+  paymentStatus: string;
+  paidAt?: string | null;
+}
+
+export const getBookingPaymentStatus = async (
+  token: string,
+  bookingId: string
+): Promise<BookingPaymentStatus> => {
   const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/payments/bookings/${bookingId}/status`;
   const response = await fetch(apiUrl, {
     method: 'GET',
@@ -215,7 +225,13 @@ export const getBookingPaymentStatus = async (token: string, bookingId: string) 
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.message || 'Failed to fetch booking payment status.');
   }
-  return response.json();
+  const data = await response.json();
+  return {
+    bookingId: String(data.bookingId ?? data.BookingId ?? bookingId),
+    bookingStatus: String(data.bookingStatus ?? data.BookingStatus ?? ''),
+    paymentStatus: String(data.paymentStatus ?? data.PaymentStatus ?? 'None'),
+    paidAt: data.paidAt ?? data.PaidAt ?? null,
+  };
 };
 
 export const registerVendor = async (

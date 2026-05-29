@@ -6,7 +6,9 @@ export type VendorShortlistItemStatus =
   | "ClientApproved"
   | "ClientRejected"
   | "BookingRequested"
-  | "BookingAccepted";
+  | "BookingAccepted"
+  | "Declined"
+  | "DepositPaid";
 
 export interface VendorShortlistItem {
   id: string;
@@ -190,5 +192,15 @@ export async function acceptVendorBooking(token: string, bookingId: string): Pro
   });
   if (!response.ok) {
     throw new Error(await parseApiError(response, "Failed to accept booking."));
+  }
+}
+
+export async function declineVendorBooking(token: string, bookingId: string): Promise<void> {
+  const response = await fetch(`${base()}/api/bookings/${bookingId}/decline`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    throw new Error(await parseApiError(response, "Failed to decline booking."));
   }
 }

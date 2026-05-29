@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/shared/context/AuthContext";
 import { auth } from "@/shared/lib/firebase";
 import { signOut } from "firebase/auth";
-import { LayoutDashboard, ShieldCheck, Users } from "lucide-react";
+import { LayoutDashboard, ShieldCheck, Users, Wallet } from "lucide-react";
 import { B2BWorkspaceShell } from "@/shared/components/layout/B2BWorkspaceShell";
 import { Button, Card, PageLoadingSkeleton } from "@/shared/components/ui";
 import { getPendingVendors } from "@/shared/lib/api/admin";
@@ -13,6 +13,7 @@ import { getPendingVendors } from "@/shared/lib/api/admin";
 const NAV_ITEMS = [
   { label: "Overview", href: "/admin/dashboard", icon: <LayoutDashboard size={18} /> },
   { label: "KYB queue", href: "/admin/vendors", icon: <Users size={18} /> },
+  { label: "Payouts", href: "/admin/dashboard/commissions", icon: <Wallet size={18} /> },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

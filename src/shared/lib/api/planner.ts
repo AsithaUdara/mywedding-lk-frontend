@@ -1,3 +1,5 @@
+import { parsePlannerApiError, PlannerSubscriptionLimitError } from "@/modules/planner/subscription/errors";
+
 export interface PlannerSignupPayload {
   businessName: string;
   businessDescription?: string;
@@ -118,11 +120,15 @@ export async function createPlannerEvent(token: string, payload: CreatePlannerEv
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || "Failed to create planner event.");
+    const err = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+    const limitError = parsePlannerApiError(err);
+    if (limitError) throw limitError;
+    throw new Error(String(err.message ?? err.detail ?? "Failed to create planner event."));
   }
   return res.json();
 }
+
+export { PlannerSubscriptionLimitError };
 
 export async function updatePlannerSubscription(token: string, payload: { tier: "Free" | "PlannerPro"; monthlyFee: number }) {
   const res = await fetch(`${BASE}/api/planner/subscription`, {
