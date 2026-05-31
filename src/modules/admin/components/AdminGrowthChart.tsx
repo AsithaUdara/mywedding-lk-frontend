@@ -1,6 +1,8 @@
 "use client";
 
 import type { PlatformAnalytics } from "@/shared/lib/api/admin";
+import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
+import { cn } from "@/shared/lib/cn";
 
 export function AdminGrowthChart({
   points,
@@ -10,7 +12,7 @@ export function AdminGrowthChart({
   max: number;
 }) {
   if (points.length === 0) {
-    return <p className="text-sm text-muted-foreground">No planner growth data yet.</p>;
+    return <p className={vg.subtitle}>No planner growth data yet.</p>;
   }
 
   return (
@@ -27,7 +29,7 @@ export function AdminGrowthChart({
             style={{ height: `${Math.max(10, Math.round((point.count / max) * 140))}px` }}
             title={`${point.count} planners in ${point.month}`}
           />
-          <span className="text-[10px] font-medium text-muted-foreground">{point.month}</span>
+          <span className={cn("text-[10px] font-medium", vg.caption)}>{point.month}</span>
         </div>
       ))}
     </div>

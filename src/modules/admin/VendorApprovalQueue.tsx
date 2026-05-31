@@ -8,16 +8,12 @@ import {
   verifyVendor,
   type PendingVendor,
 } from "@/shared/lib/api/admin";
-import { Loader2 } from "lucide-react";
+import { Loader2, Mail, MapPin, Store } from "lucide-react";
 import { ApproveButton, RejectButton } from "@/modules/admin/dashboard/components";
-import {
-  Badge,
-  DataTable,
-  type DataTableColumn,
-  EmptyState,
-  ErrorBanner,
-} from "@/shared/components/ui";
-import { ad } from "@/modules/admin/admin-theme";
+import { Badge, EmptyState, ErrorBanner } from "@/shared/components/ui";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
+import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
+import { cn } from "@/shared/lib/cn";
 
 const MOCK_PENDING: PendingVendor[] = [
   {
@@ -52,8 +48,6 @@ const MOCK_PENDING: PendingVendor[] = [
   },
 ];
 
-type Row = PendingVendor & { id: string };
-
 type ActionState = { id: string; type: "approve" | "reject" } | null;
 
 type VendorApprovalQueueProps = {
@@ -64,6 +58,9 @@ type VendorApprovalQueueProps = {
   compact?: boolean;
   onPendingCount?: (count: number) => void;
 };
+
+const glassRow =
+  "rounded-xl border border-white/55 bg-white/40 p-4 backdrop-blur-sm transition-all hover:border-[hsl(42_48%_52%/0.28)] hover:bg-white/55 sm:p-5";
 
 export function VendorApprovalQueue({
   mockOnly = false,
@@ -116,9 +113,8 @@ export function VendorApprovalQueue({
     onPendingCount?.(vendors.length);
   }, [vendors.length, onPendingCount]);
 
-  const rows: Row[] = useMemo(() => {
-    const mapped = vendors.map((v) => ({ ...v, id: v.userId }));
-    return isEmbedded ? mapped.slice(0, 4) : mapped;
+  const displayVendors = useMemo(() => {
+    return isEmbedded ? vendors.slice(0, 4) : vendors;
   }, [vendors, isEmbedded]);
 
   const removeVendor = (vendorId: string) => {
@@ -168,99 +164,9 @@ export function VendorApprovalQueue({
     }
   };
 
-  const columns = useMemo((): DataTableColumn<Row>[] => {
-    const base: DataTableColumn<Row>[] = [
-      {
-        key: "business",
-        header: "Business",
-        render: (vendor) => (
-          <div className="min-w-[200px]">
-            <p className="font-semibold text-foreground">{vendor.businessName}</p>
-            {!isEmbedded && (
-              <p className="mt-1 line-clamp-2 max-w-sm text-sm text-muted-foreground">
-                {vendor.businessDescription ?? "—"}
-              </p>
-            )}
-          </div>
-        ),
-      },
-      {
-        key: "owner",
-        header: "Owner",
-        render: (vendor) => <span className="text-foreground">{vendor.ownerName ?? "—"}</span>,
-      },
-    ];
-
-    if (!isEmbedded) {
-      base.push(
-        {
-          key: "email",
-          header: "Email",
-          render: (vendor) =>
-            vendor.ownerEmail ? (
-              <a
-                href={`mailto:${vendor.ownerEmail}`}
-                className="font-medium text-primary hover:underline"
-              >
-                {vendor.ownerEmail}
-              </a>
-            ) : (
-              "—"
-            ),
-        },
-        {
-          key: "city",
-          header: "City",
-          render: (vendor) => vendor.city ?? "—",
-        },
-        {
-          key: "category",
-          header: "Category",
-          render: (vendor) => (
-            <Badge variant="muted">{vendor.categoryName ?? "Uncategorized"}</Badge>
-          ),
-        }
-      );
-    }
-
-    base.push(
-      {
-        key: "status",
-        header: "Status",
-        render: (vendor) => <Badge variant="accent">{vendor.verificationStatus}</Badge>,
-      },
-      {
-        key: "actions",
-        header: "",
-        className: "text-right",
-        render: (vendor) => {
-          const isActing = actionState?.id === vendor.userId;
-          const isApproving = isActing && actionState?.type === "approve";
-          const isRejecting = isActing && actionState?.type === "reject";
-          return (
-            <div className="flex items-center justify-end gap-1.5">
-              <ApproveButton
-                onClick={() => void handleApprove(vendor.userId)}
-                loading={isApproving}
-                disabled={isActing && !isApproving}
-              />
-              <RejectButton
-                onClick={() => void handleReject(vendor.userId, vendor.businessName)}
-                loading={isRejecting}
-                disabled={isActing && !isRejecting}
-              />
-            </div>
-          );
-        },
-      }
-    );
-
-    return base;
-  }, [isEmbedded, actionState]);
-
   if (loading) {
     return (
-      <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
+      <div className={cn("flex items-center justify-center gap-2 py-12", vg.subtitle)}>
         <Loader2 size={16} className="animate-spin" aria-hidden />
         Loading KYB queue…
       </div>
@@ -271,25 +177,97 @@ export function VendorApprovalQueue({
     <div className="space-y-4">
       {error && <ErrorBanner message={error} />}
       {useMock && !mockOnly && !error && (
-        <p className={cnDemoBanner()}>Demo data — connect backend or submit real vendor signups.</p>
+        <p className="rounded-xl border border-white/55 bg-white/35 px-4 py-2.5 text-sm text-muted-foreground backdrop-blur-sm">
+          Demo data — connect backend or submit real vendor signups.
+        </p>
       )}
 
-      <DataTable
-        columns={columns}
-        rows={rows}
-        emptyTitle="No vendors awaiting review"
-        emptyDescription="New vendor applications will appear here for KYB approval."
-      />
+      {displayVendors.length === 0 ? (
+        <EmptyState
+          title="No vendors awaiting review"
+          description="New vendor applications will appear here for KYB approval."
+        />
+      ) : (
+        <ul className="space-y-3" role="list">
+          {displayVendors.map((vendor) => {
+            const isActing = actionState?.id === vendor.userId;
+            const isApproving = isActing && actionState?.type === "approve";
+            const isRejecting = isActing && actionState?.type === "reject";
+
+            return (
+              <li key={vendor.userId}>
+                <article className={glassRow}>
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="min-w-0 flex-1 space-y-3">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Store size={16} className="shrink-0 text-primary" aria-hidden />
+                            <h3 className="font-semibold text-foreground">{vendor.businessName}</h3>
+                            <Badge variant="accent">{vendor.verificationStatus}</Badge>
+                          </div>
+                          {!isEmbedded && vendor.businessDescription && (
+                            <p className={cn("mt-2 max-w-2xl", vg.subtitle)}>
+                              {vendor.businessDescription}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                        <span className={vg.subtitle}>
+                          Owner:{" "}
+                          <span className="font-medium text-foreground">
+                            {vendor.ownerName ?? "—"}
+                          </span>
+                        </span>
+                        {!isEmbedded && vendor.city && (
+                          <span className={cn("inline-flex items-center gap-1", vg.subtitle)}>
+                            <MapPin size={14} aria-hidden />
+                            {vendor.city}
+                          </span>
+                        )}
+                        {!isEmbedded && vendor.categoryName && (
+                          <Badge variant="muted">{vendor.categoryName}</Badge>
+                        )}
+                      </div>
+
+                      {!isEmbedded && vendor.ownerEmail && (
+                        <a
+                          href={`mailto:${vendor.ownerEmail}`}
+                          className={cn("inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline")}
+                        >
+                          <Mail size={14} aria-hidden />
+                          {vendor.ownerEmail}
+                        </a>
+                      )}
+                    </div>
+
+                    <div className="flex shrink-0 items-center gap-2 lg:pt-1">
+                      <ApproveButton
+                        onClick={() => void handleApprove(vendor.userId)}
+                        loading={isApproving}
+                        disabled={isActing && !isApproving}
+                      />
+                      <RejectButton
+                        onClick={() => void handleReject(vendor.userId, vendor.businessName)}
+                        loading={isRejecting}
+                        disabled={isActing && !isRejecting}
+                      />
+                    </div>
+                  </div>
+                </article>
+              </li>
+            );
+          })}
+        </ul>
+      )}
 
       {isEmbedded && vendors.length > 4 && (
-        <p className="text-center text-sm text-muted-foreground">
+        <p className={cn("text-center text-sm", vg.subtitle)}>
           Showing 4 of {vendors.length} pending — open the full queue to review all.
         </p>
       )}
     </div>
   );
-}
-
-function cnDemoBanner() {
-  return `${ad.demoBanner} rounded-xl border border-border px-4 py-2.5`;
 }

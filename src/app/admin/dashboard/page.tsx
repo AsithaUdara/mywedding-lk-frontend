@@ -7,35 +7,35 @@ import { usePlatformAnalytics } from "@/modules/admin/hooks/usePlatformAnalytics
 import { AdminPlatformKpis } from "@/modules/admin/components/AdminPlatformKpis";
 import { AdminGrowthChart } from "@/modules/admin/components/AdminGrowthChart";
 import { AdminEcosystemSnapshot } from "@/modules/admin/components/AdminEcosystemSnapshot";
+import { ErrorBanner, PageLoadingSkeleton } from "@/shared/components/ui";
 import {
-  Badge,
-  Button,
-  Card,
-  ErrorBanner,
-  PageHeader,
-  PageLoadingSkeleton,
-  QuickActionLink,
-  SectionCard,
-} from "@/shared/components/ui";
+  GlassButton,
+  GlassPageHeader,
+  GlassQuickActionLink,
+  GlassSectionCard,
+} from "@/modules/vendor/dashboard/glass-ui";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
+import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
+import { cn } from "@/shared/lib/cn";
 
 const QUICK_LINKS = [
   {
     href: "/admin/vendors",
     label: "KYB queue",
     description: "Approve or reject vendor applications",
-    icon: ShieldAlert,
+    icon: <ShieldAlert size={18} aria-hidden />,
   },
   {
     href: "/admin/dashboard/commissions",
     label: "Commission payouts",
     description: "Settle vendor payouts from confirmed bookings",
-    icon: Wallet,
+    icon: <Wallet size={18} aria-hidden />,
   },
   {
     href: "/vendors",
     label: "Public directory",
     description: "Preview couple-facing vendor hub",
-    icon: Users,
+    icon: <Users size={18} aria-hidden />,
   },
 ];
 
@@ -53,31 +53,31 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-8 pb-4 lg:space-y-10">
-      <PageHeader
+      <GlassPageHeader
         title="Operations center"
         description="Platform financial health, planner growth, and vendor trust & safety — live from your admin API."
         badge={
-          <Badge variant="muted" className="inline-flex items-center gap-1.5">
+          <span className={cn(rf.badge, "inline-flex items-center gap-1.5")}>
             <ShieldCheck size={12} aria-hidden />
             Internal
-          </Badge>
+          </span>
         }
         action={
           <div className="flex flex-wrap items-center gap-2">
-            <Button
+            <GlassButton
               type="button"
-              variant="secondary"
-              size="sm"
+              variant="ghost"
               disabled={refreshing}
               onClick={() => void reload()}
+              className="gap-1.5"
             >
               <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} aria-hidden />
               Refresh
-            </Button>
-            <Button href="/admin/vendors" size="sm">
+            </GlassButton>
+            <GlassButton href="/admin/vendors" variant="primary" className="gap-1.5">
               <ShieldAlert size={16} aria-hidden />
               KYB queue
-            </Button>
+            </GlassButton>
           </div>
         }
       />
@@ -89,18 +89,23 @@ export default function AdminDashboardPage() {
           <AdminPlatformKpis data={data} />
 
           <div className="grid gap-6 lg:grid-cols-3">
-            <SectionCard
+            <GlassSectionCard
               className="lg:col-span-2"
               title="Planner growth"
               subtitle="Active planners — 6 month trend"
               action={
-                <span className="text-sm font-semibold tabular-nums text-muted-foreground">
+                <span className={cn("text-sm font-semibold tabular-nums", vg.subtitle)}>
                   {data.activePlanners} active
                 </span>
               }
             >
               <AdminGrowthChart points={data.plannerGrowthByMonth} max={growthMax} />
-              <div className="mt-6 flex flex-wrap gap-4 border-t border-border pt-4 text-sm text-muted-foreground">
+              <div
+                className={cn(
+                  "mt-6 flex flex-wrap gap-4 border-t border-white/40 pt-4 text-sm",
+                  vg.subtitle
+                )}
+              >
                 <span>
                   <strong className="text-foreground">{data.totalUsers}</strong> users
                 </span>
@@ -111,64 +116,71 @@ export default function AdminDashboardPage() {
                   <strong className="text-foreground">{data.totalBookings}</strong> bookings
                 </span>
               </div>
-            </SectionCard>
+            </GlassSectionCard>
 
-            <SectionCard title="Ecosystem snapshot" subtitle="Platform scale at a glance">
+            <GlassSectionCard title="Ecosystem snapshot" subtitle="Platform scale at a glance">
               <AdminEcosystemSnapshot data={data} />
-            </SectionCard>
+            </GlassSectionCard>
           </div>
 
-          <SectionCard title="Quick links" subtitle="Common admin workflows">
+          <GlassSectionCard title="Quick links" subtitle="Common admin workflows">
             <div className="grid gap-3 sm:grid-cols-2">
               {QUICK_LINKS.map((item) => (
-                <QuickActionLink
+                <GlassQuickActionLink
                   key={item.href}
                   href={item.href}
                   label={item.label}
                   description={item.description}
-                  icon={<item.icon size={18} aria-hidden />}
+                  icon={item.icon}
                 />
               ))}
             </div>
-          </SectionCard>
+          </GlassSectionCard>
         </>
       )}
 
-      <SectionCard
+      <GlassSectionCard
         title="Vendor approval queue"
         subtitle="Know-your-business review before marketplace listing"
         action={
-          <Button href="/admin/vendors" variant="secondary" size="sm">
+          <GlassButton href="/admin/vendors" variant="ghost" className="gap-1">
             Full queue
             <ArrowRight size={14} aria-hidden />
-          </Button>
+          </GlassButton>
         }
       >
         <VendorApprovalQueue embedded />
-      </SectionCard>
+      </GlassSectionCard>
 
-      <Card className="border-primary/20 bg-primary text-primary-foreground">
+      <div
+        className={cn(
+          rf.panel,
+          "border-primary/25 bg-gradient-to-br from-primary via-primary to-primary/90 p-6 text-primary-foreground sm:p-8"
+        )}
+      >
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="max-w-xl">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary-foreground/70">
               Platform integrity
             </p>
-            <h3 className="mt-2 font-playfair text-2xl font-bold">Keep the marketplace trustworthy</h3>
+            <h3 className="mt-2 font-luxury-display text-2xl font-normal tracking-[0.04em]">
+              Keep the marketplace trustworthy
+            </h3>
             <p className="mt-2 text-sm leading-relaxed text-primary-foreground/85">
               Verified vendors protect couples and planners. Review credentials, portfolio links, and
               business details before approval.
             </p>
           </div>
-          <Button
+          <GlassButton
             href="/admin/vendors"
-            variant="secondary"
-            className="shrink-0 border-0 bg-card text-primary hover:opacity-95"
+            variant="ghost"
+            className="shrink-0 border-0 bg-white/90 text-primary hover:bg-white"
           >
             Review applications
             <ArrowRight size={16} aria-hidden />
-          </Button>
+          </GlassButton>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }

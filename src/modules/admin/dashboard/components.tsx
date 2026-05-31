@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Loader2 } from "lucide-react";
-import { Button } from "@/shared/components/ui";
+import { GlassButton } from "@/modules/vendor/dashboard/glass-ui";
 import { cn } from "@/shared/lib/cn";
 
 export function ApproveButton({
@@ -15,19 +15,17 @@ export function ApproveButton({
   disabled?: boolean;
 }) {
   return (
-    <Button
+    <button
       type="button"
-      size="sm"
       onClick={onClick}
       disabled={disabled || loading}
       className={cn(
-        "bg-success text-primary-foreground hover:opacity-90",
-        "shadow-sm shadow-success/20"
+        "font-glass-body inline-flex items-center justify-center gap-1.5 rounded-xl bg-success px-3 py-1.5 text-xs font-medium text-success-foreground shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
       )}
     >
       {loading ? <Loader2 size={14} className="animate-spin" aria-hidden /> : null}
       Approve
-    </Button>
+    </button>
   );
 }
 
@@ -41,10 +39,16 @@ export function RejectButton({
   disabled?: boolean;
 }) {
   return (
-    <Button type="button" variant="danger" size="sm" onClick={onClick} disabled={disabled || loading}>
+    <GlassButton
+      type="button"
+      variant="ghost"
+      onClick={onClick}
+      disabled={disabled || loading}
+      className="text-destructive hover:bg-destructive/10"
+    >
       {loading ? <Loader2 size={14} className="animate-spin" aria-hidden /> : null}
       Reject
-    </Button>
+    </GlassButton>
   );
 }
 
@@ -60,9 +64,9 @@ export function PrimaryButton({
   disabled?: boolean;
 }) {
   return (
-    <Button type="button" variant="primary" size="sm" onClick={onClick} disabled={disabled || loading}>
+    <GlassButton type="button" variant="primary" onClick={onClick} disabled={disabled || loading}>
       {loading && <Loader2 size={14} className="animate-spin" aria-hidden />}
       {children}
-    </Button>
+    </GlassButton>
   );
 }

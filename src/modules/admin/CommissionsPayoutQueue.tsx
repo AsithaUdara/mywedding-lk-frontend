@@ -1,23 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { CheckCircle2, Loader2, Wallet } from "lucide-react";
+import { Calendar, CheckCircle2, Loader2, Wallet } from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
 import {
   getPayoutDue,
   markPayoutSettled,
   type PayoutDueItem,
 } from "@/shared/lib/api/admin";
-import {
-  Button,
-  DataTable,
-  type DataTableColumn,
-  EmptyState,
-  ErrorBanner,
-  formatLKR,
-  PageLoadingSkeleton,
-  SectionCard,
-} from "@/shared/components/ui";
+import { SyncPaymentStatusButton } from "@/modules/payments/SyncPaymentStatusButton";
+import { PrimaryButton } from "@/modules/admin/dashboard/components";
+import { EmptyState, ErrorBanner, formatLKR } from "@/shared/components/ui";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
+import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
 import { cn } from "@/shared/lib/cn";
 
 function shortId(value: string): string {
@@ -25,7 +20,31 @@ function shortId(value: string): string {
   return `${value.slice(0, 8)}…`;
 }
 
-export function CommissionsPayoutQueue() {
+function formatPayoutDate(value: string): string | null {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+export type CommissionsQueueStats = {
+  count: number;
+  totalCommission: number;
+  totalVendorNet: number;
+};
+
+type CommissionsPayoutQueueProps = {
+  onQueueStats?: (stats: CommissionsQueueStats) => void;
+};
+
+const glassRow =
+  "rounded-xl border border-white/55 bg-white/40 p-4 backdrop-blur-sm transition-all hover:border-[hsl(42_48%_52%/0.28)] hover:bg-white/55 sm:p-5";
+
+export function CommissionsPayoutQueue({ onQueueStats }: CommissionsPayoutQueueProps) {
   const { user } = useAuth();
   const [rows, setRows] = useState<PayoutDueItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,6 +72,14 @@ export function CommissionsPayoutQueue() {
   }, [load]);
 
   useEffect(() => {
+    onQueueStats?.({
+      count: rows.length,
+      totalCommission: rows.reduce((sum, row) => sum + row.commissionAmount, 0),
+      totalVendorNet: rows.reduce((sum, row) => sum + row.vendorNetAmount, 0),
+    });
+  }, [rows, onQueueStats]);
+
+  useEffect(() => {
     if (!toast) return;
     const timer = window.setTimeout(() => setToast(null), 5000);
     return () => window.clearTimeout(timer);
@@ -74,66 +101,13 @@ export function CommissionsPayoutQueue() {
     }
   };
 
-  const columns: DataTableColumn<PayoutDueItem>[] = [
-    {
-      key: "bookingId",
-      header: "Booking ID",
-      render: (row) => (
-        <span className="font-mono text-xs text-foreground" title={row.bookingId}>
-          {shortId(row.bookingId)}
-        </span>
-      ),
-    },
-    {
-      key: "grossAmount",
-      header: "Gross amount",
-      className: "text-right",
-      render: (row) => (
-        <span className="tabular-nums font-semibold text-foreground">{formatLKR(row.grossAmount)}</span>
-      ),
-    },
-    {
-      key: "vendorNetAmount",
-      header: "Vendor net",
-      className: "text-right",
-      render: (row) => (
-        <span className="tabular-nums text-foreground">{formatLKR(row.vendorNetAmount)}</span>
-      ),
-    },
-    {
-      key: "commissionAmount",
-      header: "Commission",
-      className: "text-right",
-      render: (row) => (
-        <span className="tabular-nums font-semibold text-primary">{formatLKR(row.commissionAmount)}</span>
-      ),
-    },
-    {
-      key: "actions",
-      header: "",
-      className: "text-right",
-      render: (row) => (
-        <Button
-          type="button"
-          size="sm"
-          variant="secondary"
-          disabled={settlingId === row.id}
-          onClick={() => void handleMarkSettled(row)}
-          className="gap-1.5"
-        >
-          {settlingId === row.id ? (
-            <Loader2 size={14} className="animate-spin" aria-hidden />
-          ) : (
-            <CheckCircle2 size={14} aria-hidden />
-          )}
-          {settlingId === row.id ? "Saving…" : "Mark settled"}
-        </Button>
-      ),
-    },
-  ];
-
   if (loading) {
-    return <PageLoadingSkeleton />;
+    return (
+      <div className={cn("flex items-center justify-center gap-2 py-12", vg.subtitle)}>
+        <Loader2 size={16} className="animate-spin" aria-hidden />
+        Loading payout queue…
+      </div>
+    );
   }
 
   return (
@@ -142,8 +116,8 @@ export function CommissionsPayoutQueue() {
         <div
           role="status"
           className={cn(
-            "fixed right-4 top-20 z-[100] flex max-w-sm items-start gap-3 rounded-2xl border px-4 py-3 shadow-lg backdrop-blur-md",
-            "border-emerald-200 bg-emerald-50/95 text-emerald-900"
+            rf.panel,
+            "fixed right-4 top-20 z-[100] flex max-w-sm items-start gap-3 border-success/30 bg-success/10 px-4 py-3 text-success shadow-lg"
           )}
         >
           <CheckCircle2 size={18} className="mt-0.5 shrink-0" aria-hidden />
@@ -153,25 +127,84 @@ export function CommissionsPayoutQueue() {
 
       {error && <ErrorBanner message={error} />}
 
-      <SectionCard
-        title="Unsettled vendor payouts"
-        subtitle="Commission splits awaiting manual payout to vendors after client deposits"
-      >
-        {rows.length === 0 ? (
-          <EmptyState
-            icon={Wallet}
-            title="No payouts due"
-            description="All commission settlements have been marked as paid to vendors."
-          />
-        ) : (
-          <DataTable
-            columns={columns}
-            rows={rows}
-            emptyTitle="No payouts due"
-            className="border-0 shadow-none"
-          />
-        )}
-      </SectionCard>
+      {rows.length === 0 ? (
+        <EmptyState
+          icon={Wallet}
+          title="No payouts due"
+          description="All commission settlements have been marked as paid to vendors."
+        />
+      ) : (
+        <ul className="space-y-3" role="list">
+          {rows.map((row) => {
+            const isSettling = settlingId === row.id;
+            const createdLabel = formatPayoutDate(row.createdAt);
+
+            return (
+              <li key={row.id}>
+                <article className={glassRow}>
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="min-w-0 flex-1 space-y-3">
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                        <div>
+                          <p className={rf.label}>Booking</p>
+                          <p
+                            className="mt-0.5 font-mono text-sm font-semibold text-foreground"
+                            title={row.bookingId}
+                          >
+                            {shortId(row.bookingId)}
+                          </p>
+                        </div>
+                        {createdLabel && (
+                          <span className={cn("inline-flex items-center gap-1.5 text-sm", vg.subtitle)}>
+                            <Calendar size={14} aria-hidden />
+                            {createdLabel}
+                          </span>
+                        )}
+                      </div>
+
+                      <dl className="grid gap-3 sm:grid-cols-3">
+                        <div>
+                          <dt className={rf.label}>Gross amount</dt>
+                          <dd className="mt-0.5 tabular-nums font-semibold text-foreground">
+                            {formatLKR(row.grossAmount)}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className={rf.label}>Vendor net</dt>
+                          <dd className="mt-0.5 tabular-nums text-foreground">
+                            {formatLKR(row.vendorNetAmount)}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className={rf.label}>Commission</dt>
+                          <dd className="mt-0.5 tabular-nums font-semibold text-primary">
+                            {formatLKR(row.commissionAmount)}
+                          </dd>
+                        </div>
+                      </dl>
+                    </div>
+
+                    <div className="flex shrink-0 items-center gap-2 lg:pt-1">
+                      <SyncPaymentStatusButton
+                        bookingId={row.bookingId}
+                        onSynced={load}
+                        variant="glass"
+                      />
+                      <PrimaryButton
+                        onClick={() => void handleMarkSettled(row)}
+                        loading={isSettling}
+                        disabled={settlingId !== null && !isSettling}
+                      >
+                        {isSettling ? "Saving…" : "Mark settled"}
+                      </PrimaryButton>
+                    </div>
+                  </div>
+                </article>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }

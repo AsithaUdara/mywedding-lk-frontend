@@ -5,15 +5,19 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/shared/context/AuthContext";
 import { auth } from "@/shared/lib/firebase";
 import { signOut } from "firebase/auth";
-import { LayoutDashboard, ShieldCheck, Users, Wallet } from "lucide-react";
+import { LayoutDashboard, ScrollText, ShieldCheck, Users, Wallet } from "lucide-react";
 import { B2BWorkspaceShell } from "@/shared/components/layout/B2BWorkspaceShell";
-import { Button, Card, PageLoadingSkeleton } from "@/shared/components/ui";
+import { PageLoadingSkeleton } from "@/shared/components/ui";
+import { GlassButton } from "@/modules/vendor/dashboard/glass-ui";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
+import { cn } from "@/shared/lib/cn";
 import { getPendingVendors } from "@/shared/lib/api/admin";
 
 const NAV_ITEMS = [
   { label: "Overview", href: "/admin/dashboard", icon: <LayoutDashboard size={18} /> },
   { label: "KYB queue", href: "/admin/vendors", icon: <Users size={18} /> },
   { label: "Payouts", href: "/admin/dashboard/commissions", icon: <Wallet size={18} /> },
+  { label: "Audit log", href: "/admin/dashboard/audit-log", icon: <ScrollText size={18} /> },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -73,7 +77,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (authLoading || isAdmin === null) {
     return (
-      <div className="min-h-screen bg-background p-8 font-roboto">
+      <div className="regal-frost-shell min-h-screen bg-background p-8 font-glass-body">
         <PageLoadingSkeleton />
       </div>
     );
@@ -81,8 +85,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (!isAdmin) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background px-4 font-roboto">
-        <p className="font-playfair text-lg font-bold tracking-tight text-foreground">Access denied</p>
+      <div className="regal-frost-shell flex min-h-screen flex-col items-center justify-center gap-3 bg-background px-4 font-glass-body">
+        <p className="font-luxury-section text-lg font-medium tracking-tight text-foreground">Access denied</p>
         <p className="text-sm text-muted-foreground">Admin role required.</p>
       </div>
     );
@@ -104,21 +108,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       maxWidthClass="max-w-[1500px]"
       onLogout={handleSignOut}
       topBarActions={
-        <span className="rounded-full border border-border bg-muted px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+        <span className={cn(rf.badge, "px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em]")}>
           Internal ops
         </span>
       }
       sidebarFooter={
-        <Card className="border-primary/15 bg-primary/5 p-4 shadow-none">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Trust & safety</p>
-          <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+        <div className={cn(rf.panel, "border-primary/20 bg-primary/5 p-4 shadow-none")}>
+          <p className={cn(rf.label, "text-primary")}>Trust & safety</p>
+          <p className={cn("mt-1.5 text-xs leading-relaxed", rf.subtitle)}>
             Review vendor KYB before they appear on MyWedding.lk.
           </p>
-          <Button href="/admin/vendors" size="sm" className="mt-3 w-full">
+          <GlassButton href="/admin/vendors" variant="primary" className="mt-3 w-full justify-center">
             Open KYB queue
             {kybPending !== undefined && kybPending > 0 ? ` (${kybPending})` : ""}
-          </Button>
-        </Card>
+          </GlassButton>
+        </div>
       }
     >
       {children}

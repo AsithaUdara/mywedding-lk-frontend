@@ -2,64 +2,56 @@
 
 import { Store, TrendingUp, Users, Wallet, Percent } from "lucide-react";
 import type { PlatformAnalytics } from "@/shared/lib/api/admin";
-import { StatCard, formatLKR } from "@/shared/components/ui";
+import { GlassStatCard } from "@/modules/vendor/dashboard/glass-ui";
+import { formatLKR } from "@/shared/components/ui";
 
 function deltaTrend(delta: number | undefined) {
   if (delta === undefined) return undefined;
   return `${delta >= 0 ? "+" : ""}${delta}% MoM`;
 }
 
-function deltaTone(delta: number | undefined): "success" | "attention" | "neutral" {
-  if (delta === undefined) return "neutral";
-  return delta >= 0 ? "success" : "attention";
+function kpiSub(base: string, delta: number | undefined) {
+  const trend = deltaTrend(delta);
+  return trend ? `${base} · ${trend}` : base;
 }
 
 export function AdminPlatformKpis({ data }: { data: PlatformAnalytics }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-      <StatCard
+      <GlassStatCard
         label="MRR"
         value={formatLKR(data.mrr)}
-        sub="Planner SaaS"
+        sub={kpiSub("Planner SaaS", data.mrrDeltaPct)}
         icon={Wallet}
         iconTheme="accent"
-        trend={deltaTrend(data.mrrDeltaPct)}
-        trendTone={deltaTone(data.mrrDeltaPct)}
-        index={0}
       />
-      <StatCard
+      <GlassStatCard
         label="TPV"
         value={formatLKR(data.tpv)}
-        sub="Processing volume"
+        sub={kpiSub("Processing volume", data.tpvDeltaPct)}
         icon={TrendingUp}
         iconTheme="primary"
-        trend={deltaTrend(data.tpvDeltaPct)}
-        trendTone={deltaTone(data.tpvDeltaPct)}
-        index={1}
       />
-      <StatCard
+      <GlassStatCard
         label="Take rate"
         value={formatLKR(data.takeRateRevenue)}
         sub="Platform commission"
         icon={Percent}
-        iconTheme="rose"
-        index={2}
+        iconTheme="warning"
       />
-      <StatCard
+      <GlassStatCard
         label="Active planners"
         value={data.activePlanners}
         sub="Last 30 days"
         icon={Users}
         iconTheme="primary"
-        index={3}
       />
-      <StatCard
+      <GlassStatCard
         label="Vendors"
         value={data.registeredVendors}
         sub={`${data.activeCouples} active couples`}
         icon={Store}
         iconTheme="success"
-        index={4}
       />
     </div>
   );
