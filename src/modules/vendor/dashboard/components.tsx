@@ -18,7 +18,7 @@ export function StatusBadge({
         "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold",
         active
           ? "bg-success/10 text-success ring-1 ring-success/20"
-          : "bg-muted text-muted-foreground ring-1 ring-border"
+          : "bg-white/50 text-muted-foreground ring-1 ring-white/60"
       )}
     >
       <span
@@ -77,6 +77,7 @@ export function IconButton({
   href,
   variant = "default",
   disabled,
+  glass,
 }: {
   icon: LucideIcon;
   label: string;
@@ -84,12 +85,20 @@ export function IconButton({
   href?: string;
   variant?: "default" | "danger";
   disabled?: boolean;
+  glass?: boolean;
 }) {
   const className = cn(
-    "inline-flex h-9 w-9 items-center justify-center rounded-xl border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
-    variant === "danger"
-      ? "border-transparent text-muted-foreground hover:border-destructive/20 hover:bg-destructive/10 hover:text-destructive"
-      : "border-border bg-card text-muted-foreground hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+    "inline-flex h-9 w-9 items-center justify-center rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+    glass
+      ? variant === "danger"
+        ? "text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+        : "text-muted-foreground hover:bg-white/70 hover:text-primary"
+      : cn(
+          "border",
+          variant === "danger"
+            ? "border-transparent text-muted-foreground hover:border-destructive/20 hover:bg-destructive/10 hover:text-destructive"
+            : "border-border bg-card text-muted-foreground hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+        )
   );
 
   if (href) {
@@ -122,7 +131,7 @@ export type RowAction = {
   disabled?: boolean;
 };
 
-export function RowActionsMenu({ actions }: { actions: RowAction[] }) {
+export function RowActionsMenu({ actions, glass }: { actions: RowAction[]; glass?: boolean }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -147,7 +156,12 @@ export function RowActionsMenu({ actions }: { actions: RowAction[] }) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className={cn(
+          "inline-flex h-9 w-9 items-center justify-center rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          glass
+            ? "text-muted-foreground hover:bg-white/70 hover:text-primary"
+            : "border border-border bg-card text-muted-foreground hover:bg-muted"
+        )}
         aria-label="More actions"
         aria-expanded={open}
         aria-haspopup="menu"
@@ -157,7 +171,12 @@ export function RowActionsMenu({ actions }: { actions: RowAction[] }) {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 z-20 mt-1 min-w-[180px] overflow-hidden rounded-2xl border border-border bg-card py-1 shadow-lg"
+          className={cn(
+            "absolute right-0 z-20 mt-1 min-w-[180px] overflow-hidden rounded-2xl py-1 shadow-lg",
+            glass
+              ? "rf-glass-panel vgo-glass-panel border border-white/50"
+              : "border border-border bg-card"
+          )}
         >
           {actions.map((action) => (
             <button
@@ -190,11 +209,13 @@ export function SearchField({
   onChange,
   placeholder,
   className,
+  glass,
 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  glass?: boolean;
 }) {
   return (
     <div className={cn("relative", className)}>
@@ -208,15 +229,31 @@ export function SearchField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-full border border-border bg-muted/40 py-2.5 pl-10 pr-4 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:bg-card focus:ring-2 focus:ring-primary/10"
+        className={cn(
+          "w-full rounded-full border py-2.5 pl-10 pr-4 text-sm text-foreground outline-none transition placeholder:text-muted-foreground",
+          glass
+            ? "vgo-search"
+            : "border-border bg-muted/40 focus:border-primary focus:bg-card focus:ring-2 focus:ring-primary/10"
+        )}
       />
     </div>
   );
 }
 
-export function TableShell({ children }: { children: React.ReactNode }) {
+export function TableShell({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+    <div
+      className={cn(
+        "overflow-hidden rounded-3xl border border-border bg-card shadow-sm",
+        className
+      )}
+    >
       <div className="overflow-x-auto">{children}</div>
     </div>
   );
@@ -228,11 +265,20 @@ export function DataTable({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function Th({ children, align = "left" }: { children: React.ReactNode; align?: "left" | "right" }) {
+export function Th({
+  children,
+  align = "left",
+  glass,
+}: {
+  children: React.ReactNode;
+  align?: "left" | "right";
+  glass?: boolean;
+}) {
   return (
     <th
       className={cn(
-        "border-b border-border bg-muted/40 px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-muted-foreground",
+        "border-b px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-muted-foreground",
+        glass ? "border-white/40 bg-white/30" : "border-border bg-muted/40",
         align === "right" ? "text-right" : "text-left"
       )}
     >
@@ -245,15 +291,18 @@ export function Td({
   children,
   align = "left",
   className = "",
+  glass,
 }: {
   children: React.ReactNode;
   align?: "left" | "right";
   className?: string;
+  glass?: boolean;
 }) {
   return (
     <td
       className={cn(
-        "border-b border-border px-4 py-4 align-middle",
+        "border-b px-4 py-4 align-middle",
+        glass ? "border-white/30" : "border-border",
         align === "right" ? "text-right" : "text-left",
         className
       )}

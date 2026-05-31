@@ -2,7 +2,6 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -26,13 +25,19 @@ import {
   VendorDashboardService,
 } from "@/shared/lib/api/vendors";
 import { validateServiceImageFile } from "@/shared/lib/vendorMedia";
+import { useVendorVerification } from "@/modules/vendor/dashboard/VendorVerificationContext";
+import { VendorPublishRestrictionNotice } from "@/modules/vendor/dashboard/VendorVerificationBanner";
 import {
   DEFAULT_HIGHLIGHT_SUGGESTIONS,
   DEFAULT_INCLUDED_SUGGESTIONS,
 } from "@/shared/lib/serviceListingDetails";
 import { parseListingDetails } from "@/shared/lib/serviceListingDetails";
-import { Button, ErrorBanner, formatLKR, PageLoadingSkeleton } from "@/modules/vendor/dashboard/ui";
+import { ErrorBanner, formatLKR, PageLoadingSkeleton } from "@/modules/vendor/dashboard/ui";
+import { GlassButton } from "@/modules/vendor/dashboard/glass-ui";
+import { ToggleSwitch } from "@/modules/vendor/dashboard/components";
 import { cn } from "@/shared/lib/cn";
+import { vd } from "@/modules/vendor/dashboard/vendor-dashboard-theme";
+import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
 import ListingPreviewPanel from "./ListingPreviewPanel";
 import { saveServiceListing } from "./saveServiceListing";
 import {
@@ -49,6 +54,8 @@ function revokeIfBlob(url: string | null) {
   if (url?.startsWith("blob:")) URL.revokeObjectURL(url);
 }
 
+const LISTING_SHELL_X = "px-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-12";
+
 interface ServiceListingWizardProps {
   mode: "create" | "edit";
   serviceId?: string;
@@ -57,8 +64,9 @@ interface ServiceListingWizardProps {
 export default function ServiceListingWizard({ mode, serviceId }: ServiceListingWizardProps) {
   const router = useRouter();
   const { user } = useAuth();
+  const { canPublishListings } = useVendorVerification();
   const [step, setStep] = useState<ListingStepId>("photos");
-  const [form, setForm] = useState<ServiceListingFormState>(emptyListingForm);
+  const [form, setForm] = useState<ServiceListingFormState>(() => emptyListingForm());
   const [primaryPreview, setPrimaryPreview] = useState<string | null>(null);
   const [categories, setCategories] = useState<VendorCategory[]>([]);
   const [loading, setLoading] = useState(mode === "edit");
@@ -244,6 +252,12 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
   };
 
   const handlePublish = async (publish: boolean) => {
+    if (publish && !canPublishListings) {
+      setError("Your account must be verified before publishing listings to the marketplace.");
+      setStep("review");
+      return;
+    }
+
     const stepsToValidate: ListingStepId[] = ["photos", "basics", "pricing", "details"];
     for (const stepId of stepsToValidate) {
       const message = validateStep(stepId);
@@ -283,46 +297,46 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
   }
 
   return (
-    <div className="listing-editor-page font-roboto">
-      <header className="listing-editor-header sticky top-0 z-40 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 md:px-8">
-          <Link
-            href="/vendor/dashboard/services"
-            className="inline-flex items-center gap-2 rounded-lg px-2 py-1 text-sm font-semibold text-muted-foreground transition hover:bg-primary/5 hover:text-primary"
-          >
+    <div className="listing-editor-page font-glass-body">
+      <header className="listing-editor-header sticky top-0 z-40 w-full">
+        <div className={cn("flex w-full items-center justify-between gap-4 py-4", LISTING_SHELL_X)}>
+          <GlassButton href="/vendor/dashboard/services" variant="ghost" className="gap-2 px-4 py-2">
             <ArrowLeft size={18} />
             Exit
-          </Link>
+          </GlassButton>
           <div className="hidden text-center md:block">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/70">
+            <p className={vg.label}>
               Step {stepIndex + 1} of {LISTING_STEPS.length}
             </p>
-            <p className="font-playfair text-lg font-bold text-foreground">{currentStepMeta.label}</p>
+            <p className="font-luxury-display text-lg font-normal tracking-wide text-foreground">
+              {currentStepMeta.label}
+            </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
+            <GlassButton
+              variant="ghost"
               disabled={saving}
               onClick={() => void handlePublish(false)}
             >
               Save draft
-            </Button>
+            </GlassButton>
             {step === "review" && (
-              <Button
-                type="button"
+              <GlassButton
                 variant="primary"
-                size="sm"
-                disabled={saving}
+                disabled={saving || !canPublishListings}
+                title={
+                  canPublishListings
+                    ? undefined
+                    : "Publishing is unavailable until your account is verified."
+                }
                 onClick={() => void handlePublish(true)}
               >
                 {saving ? "Publishing…" : "Publish listing"}
-              </Button>
+              </GlassButton>
             )}
           </div>
         </div>
-        <div className="flex gap-1 overflow-x-auto px-4 pb-3 md:justify-center md:px-8">
+        <div className={cn("flex w-full gap-1.5 overflow-x-auto pb-3 md:justify-center", LISTING_SHELL_X)}>
           {LISTING_STEPS.map((s, index) => {
             const done = index < stepIndex;
             const active = s.id === step;
@@ -331,13 +345,14 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
                 key={s.id}
                 type="button"
                 onClick={() => index <= stepIndex && setStep(s.id)}
-                className={`flex flex-shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold transition ${
+                className={cn(
+                  "flex flex-shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-200",
                   active
-                    ? "bg-primary text-white shadow-md shadow-primary/25"
+                    ? "vgo-nav-active"
                     : done
                       ? "listing-editor-step-done"
                       : "listing-editor-step-pending"
-                }`}
+                )}
               >
                 {done ? <Check size={12} /> : index + 1}
                 <span className="hidden sm:inline">{s.label}</span>
@@ -347,27 +362,34 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 lg:grid-cols-[1fr_360px] lg:px-8">
+      <div
+        className={cn(
+          "grid w-full flex-1 gap-6 py-6 lg:grid-cols-[minmax(0,1fr)_minmax(320px,26rem)] xl:grid-cols-[minmax(0,1fr)_minmax(360px,28rem)] xl:gap-8 lg:py-8",
+          LISTING_SHELL_X
+        )}
+      >
         <div className="min-w-0 space-y-6">
           {error && <ErrorBanner message={error} />}
 
-          <div className="listing-editor-card p-6 md:p-10">
-            <div className="mb-8 border-b border-primary/10 pb-6">
-              <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-accent">MyWedding.lk listing</p>
-              <h1 className="mt-2 font-playfair text-3xl font-bold text-foreground">{currentStepMeta.label}</h1>
-              <p className="mt-2 text-muted-foreground">{currentStepMeta.description}</p>
+          <div className="listing-editor-card rounded-2xl p-6 md:p-10">
+            <div className="mb-8 border-b border-white/40 pb-6">
+              <p className={vg.label}>MyWedding.lk listing</p>
+              <h1 className="mt-2 font-luxury-display text-3xl font-normal tracking-wide text-foreground">
+                {currentStepMeta.label}
+              </h1>
+              <p className={cn("mt-2", vg.subtitle)}>{currentStepMeta.description}</p>
             </div>
 
             {step === "photos" && (
               <div className="space-y-8">
                 <section>
-                  <h2 className="mb-2 text-lg font-bold text-foreground">Cover photo</h2>
-                  <p className="mb-4 text-sm text-foreground/70">
+                  <h2 className={cn("mb-2 font-medium", vg.body, "text-lg")}>Cover photo</h2>
+                  <p className={cn("mb-4", vg.subtitle)}>
                     This is the first image couples see — like the hero photo on Airbnb.
                   </p>
                   <div className="flex flex-wrap gap-4">
                     {hasPrimaryImage && primaryPreview && (
-                      <div className="relative aspect-[4/3] w-full max-w-md overflow-hidden rounded-2xl border border-primary/15 shadow-md">
+                      <div className="relative aspect-[4/3] w-full max-w-xl overflow-hidden rounded-2xl border border-white/50 shadow-md xl:max-w-2xl">
                         <Image src={primaryPreview} alt="Cover" fill className="object-cover" unoptimized />
                         <button
                           type="button"
@@ -388,7 +410,7 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
                       </div>
                     )}
                     {!hasPrimaryImage && (
-                      <label className="listing-editor-upload-zone flex aspect-[4/3] w-full max-w-md cursor-pointer flex-col items-center justify-center rounded-2xl text-foreground/70">
+                      <label className="listing-editor-upload-zone flex aspect-[4/3] w-full max-w-xl cursor-pointer flex-col items-center justify-center rounded-2xl text-foreground/70 xl:max-w-2xl">
                         <Upload size={32} className="mb-2" />
                         <span className="font-semibold">Upload cover photo</span>
                         <span className="mt-1 text-xs">JPEG, PNG or WebP · max 5 MB</span>
@@ -404,8 +426,8 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
                 </section>
 
                 <section>
-                  <h2 className="mb-2 text-lg font-bold text-foreground">Photo gallery</h2>
-                  <p className="mb-4 text-sm text-foreground/70">
+                  <h2 className={cn("mb-2 font-medium", vg.body, "text-lg")}>Photo gallery</h2>
+                  <p className={cn("mb-4", vg.subtitle)}>
                     Add 3–10 photos showing your work, setup, and results. More photos build trust.
                   </p>
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
@@ -465,7 +487,7 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
             {step === "basics" && (
               <div className="space-y-6">
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-foreground">Service name</label>
+                  <label className={cn("mb-2 block font-medium", vg.body)}>Service name</label>
                   <input
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -474,7 +496,7 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
                   />
                 </div>
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-foreground">
+                  <label className={cn("mb-2 block font-medium", vg.body)}>
                     Headline for couples
                   </label>
                   <input
@@ -483,10 +505,10 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
                     placeholder="e.g. Candid storytelling with cinematic edits"
                     className="listing-editor-input w-full rounded-xl px-4 py-3"
                   />
-                  <p className="mt-1 text-xs text-foreground/55">One line that appears under your title on the listing.</p>
+                  <p className={cn("mt-1", vg.caption)}>One line that appears under your title on the listing.</p>
                 </div>
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-foreground">Category</label>
+                  <label className={cn("mb-2 block font-medium", vg.body)}>Category</label>
                   <select
                     value={form.categoryId}
                     onChange={(e) => {
@@ -514,7 +536,7 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
               <div className="space-y-8">
                 <div className="grid gap-6 md:grid-cols-2">
                   <div>
-                    <label className="mb-2 block text-sm font-bold text-foreground">Starting price (LKR)</label>
+                    <label className={cn("mb-2 block font-medium", vg.body)}>Starting price (LKR)</label>
                     <input
                       type="number"
                       value={form.basePrice}
@@ -523,7 +545,7 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
                     />
                   </div>
                   <div>
-                    <label className="mb-2 block text-sm font-bold text-foreground">Price unit</label>
+                    <label className={cn("mb-2 block font-medium", vg.body)}>Price unit</label>
                     <select
                       value={form.pricingType}
                       onChange={(e) => setForm({ ...form, pricingType: e.target.value })}
@@ -538,8 +560,8 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
                 </div>
 
                 <div>
-                  <h3 className="mb-2 text-lg font-bold text-foreground">What&apos;s included</h3>
-                  <p className="mb-4 text-sm text-foreground/70">
+                  <h3 className={cn("mb-2 font-medium", vg.body, "text-lg")}>What&apos;s included</h3>
+                  <p className={cn("mb-4", vg.subtitle)}>
                     List everything couples get — transparency reduces back-and-forth.
                   </p>
                   <div className="mb-3 flex flex-wrap gap-2">
@@ -548,7 +570,7 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
                         key={suggestion}
                         type="button"
                         onClick={() => addChipItem("includedItems", suggestion)}
-                        className="listing-editor-chip-inactive rounded-full px-3 py-1 text-xs font-medium"
+                        className="listing-editor-chip-inactive rounded-full px-3 py-1 text-xs font-medium transition hover:bg-white/70"
                       >
                         + {suggestion}
                       </button>
@@ -562,13 +584,12 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
                       placeholder="Add custom item..."
                       className="listing-editor-input flex-1 rounded-xl px-4 py-2 text-sm"
                     />
-                    <button
-                      type="button"
+                    <GlassButton
+                      variant="primary"
                       onClick={() => addChipItem("includedItems", includedInput)}
-                      className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white shadow-sm"
                     >
                       Add
-                    </button>
+                    </GlassButton>
                   </div>
                   <ul className="mt-4 space-y-2">
                     {form.listingDetails.includedItems.map((item, index) => (
@@ -594,7 +615,7 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
               <div className="space-y-8">
                 <div className="grid gap-6 md:grid-cols-2">
                   <div>
-                    <label className="mb-2 flex items-center gap-2 text-sm font-bold text-foreground">
+                    <label className={cn("mb-2 flex items-center gap-2 font-medium", vg.body)}>
                       <Clock size={16} /> Duration / coverage
                     </label>
                     <input
@@ -610,7 +631,7 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
                     />
                   </div>
                   <div>
-                    <label className="mb-2 flex items-center gap-2 text-sm font-bold text-foreground">
+                    <label className={cn("mb-2 flex items-center gap-2 font-medium", vg.body)}>
                       <Users size={16} /> Capacity
                     </label>
                     <input
@@ -628,7 +649,7 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-foreground">About this service</label>
+                  <label className={cn("mb-2 block font-medium", vg.body)}>About this service</label>
                   <textarea
                     rows={8}
                     value={form.description}
@@ -649,7 +670,7 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
                     className={`mt-1 text-xs ${
                       form.description.trim().length < MIN_DESCRIPTION_LENGTH
                         ? "font-medium text-warning"
-                        : "text-foreground/55"
+                        : vg.caption
                     }`}
                   >
                     {form.description.trim().length} / {MIN_DESCRIPTION_LENGTH} characters minimum
@@ -660,7 +681,7 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
                 </div>
 
                 <div>
-                  <h3 className="mb-2 flex items-center gap-2 text-lg font-bold text-foreground">
+                  <h3 className={cn("mb-2 flex items-center gap-2 font-medium", vg.body, "text-lg")}>
                     <Sparkles size={18} className="text-primary" />
                     Highlights
                   </h3>
@@ -670,7 +691,7 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
                         key={suggestion}
                         type="button"
                         onClick={() => addChipItem("highlights", suggestion)}
-                        className="listing-editor-chip-inactive rounded-full px-3 py-1 text-xs font-medium"
+                        className="listing-editor-chip-inactive rounded-full px-3 py-1 text-xs font-medium transition hover:bg-white/70"
                       >
                         + {suggestion}
                       </button>
@@ -684,13 +705,9 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
                       className="listing-editor-input flex-1 rounded-xl px-4 py-2 text-sm"
                       placeholder="Add a highlight..."
                     />
-                    <button
-                      type="button"
-                      onClick={() => addChipItem("highlights", highlightInput)}
-                      className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white"
-                    >
+                    <GlassButton variant="primary" onClick={() => addChipItem("highlights", highlightInput)}>
                       Add
-                    </button>
+                    </GlassButton>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {form.listingDetails.highlights.map((item, index) => (
@@ -711,93 +728,103 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
 
             {step === "review" && (
               <div className="space-y-8">
-                <div className="rounded-2xl border border-border bg-gradient-to-br from-accent/10 to-background p-6">
-                  <h3 className="flex items-center gap-2 text-lg font-bold text-foreground">
+                <div className={cn(vd.metaBox, "p-6")}>
+                  <h3 className={cn("flex items-center gap-2 font-medium", vg.body, "text-lg")}>
                     <ImageIcon size={20} className="text-primary" />
                     Listing summary
                   </h3>
-                  <ul className="mt-4 space-y-2 text-sm text-foreground/80">
-                    <li className="flex justify-between">
+                  <ul className={cn("mt-4 space-y-2", vg.subtitle)}>
+                    <li className="flex justify-between gap-4">
                       <span>Photos</span>
-                      <span className="font-semibold">{allPreviewImages.length} uploaded</span>
+                      <span className="font-medium text-foreground">{allPreviewImages.length} uploaded</span>
                     </li>
-                    <li className="flex justify-between">
+                    <li className="flex justify-between gap-4">
                       <span>Price</span>
-                      <span className="font-semibold">
+                      <span className="font-medium tabular-nums text-foreground">
                         {form.basePrice ? formatLKR(parseFloat(form.basePrice)) : "—"}
                       </span>
                     </li>
-                    <li className="flex justify-between">
+                    <li className="flex justify-between gap-4">
                       <span>Included items</span>
-                      <span className="font-semibold">{form.listingDetails.includedItems.length}</span>
+                      <span className="font-medium text-foreground">
+                        {form.listingDetails.includedItems.length}
+                      </span>
                     </li>
                   </ul>
                 </div>
 
-                <div className="listing-editor-surface-muted flex items-center justify-between rounded-2xl p-6">
+                <VendorPublishRestrictionNotice className="mb-4" />
+
+                <div className={cn(vd.metaBox, "flex items-center justify-between gap-4 p-6")}>
                   <div>
-                    <p className="font-bold text-foreground">Publish to couples</p>
-                    <p className="text-sm text-foreground/70">
-                      When on, verified vendors show this listing on search and your profile.
+                    <p className={cn("font-medium", vg.body)}>Publish to couples</p>
+                    <p className={cn("mt-0.5", vg.subtitle)}>
+                      {canPublishListings
+                        ? "When on, this listing appears in search and on your public profile."
+                        : "Available after your business account is verified."}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setForm({ ...form, isActive: !form.isActive })}
-                    className={cn(
-                      "relative h-8 w-14 rounded-full transition",
-                      form.isActive ? "bg-primary" : "bg-muted"
-                    )}
-                  >
-                    <div
-                      className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow transition ${form.isActive ? "left-7" : "left-1"}`}
-                    />
-                  </button>
+                  <ToggleSwitch
+                    checked={form.isActive}
+                    onChange={() => {
+                      if (!canPublishListings && !form.isActive) return;
+                      setForm({ ...form, isActive: !form.isActive });
+                    }}
+                    disabled={!canPublishListings && !form.isActive}
+                    aria-label={
+                      !canPublishListings && !form.isActive
+                        ? "Publishing unavailable until account verification"
+                        : form.isActive
+                          ? "Unpublish listing"
+                          : "Publish listing"
+                    }
+                  />
                 </div>
 
-                <p className="text-sm text-foreground/60">
+                <p className={vg.caption}>
                   Check the preview panel on the right (desktop) to see how couples will experience your listing.
                 </p>
               </div>
             )}
 
-            <div className="mt-10 border-t border-primary/10 pt-8">
+            <div className="mt-10 border-t border-white/40 pt-8">
               {stepBlocker && step !== "review" && (
                 <p className="mb-4 rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning">
                   {stepBlocker}
                 </p>
               )}
-              <div className="flex items-center justify-between">
-              <button
-                type="button"
-                onClick={goBack}
-                className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-muted-foreground transition hover:bg-muted hover:text-primary"
-              >
-                <ArrowLeft size={18} />
-                {stepIndex === 0 ? "Cancel" : "Back"}
-              </button>
-              {step !== "review" ? (
-                <button
-                  type="button"
-                  onClick={goNext}
-                  disabled={Boolean(stepBlocker)}
-                  title={stepBlocker ?? undefined}
-                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white shadow-lg shadow-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Continue
-                  <ArrowRight size={18} />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  disabled={saving}
-                  onClick={() => handlePublish(true)}
-                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white disabled:opacity-50"
-                >
-                  {saving ? "Publishing..." : "Publish listing"}
-                  <ChevronRight size={18} />
-                </button>
-              )}
+              <div className="flex items-center justify-between gap-3">
+                <GlassButton variant="ghost" onClick={goBack} className="gap-1.5">
+                  <ArrowLeft size={18} />
+                  {stepIndex === 0 ? "Cancel" : "Back"}
+                </GlassButton>
+                {step !== "review" ? (
+                  <GlassButton
+                    variant="primary"
+                    onClick={goNext}
+                    disabled={Boolean(stepBlocker)}
+                    title={stepBlocker ?? undefined}
+                    className="gap-1.5"
+                  >
+                    Continue
+                    <ArrowRight size={18} />
+                  </GlassButton>
+                ) : (
+                  <GlassButton
+                    variant="primary"
+                    disabled={saving || !canPublishListings}
+                    title={
+                      canPublishListings
+                        ? undefined
+                        : "Publishing is unavailable until your account is verified."
+                    }
+                    onClick={() => void handlePublish(true)}
+                    className="gap-1.5"
+                  >
+                    {saving ? "Publishing…" : "Publish listing"}
+                    <ChevronRight size={18} />
+                  </GlassButton>
+                )}
               </div>
             </div>
           </div>
@@ -808,10 +835,8 @@ export default function ServiceListingWizard({ mode, serviceId }: ServiceListing
         </div>
       </div>
 
-      <div className="border-t border-border bg-muted/30 px-4 py-8 lg:hidden">
-        <div className="mx-auto max-w-md">
-          <ListingPreviewPanel form={form} primaryPreview={primaryPreview} />
-        </div>
+      <div className={cn("border-t border-white/40 bg-white/30 py-8 backdrop-blur-sm lg:hidden", LISTING_SHELL_X)}>
+        <ListingPreviewPanel form={form} primaryPreview={primaryPreview} />
       </div>
     </div>
   );

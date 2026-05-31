@@ -63,7 +63,7 @@ const ActivityItem = ({ item }: { item: ActivityFeedItem }) => {
     <div className="group flex items-start gap-4">
       <div className="relative">
         {renderIcon()}
-        <div className="absolute left-1/2 top-10 -ml-px h-full w-0.5 bg-border group-last:hidden" />
+        <div className="absolute left-1/2 top-10 -ml-px h-full w-0.5 bg-white/50 group-last:hidden" />
       </div>
       <div className="flex-grow pb-4 pt-1">
         <p className="text-sm leading-snug text-foreground">

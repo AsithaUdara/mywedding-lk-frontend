@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { Camera, Clapperboard, Flower2, MapPin, Music, Utensils } from "lucide-react";
+import { MkSection, MkSectionHeader } from "@/modules/marketing/marketing-glass-ui";
+import { mk } from "@/modules/marketing/marketing-theme";
+import { cn } from "@/shared/lib/cn";
 
 const categories = [
   { name: "Photographers", slug: "photographers", icon: Camera },
@@ -12,50 +15,45 @@ const categories = [
 
 export default function BrowseByCategory() {
   return (
-    <section className="marketing-section-alt py-20 md:py-24" id="directory">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-            Vendor directory
-          </p>
-          <h2 className="mt-3 font-playfair text-3xl font-bold text-foreground md:text-4xl">
-            Browse by category
-          </h2>
-          <p className="mt-4 text-muted-foreground">
-            Planners shortlist from verified vendors — couples can explore the same curated network.
-          </p>
-        </div>
+    <MkSection id="directory" alt>
+      <MkSectionHeader
+        eyebrow="Vendor directory"
+        title="Browse by category"
+        subtitle="Planners shortlist from verified vendors — couples can explore the same curated network."
+      />
 
-        <div className="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6 lg:gap-6">
-          {categories.map((category) => {
-            const Icon = category.icon;
-            const href = category.href ?? `/vendors/search?category=${category.slug}`;
-            return (
-              <Link
-                key={category.name}
-                href={href}
-                className="group flex flex-col items-center rounded-3xl border border-border bg-card p-6 text-center shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-colors duration-200 group-hover:bg-primary group-hover:text-primary-foreground">
-                  <Icon size={28} strokeWidth={1.75} aria-hidden />
-                </div>
-                <h3 className="mt-4 text-sm font-semibold text-foreground group-hover:text-primary transition-colors duration-200">
-                  {category.name}
-                </h3>
-              </Link>
-            );
-          })}
-        </div>
-
-        <p className="mt-10 text-center">
-          <Link
-            href="/vendors"
-            className="text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
-          >
-            View full vendor directory →
-          </Link>
-        </p>
+      <div className="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6 lg:gap-5">
+        {categories.map((category) => {
+          const Icon = category.icon;
+          const href = category.href ?? `/vendors/search?category=${category.slug}`;
+          return (
+            <Link
+              key={category.name}
+              href={href}
+              className={cn(
+                mk.glass,
+                "group flex flex-col items-center rounded-2xl p-5 text-center transition-all duration-200 hover:border-[hsl(42_48%_52%/0.3)] hover:shadow-[0_6px_24px_hsl(345_100%_25%/0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              )}
+            >
+              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/10 transition-colors duration-200 group-hover:bg-primary group-hover:text-primary-foreground">
+                <Icon size={26} strokeWidth={1.75} aria-hidden />
+              </div>
+              <h3 className="font-glass-body mt-4 text-sm font-medium text-foreground transition-colors group-hover:text-primary">
+                {category.name}
+              </h3>
+            </Link>
+          );
+        })}
       </div>
-    </section>
+
+      <p className="mt-10 text-center">
+        <Link
+          href="/vendors"
+          className="font-glass-body text-sm font-medium text-primary underline-offset-4 hover:underline"
+        >
+          View full vendor directory →
+        </Link>
+      </p>
+    </MkSection>
   );
 }

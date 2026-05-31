@@ -7,12 +7,13 @@ import EventHeaderClient from "@/modules/events/EventHeaderClient";
 import QuickInsightsRow from "@/modules/events/QuickInsightsRow";
 import EventNavigation from "@/modules/events/EventNavigation";
 import CollaborationHubSidebar from "@/modules/collaboration/CollaborationHubSidebar";
-import AIChatWidget from "@/modules/ai/AIChatWidget";
+import { EventBrandingProvider } from "@/modules/events/EventBrandingProvider";
 import { RealTimeProvider } from "@/shared/context/RealTimeContext";
 import { useAuth } from "@/shared/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { ClientEventShell } from "@/shared/components/layout/ClientEventShell";
 import { PageLoadingSkeleton } from "@/shared/components/ui";
+import { RegalFrostShell } from "@/modules/design-system/regal-frost/RegalFrostShell";
 
 export default function EventLayout({
   children,
@@ -33,9 +34,9 @@ export default function EventLayout({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background p-8">
+      <RegalFrostShell mesh className="min-h-screen p-8">
         <PageLoadingSkeleton />
-      </div>
+      </RegalFrostShell>
     );
   }
 
@@ -45,25 +46,26 @@ export default function EventLayout({
 
   return (
     <RealTimeProvider eventId={eventId}>
-      <div className="flex min-h-screen flex-col bg-background font-roboto text-foreground">
-        <Header onLoginClick={() => {}} />
+      <EventBrandingProvider eventId={eventId}>
+        <RegalFrostShell mesh className="flex min-h-screen flex-col">
+          <Header onLoginClick={() => {}} />
 
-        <ClientEventShell
-          header={
-            <div className="space-y-6">
-              <EventHeaderClient eventId={eventId} />
-              <QuickInsightsRow eventId={eventId} />
-            </div>
-          }
-          subNav={<EventNavigation eventId={eventId} />}
-        >
-          {children}
-        </ClientEventShell>
+          <ClientEventShell
+            header={
+              <div className="space-y-6">
+                <EventHeaderClient eventId={eventId} />
+                <QuickInsightsRow eventId={eventId} />
+              </div>
+            }
+            subNav={<EventNavigation eventId={eventId} />}
+          >
+            {children}
+          </ClientEventShell>
 
-        <Footer />
-        <CollaborationHubSidebar eventId={eventId} />
-        <AIChatWidget />
-      </div>
+          <Footer />
+          <CollaborationHubSidebar eventId={eventId} />
+        </RegalFrostShell>
+      </EventBrandingProvider>
     </RealTimeProvider>
   );
 }

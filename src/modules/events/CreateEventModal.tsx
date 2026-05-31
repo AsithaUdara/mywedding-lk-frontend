@@ -1,12 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/shared/context/AuthContext";
 import { createEvent } from "@/shared/lib/api/events";
 import { X } from "lucide-react";
-import { Button, ErrorBanner, inputClass } from "@/shared/components/ui";
-import { pv } from "@/modules/vendors/public-theme";
+import { ErrorBanner, inputClass } from "@/shared/components/ui";
+import { GlassButton } from "@/modules/vendor/dashboard/glass-ui";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
 import { cn } from "@/shared/lib/cn";
+
+const glassInput = cn(inputClass, "border-white/55 bg-white/40 backdrop-blur-sm");
 
 interface CreateEventModalProps {
   isOpen: boolean;
@@ -20,6 +23,17 @@ const CreateEventModal = ({ isOpen, onClose, onEventCreated }: CreateEventModalP
   const [eventDate, setEventDate] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add("modal-open-blur");
+    } else {
+      document.body.classList.remove("modal-open-blur");
+    }
+    return () => {
+      document.body.classList.remove("modal-open-blur");
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -48,17 +62,27 @@ const CreateEventModal = ({ isOpen, onClose, onEventCreated }: CreateEventModalP
   };
 
   return (
-    <div className={pv.modalOverlay} onClick={onClose}>
-      <div className={pv.modalPanel} onClick={(e) => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 z-[110] flex items-center justify-center bg-foreground/30 p-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="create-event-title"
+      onClick={onClose}
+    >
+      <div
+        className={cn(rf.panel, "relative w-full max-w-lg overflow-hidden p-6 sm:p-8")}
+        onClick={(e) => e.stopPropagation()}
+      >
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-lg p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+          className={cn(rf.navBtn, "absolute right-3 top-3")}
           aria-label="Close"
         >
-          <X size={22} />
+          <X size={20} />
         </button>
-        <h2 className="mb-6 text-center font-playfair text-2xl font-bold text-foreground sm:text-3xl">
+
+        <h2 id="create-event-title" className={cn(rf.sectionTitle, "mb-6 pr-8 text-center")}>
           Create a new event
         </h2>
 
@@ -66,7 +90,7 @@ const CreateEventModal = ({ isOpen, onClose, onEventCreated }: CreateEventModalP
 
         <form onSubmit={(e) => void handleSubmit(e)} className="space-y-5">
           <div>
-            <label htmlFor="eventName" className={cn("mb-1.5 block", pv.label)}>
+            <label htmlFor="eventName" className={cn("mb-1.5 block", rf.label)}>
               Event name
             </label>
             <input
@@ -76,11 +100,11 @@ const CreateEventModal = ({ isOpen, onClose, onEventCreated }: CreateEventModalP
               value={eventName}
               onChange={(e) => setEventName(e.target.value)}
               required
-              className={inputClass}
+              className={glassInput}
             />
           </div>
           <div>
-            <label htmlFor="eventDate" className={cn("mb-1.5 block", pv.label)}>
+            <label htmlFor="eventDate" className={cn("mb-1.5 block", rf.label)}>
               Event date
             </label>
             <input
@@ -89,13 +113,13 @@ const CreateEventModal = ({ isOpen, onClose, onEventCreated }: CreateEventModalP
               value={eventDate}
               onChange={(e) => setEventDate(e.target.value)}
               required
-              className={inputClass}
+              className={glassInput}
             />
           </div>
 
-          <Button type="submit" variant="primary" className="w-full" disabled={loading}>
+          <GlassButton type="submit" variant="primary" className="w-full justify-center" disabled={loading}>
             {loading ? "Creating…" : "Create event"}
-          </Button>
+          </GlassButton>
         </form>
       </div>
     </div>

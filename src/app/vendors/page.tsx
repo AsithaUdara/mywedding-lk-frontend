@@ -11,6 +11,9 @@ import AmenityCard from "@/modules/vendors/components/AmenityCard";
 import HeroWithSearch from "./components/HeroWithSearch";
 import { VendorsHubProvider, useVendorsHub } from "./components/VendorsHubClient";
 import { VendorsHubAllGrid, VendorsHubTopRated } from "./components/VendorsHubSections";
+import { RegalFrostShell } from "@/modules/design-system/regal-frost/RegalFrostShell";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
+import { cn } from "@/shared/lib/cn";
 import { Star, Camera, Music } from "lucide-react";
 
 const VendorsHubPage = () => {
@@ -44,8 +47,8 @@ const VendorsHubPage = () => {
   ];
 
   return (
-    <>
-      <main className="bg-background font-roboto">
+    <RegalFrostShell>
+      <main>
         <Header onLoginClick={() => setAuthModalOpen(true)} />
 
         <HeroWithSearch
@@ -58,7 +61,7 @@ const VendorsHubPage = () => {
             <VendorsHubTopRatedWrapper />
 
             <section>
-              <h2 className="mb-8 font-playfair text-3xl font-bold text-foreground sm:text-4xl">
+              <h2 className={cn("mb-8", rf.marketingSectionTitle)}>
                 Services for every style
               </h2>
               <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
@@ -69,7 +72,7 @@ const VendorsHubPage = () => {
             </section>
 
             <section>
-              <h2 className="mb-8 font-playfair text-3xl font-bold text-foreground sm:text-4xl">
+              <h2 className={cn("mb-8", rf.marketingSectionTitle)}>
                 Popular features and services
               </h2>
               <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
@@ -86,7 +89,7 @@ const VendorsHubPage = () => {
         <Footer />
       </main>
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setAuthModalOpen(false)} />
-    </>
+    </RegalFrostShell>
   );
 };
 

@@ -5,9 +5,12 @@ import { useAuth } from "@/shared/context/AuthContext";
 import { addExpense, getBudgetCategories, type BudgetCategory } from "@/shared/lib/api/budget";
 import { postComment } from "@/shared/lib/api/feed";
 import { X, ChevronDown } from "lucide-react";
-import { Button, ErrorBanner, inputClass } from "@/shared/components/ui";
-import { pv } from "@/modules/vendors/public-theme";
+import { ErrorBanner, inputClass } from "@/shared/components/ui";
+import { GlassButton } from "@/modules/vendor/dashboard/glass-ui";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
 import { cn } from "@/shared/lib/cn";
+
+const glassInput = cn(inputClass, "border-white/55 bg-white/40 backdrop-blur-sm");
 
 interface AddExpenseModalProps {
   isOpen: boolean;
@@ -91,17 +94,27 @@ const AddExpenseModal = ({ isOpen, onClose, eventId, onExpenseAdded }: AddExpens
   };
 
   return (
-    <div className={cn(pv.modalOverlay, "modal-container")} onClick={onClose}>
-      <div className={pv.modalPanel} onClick={(e) => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 z-[110] flex items-center justify-center bg-foreground/30 p-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="add-expense-title"
+      onClick={onClose}
+    >
+      <div
+        className={cn(rf.panel, "relative w-full max-w-lg overflow-hidden p-6 sm:p-8")}
+        onClick={(e) => e.stopPropagation()}
+      >
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-lg p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+          className={cn(rf.navBtn, "absolute right-3 top-3")}
           aria-label="Close"
         >
-          <X size={22} />
+          <X size={20} />
         </button>
-        <h2 className="mb-6 text-center font-playfair text-2xl font-bold text-foreground sm:text-3xl">
+
+        <h2 id="add-expense-title" className={cn(rf.sectionTitle, "mb-6 pr-8 text-center")}>
           Add a new expense
         </h2>
 
@@ -109,7 +122,7 @@ const AddExpenseModal = ({ isOpen, onClose, eventId, onExpenseAdded }: AddExpens
 
         <form onSubmit={(e) => void handleSubmit(e)} className="space-y-5">
           <div>
-            <label htmlFor="expenseTitle" className={cn("mb-1.5 block", pv.label)}>
+            <label htmlFor="expenseTitle" className={cn("mb-1.5 block", rf.label)}>
               Expense title
             </label>
             <input
@@ -119,12 +132,12 @@ const AddExpenseModal = ({ isOpen, onClose, eventId, onExpenseAdded }: AddExpens
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              className={inputClass}
+              className={glassInput}
             />
           </div>
           <div className="flex gap-4">
             <div className="w-1/2">
-              <label htmlFor="expenseAmount" className={cn("mb-1.5 block", pv.label)}>
+              <label htmlFor="expenseAmount" className={cn("mb-1.5 block", rf.label)}>
                 Amount (LKR)
               </label>
               <input
@@ -134,11 +147,11 @@ const AddExpenseModal = ({ isOpen, onClose, eventId, onExpenseAdded }: AddExpens
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 required
-                className={inputClass}
+                className={glassInput}
               />
             </div>
             <div className="w-1/2">
-              <label htmlFor="expenseDate" className={cn("mb-1.5 block", pv.label)}>
+              <label htmlFor="expenseDate" className={cn("mb-1.5 block", rf.label)}>
                 Date
               </label>
               <input
@@ -147,12 +160,12 @@ const AddExpenseModal = ({ isOpen, onClose, eventId, onExpenseAdded }: AddExpens
                 value={expenseDate}
                 onChange={(e) => setExpenseDate(e.target.value)}
                 required
-                className={inputClass}
+                className={glassInput}
               />
             </div>
           </div>
           <div>
-            <label htmlFor="budgetCategory" className={cn("mb-1.5 block", pv.label)}>
+            <label htmlFor="budgetCategory" className={cn("mb-1.5 block", rf.label)}>
               Category
             </label>
             <div className="relative">
@@ -161,7 +174,7 @@ const AddExpenseModal = ({ isOpen, onClose, eventId, onExpenseAdded }: AddExpens
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
                 required
-                className={cn(inputClass, "appearance-none pr-10")}
+                className={cn(glassInput, "appearance-none pr-10")}
               >
                 {categories.length === 0 && <option>Loading categories…</option>}
                 {categories.map((cat) => (
@@ -178,9 +191,9 @@ const AddExpenseModal = ({ isOpen, onClose, eventId, onExpenseAdded }: AddExpens
             </div>
           </div>
 
-          <Button type="submit" variant="primary" className="w-full" disabled={loading}>
+          <GlassButton type="submit" variant="primary" className="w-full justify-center" disabled={loading}>
             {loading ? "Adding…" : "Add expense"}
-          </Button>
+          </GlassButton>
         </form>
       </div>
     </div>

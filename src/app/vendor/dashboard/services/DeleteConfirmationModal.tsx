@@ -1,7 +1,9 @@
 "use client";
 
 import { AlertTriangle, Trash2, X } from "lucide-react";
-import { Button } from "@/shared/components/ui";
+import { GlassButton } from "@/modules/vendor/dashboard/glass-ui";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
+import { cn } from "@/shared/lib/cn";
 
 interface DeleteConfirmationModalProps {
   isOpen: boolean;
@@ -22,16 +24,16 @@ export default function DeleteConfirmationModal({
 
   return (
     <div
-      className="fixed inset-0 z-[110] flex items-center justify-center bg-foreground/40 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[110] flex items-center justify-center bg-foreground/30 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="delete-listing-title"
     >
-      <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-border bg-card shadow-xl">
+      <div className={cn(rf.panel, "relative w-full max-w-md overflow-hidden")}>
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-3 top-3 rounded-xl p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className={cn(rf.navBtn, "absolute right-3 top-3")}
           aria-label="Close"
         >
           <X size={20} />
@@ -41,19 +43,23 @@ export default function DeleteConfirmationModal({
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 text-destructive">
             <AlertTriangle size={32} strokeWidth={2} aria-hidden />
           </div>
-          <h3 id="delete-listing-title" className="text-xl font-bold text-foreground">
+          <h3 id="delete-listing-title" className={rf.sectionTitle}>
             {title}
           </h3>
-          <p className="mb-8 mt-2 text-sm leading-relaxed text-muted-foreground">{message}</p>
+          <p className={cn("mb-8 mt-2 leading-relaxed", rf.subtitle)}>{message}</p>
 
           <div className="flex gap-3">
-            <Button type="button" variant="secondary" className="flex-1" onClick={onClose}>
+            <GlassButton variant="ghost" className="flex-1 justify-center" onClick={onClose}>
               Cancel
-            </Button>
-            <Button type="button" variant="danger" className="flex-1" onClick={onConfirm}>
+            </GlassButton>
+            <button
+              type="button"
+              className="font-glass-body inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-destructive px-3.5 py-1.5 text-xs font-medium text-destructive-foreground shadow-sm transition-opacity hover:opacity-90"
+              onClick={onConfirm}
+            >
               <Trash2 size={18} aria-hidden />
               Delete
-            </Button>
+            </button>
           </div>
         </div>
       </div>

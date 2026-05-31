@@ -17,21 +17,23 @@ import {
   VendorTier,
 } from "@/modules/vendor/billing/constants";
 import { Check, CreditCard, Crown, RefreshCw, Shield, Star, Zap } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import {
-  Badge,
-  Button,
   ErrorBanner,
   formatLKR,
-  PageHeader,
   PageLoadingSkeleton,
-  SectionCard,
-  StatCard,
   StatIcon,
   SuccessBanner,
-  inputClass,
 } from "@/modules/vendor/dashboard/ui";
+import {
+  GlassButton,
+  GlassPageHeader,
+  GlassSectionCard,
+  GlassStatCard,
+} from "@/modules/vendor/dashboard/glass-ui";
 import { cn } from "@/shared/lib/cn";
 import { vd } from "@/modules/vendor/dashboard/vendor-dashboard-theme";
+import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
 
 function detectBrand(cardNumber: string): string {
   const n = cardNumber.replace(/\s/g, "");
@@ -42,7 +44,7 @@ function detectBrand(cardNumber: string): string {
 
 const TIERS: VendorTier[] = ["Free", "Featured", "Sponsored"];
 
-function tierIcon(item: VendorTier) {
+function tierIcon(item: VendorTier): LucideIcon {
   if (item === "Free") return Zap;
   if (item === "Featured") return Star;
   return Crown;
@@ -54,11 +56,16 @@ function tierTheme(item: VendorTier): "muted" | "primary" | "accent" {
   return "accent";
 }
 
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return <label className={cn("mb-1.5 block", vg.label)}>{children}</label>;
+}
+
 export default function VendorSettingsPage() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const [tier, setTier] = useState<VendorTier>("Free");
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -76,14 +83,13 @@ export default function VendorSettingsPage() {
   const load = useCallback(async () => {
     if (!user) return;
     try {
-      setLoading(true);
       setError(null);
       const token = await user.getIdToken();
       const [sub, profile] = await Promise.all([
         getVendorSubscription(token),
         getVendorBillingProfile(token),
       ]);
-      if (sub?.tier === "Featured" || sub?.tier === "Sponsored" || sub?.tier === "Free") {
+      if (sub.tier === "Featured" || sub.tier === "Sponsored" || sub.tier === "Free") {
         setTier(sub.tier);
       }
       setHasPaymentMethod(profile.hasPaymentMethod);
@@ -92,13 +98,22 @@ export default function VendorSettingsPage() {
       if (profile.cardholderName) setCardholderName(profile.cardholderName);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load billing.");
-    } finally {
-      setLoading(false);
     }
   }, [user]);
 
   useEffect(() => {
-    void load();
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoading(true);
+        await load();
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [load]);
 
   useEffect(() => {
@@ -109,6 +124,12 @@ export default function VendorSettingsPage() {
       setError("Payment was cancelled. Your plan was not changed.");
     }
   }, [paymentReturn, load]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  };
 
   const savePaymentMethod = async () => {
     if (!user) return;
@@ -137,6 +158,8 @@ export default function VendorSettingsPage() {
         expiryYear: 2000 + Number(yy.length === 2 ? yy : yy.slice(-2)),
       });
       setMessage("Payment method saved securely (only masked details are stored).");
+      setCardNumber("");
+      setCvv("");
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save payment method.");
@@ -189,18 +212,34 @@ export default function VendorSettingsPage() {
   }
 
   return (
-    <section className="space-y-8 pb-4">
-      <PageHeader
+    <section className="space-y-6 pb-4 md:space-y-8">
+      <GlassPageHeader
         title="Plan & billing"
         description="Compare visibility tiers, add a card for monthly billing, and pay securely via PayHere."
         badge="Account"
         action={
-          <div className="flex items-center gap-2">
-            <Badge variant="accent">{tier}</Badge>
-            <Button type="button" variant="secondary" size="sm" onClick={() => void load()}>
-              <RefreshCw size={16} aria-hidden />
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={cn(
+                "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold",
+                tier === "Sponsored"
+                  ? "bg-[hsl(42_48%_52%/0.15)] text-[hsl(42_35%_38%)] ring-1 ring-[hsl(42_48%_52%/0.3)]"
+                  : tier === "Featured"
+                    ? "bg-primary/10 text-primary ring-1 ring-primary/20"
+                    : "bg-white/55 text-muted-foreground ring-1 ring-white/60"
+              )}
+            >
+              {tier} plan
+            </span>
+            <GlassButton
+              variant="ghost"
+              onClick={() => void handleRefresh()}
+              disabled={refreshing}
+              className="gap-1.5"
+            >
+              <RefreshCw size={16} className={cn(refreshing && "animate-spin")} aria-hidden />
               Refresh
-            </Button>
+            </GlassButton>
           </div>
         }
       />
@@ -209,80 +248,87 @@ export default function VendorSettingsPage() {
       {message && <SuccessBanner message={message} />}
 
       <div className="grid gap-4 sm:grid-cols-3">
-        {TIERS.map((item, index) => (
-          <StatCard
+        {TIERS.map((item) => (
+          <GlassStatCard
             key={item}
             label={`${item} plan`}
             value={formatLKR(VENDOR_TIER_PRICING[item])}
             sub={item === tier ? "Current plan" : "per month"}
             icon={tierIcon(item)}
             iconTheme={tierTheme(item)}
-            index={index}
           />
         ))}
       </div>
 
-      <SectionCard title="Visibility tiers" subtitle="Choose how prominently you appear in search">
-        <div className="grid gap-4 lg:grid-cols-3">
-          {TIERS.map((item) => (
-            <label
-              key={item}
-              className={cn(
-                "flex cursor-pointer flex-col rounded-3xl border p-5 transition-shadow",
-                tier === item
-                  ? "border-primary bg-primary/5 shadow-md ring-1 ring-primary/20"
-                  : "border-border bg-card hover:border-primary/30"
-              )}
-            >
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <StatIcon icon={tierIcon(item)} theme={tierTheme(item)} size={18} />
-                  <p className="font-bold text-foreground">{item}</p>
+      <GlassSectionCard title="Visibility tiers" subtitle="Choose how prominently you appear in search">
+        <div className="grid gap-3 lg:grid-cols-3">
+          {TIERS.map((item) => {
+            const selected = tier === item;
+            const Icon = tierIcon(item);
+
+            return (
+              <label
+                key={item}
+                className={cn(
+                  "flex cursor-pointer flex-col rounded-xl border p-5 backdrop-blur-sm transition-all duration-200",
+                  selected
+                    ? "border-primary/35 bg-primary/5 shadow-[0_4px_20px_hsl(345_100%_25%/0.1)] ring-1 ring-primary/25"
+                    : "border-white/55 bg-white/40 hover:border-[hsl(42_48%_52%/0.28)] hover:bg-white/55"
+                )}
+              >
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <StatIcon icon={Icon} theme={tierTheme(item)} size={18} className="!h-10 !w-10" />
+                    <div>
+                      <p className={cn("font-medium", vg.body)}>{item}</p>
+                      {selected && (
+                        <p className={cn("text-primary", vg.caption)}>Selected</p>
+                      )}
+                    </div>
+                  </div>
+                  <input
+                    type="radio"
+                    name="tier"
+                    checked={selected}
+                    onChange={() => setTier(item)}
+                    className="h-4 w-4 accent-primary"
+                  />
                 </div>
-                <input
-                  type="radio"
-                  name="tier"
-                  checked={tier === item}
-                  onChange={() => setTier(item)}
-                  className="h-4 w-4 accent-primary"
-                />
-              </div>
-              <p className="text-2xl font-bold text-primary">
-                {formatLKR(VENDOR_TIER_PRICING[item])}
-                <span className="text-sm font-normal text-muted-foreground">/mo</span>
-              </p>
-              <ul className="mt-4 flex-1 space-y-2">
-                {VENDOR_TIER_FEATURES[item].map((feature) => (
-                  <li key={feature} className="flex items-start gap-2 text-sm text-muted-foreground">
-                    <Check size={14} className="mt-0.5 flex-shrink-0 text-success" aria-hidden />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </label>
-          ))}
+                <p className="font-semibold tabular-nums tracking-tight text-foreground">
+                  {formatLKR(VENDOR_TIER_PRICING[item])}
+                  <span className={cn("font-normal", vg.caption)}>/mo</span>
+                </p>
+                <ul className="mt-4 flex-1 space-y-2">
+                  {VENDOR_TIER_FEATURES[item].map((feature) => (
+                    <li key={feature} className={cn("flex items-start gap-2", vg.subtitle)}>
+                      <Check size={14} className="mt-0.5 flex-shrink-0 text-success" aria-hidden />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+              </label>
+            );
+          })}
         </div>
 
-        <Button
-          type="button"
+        <GlassButton
           variant="primary"
-          size="md"
-          className="mt-6"
+          className="mt-6 gap-1.5"
           onClick={() => void savePlan()}
           disabled={saving}
         >
           {saving ? "Processing…" : tier === "Free" ? "Save plan" : "Save plan & pay via PayHere"}
-        </Button>
-      </SectionCard>
+        </GlassButton>
+      </GlassSectionCard>
 
-      <SectionCard
+      <GlassSectionCard
         title="Payment method"
         subtitle="Visa, Mastercard, and other cards via PayHere — we never store full card numbers"
       >
         {hasPaymentMethod && savedLast4 && (
           <div className={cn("mb-5 flex items-center gap-3", vd.metaBox)}>
             <StatIcon icon={CreditCard} theme="success" size={18} className="!h-10 !w-10" />
-            <span className="text-sm text-foreground">
+            <span className={vg.body}>
               {savedBrand ?? "Card"} ending in <strong>{savedLast4}</strong> on file
             </span>
           </div>
@@ -290,78 +336,68 @@ export default function VendorSettingsPage() {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Cardholder name
-            </label>
+            <FieldLabel>Cardholder name</FieldLabel>
             <input
               value={cardholderName}
               onChange={(e) => setCardholderName(e.target.value)}
-              className={inputClass}
+              className={vd.input}
               placeholder="Name on card"
             />
           </div>
           <div className="sm:col-span-2">
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Card number
-            </label>
+            <FieldLabel>Card number</FieldLabel>
             <input
               value={cardNumber}
               onChange={(e) => setCardNumber(e.target.value.replace(/[^\d\s]/g, "").slice(0, 19))}
-              className={inputClass}
+              className={vd.input}
               placeholder="4242 4242 4242 4242"
               inputMode="numeric"
               autoComplete="cc-number"
             />
-            <p className="mt-1 text-[11px] text-muted-foreground">
+            <p className={cn("mt-1", vg.caption)}>
               Used only in your browser to detect brand; only the last 4 digits are sent to our servers.
             </p>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Expiry
-            </label>
+            <FieldLabel>Expiry</FieldLabel>
             <input
               value={expiry}
               onChange={(e) => setExpiry(e.target.value)}
-              className={inputClass}
+              className={vd.input}
               placeholder="MM/YY"
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              CVV
-            </label>
+            <FieldLabel>CVV</FieldLabel>
             <input
               value={cvv}
               onChange={(e) => setCvv(e.target.value.replace(/\D/g, "").slice(0, 4))}
-              className={inputClass}
+              className={vd.input}
               placeholder="123"
               type="password"
               autoComplete="cc-csc"
             />
-            <p className="mt-1 text-[11px] text-muted-foreground">CVV is never stored.</p>
+            <p className={cn("mt-1", vg.caption)}>CVV is never stored.</p>
           </div>
         </div>
 
         <div className={cn("mt-4 flex items-start gap-3", vd.metaBox)}>
           <StatIcon icon={Shield} theme="primary" size={16} className="!h-9 !w-9 flex-shrink-0" />
-          <p className="text-xs leading-relaxed text-muted-foreground">
+          <p className={cn("leading-relaxed", vg.caption)}>
             Monthly charges for Featured and Sponsored plans are collected through PayHere. Card details are
             tokenized by the gateway; MyWedding.lk stores masked metadata only.
           </p>
         </div>
 
-        <Button
-          type="button"
-          variant="secondary"
-          size="md"
+        <GlassButton
+          variant="ghost"
           className="mt-5"
           onClick={() => void savePaymentMethod()}
           disabled={saving}
         >
           {saving ? "Saving…" : "Save payment method"}
-        </Button>
-      </SectionCard>
+        </GlassButton>
+      </GlassSectionCard>
     </section>
   );
 }

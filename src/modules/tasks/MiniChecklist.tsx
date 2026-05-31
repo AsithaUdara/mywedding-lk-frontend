@@ -4,12 +4,14 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/shared/context/AuthContext";
 import { getTasksForEvent, type Task } from "@/shared/lib/api/tasks";
 import { useRealTime } from "@/shared/context/RealTimeContext";
-import { CheckSquare, ArrowRight } from "lucide-react";
-import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import TaskItem from "./TaskItem";
 import Skeleton from "@/shared/components/ui/Skeleton";
-import { cp } from "@/modules/client/client-theme";
-const MiniChecklist = ({ eventId }: { eventId: string }) => {
+import { GlassButton, GlassSectionCard } from "@/modules/vendor/dashboard/glass-ui";
+import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
+import { cn } from "@/shared/lib/cn";
+
+const MiniChecklist = ({ eventId, className }: { eventId: string; className?: string }) => {
   const { user } = useAuth();
   const { checklistVersion } = useRealTime();
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -34,39 +36,36 @@ const MiniChecklist = ({ eventId }: { eventId: string }) => {
   }, [fetchTasks, checklistVersion]);
 
   return (
-    <div className={cp.panel}>
-      <div className="mb-5 flex items-center justify-between border-b border-border pb-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-            <CheckSquare className="text-primary" size={16} strokeWidth={2} aria-hidden />
-          </div>
-          <h2 className={cp.sectionTitle}>Next tasks</h2>
-        </div>
-        <Link
-          href={`/events/${eventId}/checklist`}
-          className="flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-primary transition-colors hover:text-primary/80"
-        >
-          View all <ArrowRight size={14} aria-hidden />
-        </Link>
-      </div>
-
-      <div className="space-y-3">
+    <GlassSectionCard
+      className={className}
+      title="Next tasks"
+      subtitle="Your upcoming checklist items"
+      action={
+        <GlassButton href={`/events/${eventId}/checklist`} variant="ghost" className="gap-1">
+          View all
+          <ArrowRight size={14} aria-hidden />
+        </GlassButton>
+      }
+    >
+      <div className="flex min-h-0 flex-1 flex-col space-y-3">
         {isLoading ? (
           <>
             <Skeleton className="h-16 w-full rounded-xl" />
             <Skeleton className="h-16 w-full rounded-xl" />
           </>
         ) : tasks.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border bg-muted/30 py-6 text-center">
-            <p className="text-sm font-medium text-muted-foreground">No pending tasks</p>
+          <div className={cn("rounded-xl border border-dashed border-white/60 bg-white/25 py-6 text-center", vg.subtitle)}>
+            <p className="font-medium">No pending tasks</p>
           </div>
         ) : (
-          tasks.map((task) => (
-            <TaskItem key={task.id} task={task} eventId={eventId} onStatusChange={fetchTasks} />
-          ))
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto lg:max-h-[380px]">
+            {tasks.map((task) => (
+              <TaskItem key={task.id} task={task} eventId={eventId} onStatusChange={fetchTasks} />
+            ))}
+          </div>
         )}
       </div>
-    </div>
+    </GlassSectionCard>
   );
 };
 

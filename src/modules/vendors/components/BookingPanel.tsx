@@ -7,7 +7,9 @@ import { pricingTypeLabel } from "@/shared/lib/vendorMedia";
 import { phoneTelHref, formatDisplayPhone } from "@/shared/lib/phone";
 import { useVendorDetailAuth } from "@/modules/vendors/context/VendorDetailAuthContext";
 import { formatLKR } from "@/shared/components/ui";
-import { pv } from "@/modules/vendors/public-theme";
+import { GlassButton } from "@/modules/vendor/dashboard/glass-ui";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
+import { cn } from "@/shared/lib/cn";
 
 interface BookingPanelProps {
   price: number;
@@ -34,6 +36,7 @@ const BookingPanel = ({
   contactPhone,
   variant = "default",
 }: BookingPanelProps) => {
+  void vendorId;
   const { requireAuth } = useVendorDetailAuth();
   const [isModalOpen, setModalOpen] = useState(false);
 
@@ -57,14 +60,14 @@ const BookingPanel = ({
   if (variant === "compact") {
     return (
       <>
-        <button
+        <GlassButton
           type="button"
+          variant="primary"
           onClick={handleBookingClick}
           disabled={!serviceId}
-          className={pv.primaryBtn}
         >
           {serviceId ? "Reserve" : "Unavailable"}
-        </button>
+        </GlassButton>
         {modals}
       </>
     );
@@ -74,7 +77,7 @@ const BookingPanel = ({
 
   return (
     <>
-      <div className={pv.cardPad}>
+      <div className={cn(rf.panel, "p-5 sm:p-6")}>
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-2xl font-bold text-primary">
@@ -96,31 +99,32 @@ const BookingPanel = ({
           )}
         </div>
 
-        <p className="mt-5 border-t border-border pt-5 text-sm text-muted-foreground">
+        <p className={cn("mt-5 border-t border-white/40 pt-5", rf.subtitle)}>
           Choose your event date and submit a booking request. The vendor will confirm availability.
         </p>
 
-        <button
+        <GlassButton
           type="button"
+          variant="primary"
           onClick={handleBookingClick}
           disabled={!serviceId}
-          className={`mt-5 w-full ${pv.primaryBtn}`}
+          className="mt-5 w-full justify-center"
         >
           {serviceId ? "Request to book" : "No services available"}
-        </button>
-        <p className="mt-2 text-center text-xs text-muted-foreground">You won&apos;t be charged yet</p>
+        </GlassButton>
+        <p className={cn("mt-2 text-center", rf.caption)}>You won&apos;t be charged yet</p>
 
-        <div className="mt-5 space-y-2 border-t border-border pt-5">
-          <p className={pv.label}>Contact</p>
+        <div className="mt-5 space-y-2 border-t border-white/40 pt-5">
+          <p className={rf.label}>Contact</p>
           {telHref ? (
-            <a href={telHref} className={`flex w-full items-center justify-center gap-2 ${pv.outlineBtn}`}>
+            <a href={telHref} className={cn(rf.btnGhost, "flex w-full items-center justify-center gap-2")}>
               <Phone size={16} aria-hidden />
               Call {formatDisplayPhone(contactPhone!)}
             </a>
           ) : (
-            <p className="text-xs text-muted-foreground">Phone number not provided by vendor.</p>
+            <p className={rf.caption}>Phone number not provided by vendor.</p>
           )}
-          <p className="text-center text-[11px] text-muted-foreground">
+          <p className={cn("text-center", rf.caption)}>
             Or send an inquiry from your planner dashboard.
           </p>
         </div>

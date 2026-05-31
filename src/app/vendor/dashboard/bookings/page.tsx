@@ -4,41 +4,36 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Briefcase,
   Calendar,
+  CalendarDays,
   CheckCircle,
   Clock,
   DollarSign,
   RefreshCw,
+  Sparkles,
   User,
   XCircle,
 } from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
-import { getVendorBookings } from "@/shared/lib/api/vendors";
+import { getVendorBookings, VendorBookingItem } from "@/shared/lib/api/vendors";
 import { updateBookingStatus } from "@/shared/lib/api/bookings";
 import { acceptVendorBooking, declineVendorBooking } from "@/shared/lib/api/vendorShortlist";
 import { SearchField } from "@/modules/vendor/dashboard/components";
 import {
   Badge,
-  Button,
   EmptyState,
   ErrorBanner,
   formatLKR,
-  PageHeader,
   PageLoadingSkeleton,
-  SectionCard,
-  StatCard,
 } from "@/modules/vendor/dashboard/ui";
+import {
+  GlassButton,
+  GlassPageHeader,
+  GlassSectionCard,
+  GlassStatCard,
+} from "@/modules/vendor/dashboard/glass-ui";
 import { cn } from "@/shared/lib/cn";
 import { vd } from "@/modules/vendor/dashboard/vendor-dashboard-theme";
-
-interface VendorBooking {
-  bookingId: string;
-  serviceName: string;
-  eventName: string;
-  coupleName: string;
-  finalAmount: number;
-  status: string;
-  serviceDate: string;
-}
+import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
 
 type BookingFilter = "all" | "Requested" | "AwaitingPayment" | "Confirmed" | "Completed";
 
@@ -54,62 +49,163 @@ function statusLabel(status: string): string {
   switch (status) {
     case "AwaitingPayment":
       return "Awaiting payment";
+    case "ContractSigned":
+      return "Contract signed";
     default:
       return status;
   }
 }
 
-function BookingPlaceholderPreview() {
-  const samples = [
-    {
-      service: "Full-day photography",
-      couple: "Couple name",
-      event: "Colombo wedding",
-      date: "Sat, 15 Jun 2026",
-      amount: "LKR 150,000",
-      status: "Requested" as const,
-    },
-    {
-      service: "Reception décor",
-      couple: "Another couple",
-      event: "Kandy celebration",
-      date: "Sun, 22 Jun 2026",
-      amount: "LKR 95,000",
-      status: "Confirmed" as const,
-    },
-  ];
-
+function BookingQueueList({
+  bookings,
+  actionLoading,
+  onAccept,
+  onDecline,
+  onMarkCompleted,
+}: {
+  bookings: VendorBookingItem[];
+  actionLoading: string | null;
+  onAccept: (bookingId: string) => void;
+  onDecline: (bookingId: string) => void;
+  onMarkCompleted: (bookingId: string) => void;
+}) {
   return (
-    <div className="mt-6 space-y-3 opacity-90" aria-hidden>
-      <p className="text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        Preview — bookings appear here when couples confirm your services
-      </p>
-      {samples.map((row) => (
-        <div
-          key={row.service}
-          className="rounded-2xl border border-dashed border-border bg-muted/20 p-4"
-        >
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <p className="font-semibold text-muted-foreground">{row.service}</p>
-            <Badge variant="status" status={row.status}>
-              {statusLabel(row.status)}
-            </Badge>
-          </div>
-          <p className="mt-2 text-xs text-muted-foreground/80">
-            {row.couple} · {row.event}
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground/80">
-            {row.date} · {row.amount}
-          </p>
-        </div>
-      ))}
-    </div>
+    <ul className="space-y-3" role="list">
+      {bookings.map((booking) => {
+        const isLoading = actionLoading === booking.bookingId;
+        const serviceDate = new Date(booking.serviceDate);
+
+        return (
+          <li key={booking.bookingId}>
+            <article
+              className={cn(
+                "rounded-xl border border-white/55 bg-white/40 p-5 backdrop-blur-sm sm:p-6",
+                "transition-all duration-200",
+                "hover:border-[hsl(42_48%_52%/0.28)] hover:bg-white/60 hover:shadow-[0_4px_20px_hsl(345_100%_25%/0.07)]"
+              )}
+            >
+              <div className="flex flex-col gap-5 lg:flex-row lg:items-stretch">
+                <div className="grid flex-1 grid-cols-1 gap-5 md:grid-cols-2">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <h3 className={cn("font-medium text-foreground", vg.body, "text-base sm:text-lg")}>
+                        {booking.serviceName}
+                      </h3>
+                      <Badge variant="status" status={booking.status} className="lg:hidden">
+                        {statusLabel(booking.status)}
+                      </Badge>
+                    </div>
+                    <div className="mt-4 space-y-2.5">
+                      <p className="flex items-center gap-2.5">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                          <User size={15} aria-hidden />
+                        </span>
+                        <span className={cn("font-medium", vg.body)}>{booking.coupleName}</span>
+                      </p>
+                      <p className="flex items-center gap-2.5">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/55 text-muted-foreground ring-1 ring-white/60">
+                          <Sparkles size={15} aria-hidden />
+                        </span>
+                        <span className={vg.subtitle}>{booking.eventName}</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-1">
+                    <div className={vd.metaBox}>
+                      <p className={vg.label}>Service date</p>
+                      <p className={cn("mt-1 flex items-start gap-2 font-medium", vg.body)}>
+                        <Calendar size={16} className="mt-0.5 shrink-0 text-muted-foreground" aria-hidden />
+                        {serviceDate.toLocaleDateString(undefined, {
+                          weekday: "long",
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })}
+                      </p>
+                    </div>
+                    <div className={vd.metaBox}>
+                      <p className={vg.label}>Agreed amount</p>
+                      <p className="mt-1 font-semibold tabular-nums tracking-tight text-foreground">
+                        {formatLKR(booking.finalAmount)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex min-w-[200px] flex-col justify-between border-t border-white/40 pt-4 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+                  <div className="mb-4 hidden lg:block">
+                    <Badge variant="status" status={booking.status}>
+                      {statusLabel(booking.status)}
+                    </Badge>
+                  </div>
+
+                  {booking.status === "Requested" && (
+                    <div className="mt-auto flex w-full gap-2 lg:flex-col">
+                      <GlassButton
+                        variant="primary"
+                        className="flex-1 justify-center"
+                        onClick={() => onAccept(booking.bookingId)}
+                        disabled={isLoading}
+                      >
+                        {isLoading ? "Accepting…" : "Accept booking"}
+                      </GlassButton>
+                      <GlassButton
+                        variant="ghost"
+                        className="flex-1 justify-center text-destructive hover:text-destructive"
+                        onClick={() => onDecline(booking.bookingId)}
+                        disabled={isLoading}
+                      >
+                        <XCircle size={16} aria-hidden />
+                        Decline
+                      </GlassButton>
+                    </div>
+                  )}
+
+                  {booking.status === "AwaitingPayment" && (
+                    <p className={cn("mt-auto", vg.caption)}>
+                      Waiting for deposit checkout from the couple or planner.
+                    </p>
+                  )}
+
+                  {booking.status === "Confirmed" && (
+                    <GlassButton
+                      variant="primary"
+                      className="mt-auto w-full justify-center lg:w-auto"
+                      onClick={() => onMarkCompleted(booking.bookingId)}
+                      disabled={isLoading}
+                    >
+                      <CheckCircle size={16} aria-hidden />
+                      {isLoading ? "Updating…" : "Mark completed"}
+                    </GlassButton>
+                  )}
+
+                  {booking.status === "ContractSigned" && (
+                    <p className={cn("mt-auto", vg.caption)}>
+                      Contract signed — proceed when payment is confirmed.
+                    </p>
+                  )}
+
+                  {booking.status === "Completed" && (
+                    <p className={cn("mt-auto", vg.caption)}>Service delivered.</p>
+                  )}
+
+                  {booking.status === "Cancelled" && (
+                    <p className={cn("mt-auto", vg.caption)}>This booking was cancelled.</p>
+                  )}
+                </div>
+              </div>
+            </article>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
 export default function VendorBookingsPage() {
   const { user } = useAuth();
-  const [bookings, setBookings] = useState<VendorBooking[]>([]);
+  const [bookings, setBookings] = useState<VendorBookingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -122,7 +218,7 @@ export default function VendorBookingsPage() {
     try {
       setError(null);
       const token = await user.getIdToken();
-      const data: VendorBooking[] = await getVendorBookings(token);
+      const data = await getVendorBookings(token);
 
       data.sort((a, b) => {
         if (a.status === "Requested" && b.status !== "Requested") return -1;
@@ -235,27 +331,26 @@ export default function VendorBookingsPage() {
   }
 
   return (
-    <div className="space-y-8 pb-4">
-      <PageHeader
+    <div className="space-y-6 pb-4 md:space-y-8">
+      <GlassPageHeader
         title="Bookings"
         description="Manage requests, payment states, confirmations, and completed services from couples and planners."
         badge="Operations"
         action={
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
+            <GlassButton
+              variant="ghost"
               onClick={() => void handleRefresh()}
               disabled={refreshing}
+              className="gap-1.5"
             >
               <RefreshCw size={16} className={cn(refreshing && "animate-spin")} aria-hidden />
               Refresh
-            </Button>
-            <Button href="/vendor/dashboard/availability" variant="ghost" size="sm">
-              <Calendar size={16} aria-hidden />
+            </GlassButton>
+            <GlassButton href="/vendor/dashboard/availability" variant="ghost" className="gap-1.5">
+              <CalendarDays size={16} aria-hidden />
               Calendar
-            </Button>
+            </GlassButton>
           </div>
         }
       />
@@ -263,30 +358,26 @@ export default function VendorBookingsPage() {
       {error && <ErrorBanner message={error} />}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          index={0}
+        <GlassStatCard
           label="Requested"
           value={counts.requested}
           sub="Needs your response"
           icon={Clock}
           iconTheme="warning"
         />
-        <StatCard
-          index={1}
+        <GlassStatCard
           label="Awaiting payment"
           value={counts.awaitingPayment}
           icon={DollarSign}
           iconTheme="accent"
         />
-        <StatCard
-          index={2}
+        <GlassStatCard
           label="Confirmed"
           value={counts.confirmed}
           icon={CheckCircle}
           iconTheme="success"
         />
-        <StatCard
-          index={3}
+        <GlassStatCard
           label="Completed"
           value={counts.completed}
           icon={Briefcase}
@@ -294,7 +385,7 @@ export default function VendorBookingsPage() {
         />
       </div>
 
-      <SectionCard
+      <GlassSectionCard
         title="Booking queue"
         subtitle="Sorted by urgency — requested first, then by service date"
         action={
@@ -306,10 +397,10 @@ export default function VendorBookingsPage() {
                   type="button"
                   onClick={() => setFilter(f.value)}
                   className={cn(
-                    "rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-200",
+                    "rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-200",
                     filter === f.value
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "bg-muted text-muted-foreground hover:text-foreground"
+                      ? "vgo-nav-active"
+                      : "vgo-nav-idle rf-glass-subtle vgo-glass-subtle"
                   )}
                   aria-pressed={filter === f.value}
                 >
@@ -327,6 +418,7 @@ export default function VendorBookingsPage() {
               onChange={setSearch}
               placeholder="Search service, couple, or event…"
               className="max-w-md"
+              glass
             />
           </div>
         )}
@@ -334,159 +426,49 @@ export default function VendorBookingsPage() {
         {refreshing ? (
           <p className="py-8 text-center text-sm text-muted-foreground">Refreshing bookings…</p>
         ) : bookings.length === 0 ? (
-          <div>
-            <EmptyState
-              title="No bookings yet"
-              description="When couples or planners book your services, they appear here. Keep listings published and availability up to date."
-              icon={Briefcase}
-              action={
-                <div className="flex flex-wrap justify-center gap-2">
-                  <Button href="/vendor/dashboard/services" variant="primary" size="sm">
-                    Manage services
-                  </Button>
-                  <Button href="/vendor/dashboard/availability" variant="secondary" size="sm">
-                    Set availability
-                  </Button>
-                </div>
-              }
-            />
-            <BookingPlaceholderPreview />
-          </div>
+          <EmptyState
+            title="No bookings yet"
+            description="When couples or planners book your services, they appear here. Keep listings published and availability up to date."
+            icon={Briefcase}
+            action={
+              <div className="flex flex-wrap justify-center gap-2">
+                <GlassButton href="/vendor/dashboard/services" variant="primary">
+                  Manage services
+                </GlassButton>
+                <GlassButton href="/vendor/dashboard/availability" variant="ghost">
+                  Set availability
+                </GlassButton>
+              </div>
+            }
+            className="border-0 bg-transparent shadow-none"
+          />
         ) : filteredBookings.length === 0 ? (
           <EmptyState
             title="No bookings in this view"
             description="Try another filter or clear your search."
             action={
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
+              <GlassButton
+                variant="ghost"
                 onClick={() => {
                   setFilter("all");
                   setSearch("");
                 }}
               >
                 Reset filters
-              </Button>
+              </GlassButton>
             }
+            className="border-0 bg-transparent shadow-none"
           />
         ) : (
-          <div className="grid gap-4">
-            {filteredBookings.map((booking) => (
-              <article
-                key={booking.bookingId}
-                className="rounded-3xl border border-border bg-card p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6"
-              >
-                <div className="flex flex-col justify-between gap-6 lg:flex-row">
-                  <div className="grid flex-1 grid-cols-1 gap-6 md:grid-cols-2">
-                    <div>
-                      <div className="mb-2 flex items-center justify-between gap-2">
-                        <h3 className="text-lg font-bold text-foreground">{booking.serviceName}</h3>
-                        <div className="lg:hidden">
-                          <Badge variant="status" status={booking.status}>
-                            {statusLabel(booking.status)}
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className="mt-4 space-y-2">
-                        <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <User size={16} className="text-primary" aria-hidden />
-                          <span className="font-semibold text-foreground">{booking.coupleName}</span>
-                        </p>
-                        <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
-                            E
-                          </span>
-                          <span>{booking.eventName}</span>
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className={vd.metaBox}>
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                          Service date
-                        </p>
-                        <p className="mt-1 flex items-center gap-2 text-sm font-semibold text-foreground">
-                          <Calendar size={16} className="text-muted-foreground" aria-hidden />
-                          {new Date(booking.serviceDate).toLocaleDateString(undefined, {
-                            weekday: "long",
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
-                        </p>
-                      </div>
-                      <div className={vd.metaBox}>
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                          Agreed amount
-                        </p>
-                        <p className="mt-1 text-lg font-bold text-primary">
-                          {formatLKR(booking.finalAmount)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex min-w-[200px] flex-col items-start justify-between border-t border-border pt-4 lg:items-end lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
-                    <div className="mb-4 hidden lg:block">
-                      <Badge variant="status" status={booking.status}>
-                        {statusLabel(booking.status)}
-                      </Badge>
-                    </div>
-
-                    {booking.status === "Requested" && (
-                      <div className="mt-auto flex w-full gap-2 lg:flex-col">
-                        <Button
-                          type="button"
-                          variant="primary"
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => void handleAcceptBooking(booking.bookingId)}
-                          disabled={actionLoading === booking.bookingId}
-                        >
-                          {actionLoading === booking.bookingId ? "Accepting…" : "Accept booking"}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          size="sm"
-                          className="flex-1 !text-destructive hover:!bg-destructive/10"
-                          onClick={() => void handleDeclineBooking(booking.bookingId)}
-                          disabled={actionLoading === booking.bookingId}
-                        >
-                          <XCircle size={16} aria-hidden />
-                          Decline
-                        </Button>
-                      </div>
-                    )}
-
-                    {booking.status === "AwaitingPayment" && (
-                      <p className="mt-auto text-xs text-muted-foreground">
-                        Waiting for deposit checkout from the couple or planner.
-                      </p>
-                    )}
-
-                    {booking.status === "Confirmed" && (
-                      <Button
-                        type="button"
-                        variant="primary"
-                        size="sm"
-                        className="mt-auto w-full lg:w-auto"
-                        onClick={() => void handleUpdateStatus(booking.bookingId, "Completed")}
-                        disabled={actionLoading === booking.bookingId}
-                      >
-                        <CheckCircle size={16} aria-hidden />
-                        {actionLoading === booking.bookingId ? "Updating…" : "Mark completed"}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
+          <BookingQueueList
+            bookings={filteredBookings}
+            actionLoading={actionLoading}
+            onAccept={(id) => void handleAcceptBooking(id)}
+            onDecline={(id) => void handleDeclineBooking(id)}
+            onMarkCompleted={(id) => void handleUpdateStatus(id, "Completed")}
+          />
         )}
-      </SectionCard>
+      </GlassSectionCard>
     </div>
   );
 }

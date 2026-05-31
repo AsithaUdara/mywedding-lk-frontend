@@ -22,65 +22,77 @@ const EventNavigation = ({ eventId }: EventNavigationProps) => {
     { name: "Design Board", href: `/events/${eventId}/style`, icon: Palette, exact: false },
   ];
 
-  const linkClass = (isActive: boolean) =>
-    cn(
-      "flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-      isActive
-        ? "bg-primary/10 text-primary"
-        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-    );
+  const isActive = (item: (typeof navItems)[number]) =>
+    item.exact ? pathname === item.href : pathname.startsWith(item.href);
 
   return (
     <>
-      <div className="mb-6 hidden overflow-x-auto rounded-2xl border border-border bg-card p-1.5 shadow-sm no-scrollbar md:block">
-        <div className="flex min-w-max items-center gap-1">
+      <nav
+        aria-label="Event sections"
+        className="mb-8 hidden overflow-x-auto border-b border-border/70 no-scrollbar md:block"
+      >
+        <div className="flex min-w-max items-end gap-1">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = item.exact
-              ? pathname === item.href
-              : pathname.startsWith(item.href);
-
-            return (
-              <Link key={item.name} href={item.href} className={linkClass(isActive)}>
-                <Icon size={16} strokeWidth={isActive ? 2.5 : 2} aria-hidden />
-                <span>{item.name}</span>
-              </Link>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="fixed bottom-0 left-0 right-0 z-[100] border-t border-border bg-card/95 px-2 py-3 pb-safe shadow-[0_-8px_30px_rgba(128,0,32,0.06)] backdrop-blur-xl md:hidden">
-        <div className="flex items-center justify-around">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = item.exact
-              ? pathname === item.href
-              : pathname.startsWith(item.href);
+            const active = isActive(item);
 
             return (
               <Link
                 key={item.name}
                 href={item.href}
                 className={cn(
-                  "flex min-w-[56px] flex-col items-center gap-1 transition-all duration-200",
-                  isActive ? "text-primary" : "text-muted-foreground"
+                  "relative inline-flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                  active
+                    ? "text-primary"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
+                aria-current={active ? "page" : undefined}
               >
-                <div
-                  className={cn(
-                    "rounded-xl p-1.5 transition-all",
-                    isActive && "scale-110 bg-primary/10"
-                  )}
-                >
-                  <Icon size={20} strokeWidth={isActive ? 2.5 : 2} aria-hidden />
-                </div>
-                <span className="text-[9px] font-bold uppercase tracking-tighter">{item.name}</span>
+                <Icon size={16} strokeWidth={active ? 2.25 : 2} aria-hidden />
+                <span>{item.name}</span>
+                {active ? (
+                  <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-primary" aria-hidden />
+                ) : null}
               </Link>
             );
           })}
         </div>
-      </div>
+      </nav>
+
+      <nav
+        aria-label="Event sections"
+        className="fixed bottom-0 left-0 right-0 z-[100] border-t border-border/70 bg-background/95 px-1 py-2 pb-safe shadow-[0_-8px_24px_rgba(0,0,0,0.06)] backdrop-blur-md md:hidden"
+      >
+        <div className="flex items-center justify-around">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item);
+
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={cn(
+                  "flex min-w-[52px] flex-col items-center gap-1 rounded-lg px-1 py-1 transition-colors",
+                  active ? "text-primary" : "text-muted-foreground"
+                )}
+                aria-current={active ? "page" : undefined}
+              >
+                <span
+                  className={cn(
+                    "rounded-lg p-1.5 transition-colors",
+                    active && "bg-primary/10"
+                  )}
+                >
+                  <Icon size={18} strokeWidth={active ? 2.25 : 2} aria-hidden />
+                </span>
+                <span className="max-w-[56px] truncate text-[10px] font-semibold">{item.name}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
     </>
   );
 };

@@ -204,7 +204,9 @@ export function VendorApprovalQueue({
                           <div className="flex flex-wrap items-center gap-2">
                             <Store size={16} className="shrink-0 text-primary" aria-hidden />
                             <h3 className="font-semibold text-foreground">{vendor.businessName}</h3>
-                            <Badge variant="accent">{vendor.verificationStatus}</Badge>
+                            <Badge variant="status" status={vendor.verificationStatus}>
+                              {vendor.verificationStatus}
+                            </Badge>
                           </div>
                           {!isEmbedded && vendor.businessDescription && (
                             <p className={cn("mt-2 max-w-2xl", vg.subtitle)}>

@@ -70,11 +70,9 @@ export const RealTimeProvider: React.FC<{ children: React.ReactNode; eventId: st
         const newConnection = new signalR.HubConnectionBuilder()
             .withUrl(`${process.env.NEXT_PUBLIC_API_BASE_URL}/hubs/collaboration`, {
                 accessTokenFactory: () => user.getIdToken(),
-                skipNegotiation: true,
-                transport: signalR.HttpTransportType.WebSockets
             })
             .configureLogging(customLogger)
-            .withAutomaticReconnect()
+            .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
             .build();
 
         connectionRef.current = newConnection;
@@ -116,7 +114,9 @@ export const RealTimeProvider: React.FC<{ children: React.ReactNode; eventId: st
                 }
             } catch (err: unknown) {
                 if (isMounted && (err as { name?: string }).name !== 'AbortError') {
-                    console.error('❌ SignalR Connection Error:', err);
+                    if (process.env.NODE_ENV === 'development') {
+                        console.warn('Collaboration hub unavailable — page works without live sync.', err);
+                    }
                     setIsConnected(false);
                 }
             }

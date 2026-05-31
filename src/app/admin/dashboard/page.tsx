@@ -6,7 +6,6 @@ import { VendorApprovalQueue } from "@/modules/admin/VendorApprovalQueue";
 import { usePlatformAnalytics } from "@/modules/admin/hooks/usePlatformAnalytics";
 import { AdminPlatformKpis } from "@/modules/admin/components/AdminPlatformKpis";
 import { AdminGrowthChart } from "@/modules/admin/components/AdminGrowthChart";
-import { AdminEcosystemSnapshot } from "@/modules/admin/components/AdminEcosystemSnapshot";
 import { ErrorBanner, PageLoadingSkeleton } from "@/shared/components/ui";
 import {
   GlassButton,
@@ -24,6 +23,12 @@ const QUICK_LINKS = [
     label: "KYB queue",
     description: "Approve or reject vendor applications",
     icon: <ShieldAlert size={18} aria-hidden />,
+  },
+  {
+    href: "/admin/vendors/directory",
+    label: "All vendors",
+    description: "Browse every vendor by verification status",
+    icon: <Users size={18} aria-hidden />,
   },
   {
     href: "/admin/dashboard/commissions",
@@ -99,13 +104,18 @@ export default function AdminDashboardPage() {
                 </span>
               }
             >
-              <AdminGrowthChart points={data.plannerGrowthByMonth} max={growthMax} />
-              <div
-                className={cn(
-                  "mt-6 flex flex-wrap gap-4 border-t border-white/40 pt-4 text-sm",
-                  vg.subtitle
-                )}
-              >
+              <div className="flex min-h-[280px] flex-col">
+                <AdminGrowthChart
+                  className="flex-1"
+                  points={data.plannerGrowthByMonth}
+                  max={growthMax}
+                />
+                <div
+                  className={cn(
+                    "mt-4 flex flex-wrap gap-4 border-t border-white/40 pt-4 text-sm",
+                    vg.subtitle
+                  )}
+                >
                 <span>
                   <strong className="text-foreground">{data.totalUsers}</strong> users
                 </span>
@@ -115,27 +125,24 @@ export default function AdminDashboardPage() {
                 <span>
                   <strong className="text-foreground">{data.totalBookings}</strong> bookings
                 </span>
+                </div>
               </div>
             </GlassSectionCard>
 
-            <GlassSectionCard title="Ecosystem snapshot" subtitle="Platform scale at a glance">
-              <AdminEcosystemSnapshot data={data} />
+            <GlassSectionCard title="Quick links" subtitle="Common admin workflows">
+              <div className="grid gap-3">
+                {QUICK_LINKS.map((item) => (
+                  <GlassQuickActionLink
+                    key={item.href}
+                    href={item.href}
+                    label={item.label}
+                    description={item.description}
+                    icon={item.icon}
+                  />
+                ))}
+              </div>
             </GlassSectionCard>
           </div>
-
-          <GlassSectionCard title="Quick links" subtitle="Common admin workflows">
-            <div className="grid gap-3 sm:grid-cols-2">
-              {QUICK_LINKS.map((item) => (
-                <GlassQuickActionLink
-                  key={item.href}
-                  href={item.href}
-                  label={item.label}
-                  description={item.description}
-                  icon={item.icon}
-                />
-              ))}
-            </div>
-          </GlassSectionCard>
         </>
       )}
 
@@ -151,36 +158,6 @@ export default function AdminDashboardPage() {
       >
         <VendorApprovalQueue embedded />
       </GlassSectionCard>
-
-      <div
-        className={cn(
-          rf.panel,
-          "border-primary/25 bg-gradient-to-br from-primary via-primary to-primary/90 p-6 text-primary-foreground sm:p-8"
-        )}
-      >
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="max-w-xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary-foreground/70">
-              Platform integrity
-            </p>
-            <h3 className="mt-2 font-luxury-display text-2xl font-normal tracking-[0.04em]">
-              Keep the marketplace trustworthy
-            </h3>
-            <p className="mt-2 text-sm leading-relaxed text-primary-foreground/85">
-              Verified vendors protect couples and planners. Review credentials, portfolio links, and
-              business details before approval.
-            </p>
-          </div>
-          <GlassButton
-            href="/admin/vendors"
-            variant="ghost"
-            className="shrink-0 border-0 bg-white/90 text-primary hover:bg-white"
-          >
-            Review applications
-            <ArrowRight size={16} aria-hidden />
-          </GlassButton>
-        </div>
-      </div>
     </div>
   );
 }

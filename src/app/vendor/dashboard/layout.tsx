@@ -5,7 +5,6 @@ import {
   BarChart3,
   Briefcase,
   CalendarDays,
-  Crown,
   LineChart,
   MessageSquare,
   Package,
@@ -20,9 +19,13 @@ import {
 } from "@/shared/components/layout/VendorWorkspaceShell";
 import { Button } from "@/shared/components/ui";
 import { useAuth } from "@/shared/context/AuthContext";
+import { RegalFrostShell } from "@/modules/design-system/regal-frost/RegalFrostShell";
 import { getVendorAnalytics, getVendorSubscription } from "@/shared/lib/api/vendors";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { VendorVerificationProvider } from "@/modules/vendor/dashboard/VendorVerificationContext";
+import { VendorVerificationBanner } from "@/modules/vendor/dashboard/VendorVerificationBanner";
+import { WorkspacePlanBadge } from "@/shared/components/layout/WorkspacePlanBadge";
 
 const NAV_GROUPS: VendorNavGroup[] = [
   {
@@ -80,7 +83,14 @@ export default function VendorDashboardLayout({ children }: { children: React.Re
   }, [user, pathname]);
 
   if (isListingEditor) {
-    return <>{children}</>;
+    return (
+      <VendorVerificationProvider>
+        <RegalFrostShell mesh className="!flex-col">
+          <VendorVerificationBanner compact />
+          {children}
+        </RegalFrostShell>
+      </VendorVerificationProvider>
+    );
   }
 
   const navGroups = NAV_GROUPS.map((group) => ({
@@ -93,11 +103,12 @@ export default function VendorDashboardLayout({ children }: { children: React.Re
   }));
 
   return (
+    <VendorVerificationProvider>
     <VendorWorkspaceShell
       navGroups={navGroups}
       sidebarFooter={
-        <div className="mx-3 mb-3 rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/8 via-card to-accent/10 p-4 shadow-sm">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
+        <div className="vgo-pro-card mx-3 mb-2 rounded-xl border p-3.5">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             Growth
           </p>
           <p className="mt-1 text-sm font-semibold text-foreground">Vendor Pro</p>
@@ -106,7 +117,7 @@ export default function VendorDashboardLayout({ children }: { children: React.Re
           </p>
           <Link
             href="/vendor/dashboard/settings"
-            className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground transition-opacity duration-200 hover:opacity-90"
+            className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90"
           >
             View plans
             <Sparkles size={12} aria-hidden />
@@ -115,13 +126,18 @@ export default function VendorDashboardLayout({ children }: { children: React.Re
       }
       topBarActions={
         <>
-          <Button href="/vendor/dashboard/settings" variant="accent" size="sm" className="hidden sm:inline-flex">
+          <Button
+            href="/vendor/dashboard/settings"
+            variant="ghost"
+            size="sm"
+            className="vgo-upgrade-btn hidden rounded-xl sm:inline-flex"
+          >
             <Sparkles size={14} aria-hidden />
             Upgrade
           </Button>
           <Link
             href="/vendor/dashboard/inquiries"
-            className="relative rounded-full border border-border bg-card p-2 text-muted-foreground transition-colors duration-200 hover:border-primary/30 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="vgo-topbar-btn relative rounded-xl border p-2 text-muted-foreground transition-all duration-200 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Inquiries"
           >
             <Bell size={20} />
@@ -131,20 +147,17 @@ export default function VendorDashboardLayout({ children }: { children: React.Re
               </span>
             )}
           </Link>
-          <span
-            className={`hidden items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs font-semibold sm:inline-flex ${
-              planLabel === "PRO"
-                ? "border-accent/40 bg-accent/15 text-accent-foreground"
-                : "border-border bg-muted text-muted-foreground"
-            }`}
-          >
-            <Crown size={13} aria-hidden />
-            {planLabel}
-          </span>
+          <WorkspacePlanBadge
+            tier={planLabel}
+            href="/vendor/dashboard/settings"
+            title="Subscription & settings"
+          />
         </>
       }
     >
+      <VendorVerificationBanner />
       {children}
     </VendorWorkspaceShell>
+    </VendorVerificationProvider>
   );
 }

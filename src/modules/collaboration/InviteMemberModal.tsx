@@ -1,18 +1,21 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/shared/context/AuthContext";
 import { sendInvitation } from "@/shared/lib/api/invitations";
 import { X, Mail, ChevronDown } from "lucide-react";
-import { Button, ErrorBanner, inputClass } from "@/shared/components/ui";
-import { pv } from "@/modules/vendors/public-theme";
+import { ErrorBanner, inputClass } from "@/shared/components/ui";
+import { GlassButton } from "@/modules/vendor/dashboard/glass-ui";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
 import { cn } from "@/shared/lib/cn";
+
+const glassInput = cn(inputClass, "border-white/55 bg-white/40 backdrop-blur-sm");
 
 interface InviteMemberModalProps {
   isOpen: boolean;
   onClose: () => void;
   eventId: string;
-  onInviteSuccess: () => void;
+  onInviteSuccess: (result: { emailSent: boolean; acceptUrl: string; message: string }) => void;
 }
 
 const InviteMemberModal = ({ isOpen, onClose, eventId, onInviteSuccess }: InviteMemberModalProps) => {
@@ -21,6 +24,17 @@ const InviteMemberModal = ({ isOpen, onClose, eventId, onInviteSuccess }: Invite
   const [permissionLevel, setPermissionLevel] = useState("Viewer");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add("modal-open-blur");
+    } else {
+      document.body.classList.remove("modal-open-blur");
+    }
+    return () => {
+      document.body.classList.remove("modal-open-blur");
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -35,8 +49,12 @@ const InviteMemberModal = ({ isOpen, onClose, eventId, onInviteSuccess }: Invite
 
     try {
       const token = await user.getIdToken();
-      await sendInvitation(token, { eventId, email, permissionLevel });
-      onInviteSuccess();
+      const result = await sendInvitation(token, { eventId, email, permissionLevel });
+      onInviteSuccess({
+        emailSent: result.emailSent,
+        acceptUrl: result.acceptUrl,
+        message: result.message,
+      });
     } catch (err: unknown) {
       const firebaseErr = err as { message?: string };
       setError(firebaseErr.message || "An unexpected error occurred.");
@@ -46,17 +64,27 @@ const InviteMemberModal = ({ isOpen, onClose, eventId, onInviteSuccess }: Invite
   };
 
   return (
-    <div className={pv.modalOverlay} onClick={onClose}>
-      <div className={pv.modalPanel} onClick={(e) => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 z-[110] flex items-center justify-center bg-foreground/30 p-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="invite-member-title"
+      onClick={onClose}
+    >
+      <div
+        className={cn(rf.panel, "relative w-full max-w-lg overflow-hidden p-6 sm:p-8")}
+        onClick={(e) => e.stopPropagation()}
+      >
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-lg p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+          className={cn(rf.navBtn, "absolute right-3 top-3")}
           aria-label="Close"
         >
-          <X size={22} />
+          <X size={20} />
         </button>
-        <h2 className="mb-6 text-center font-playfair text-2xl font-bold text-foreground sm:text-3xl">
+
+        <h2 id="invite-member-title" className={cn(rf.sectionTitle, "mb-6 pr-8 text-center")}>
           Invite a team member
         </h2>
 
@@ -64,7 +92,7 @@ const InviteMemberModal = ({ isOpen, onClose, eventId, onInviteSuccess }: Invite
 
         <form onSubmit={(e) => void handleSubmit(e)} className="space-y-5">
           <div>
-            <label htmlFor="inviteEmail" className={cn("mb-1.5 block", pv.label)}>
+            <label htmlFor="inviteEmail" className={cn("mb-1.5 block", rf.label)}>
               Member&apos;s email
             </label>
             <div className="relative">
@@ -80,16 +108,16 @@ const InviteMemberModal = ({ isOpen, onClose, eventId, onInviteSuccess }: Invite
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className={cn(inputClass, "pl-10")}
+                className={cn(glassInput, "pl-10")}
               />
             </div>
-            <p className="mt-2 text-xs text-muted-foreground">
+            <p className={cn("mt-2", rf.caption)}>
               We will send an invitation email with a link to join this event.
             </p>
           </div>
 
           <div>
-            <label htmlFor="invitePermission" className={cn("mb-1.5 block", pv.label)}>
+            <label htmlFor="invitePermission" className={cn("mb-1.5 block", rf.label)}>
               Permission
             </label>
             <div className="relative">
@@ -97,7 +125,7 @@ const InviteMemberModal = ({ isOpen, onClose, eventId, onInviteSuccess }: Invite
                 id="invitePermission"
                 value={permissionLevel}
                 onChange={(e) => setPermissionLevel(e.target.value)}
-                className={cn(inputClass, "appearance-none pr-10")}
+                className={cn(glassInput, "appearance-none pr-10")}
               >
                 <option value="Viewer">Viewer</option>
                 <option value="Editor">Editor</option>
@@ -110,9 +138,14 @@ const InviteMemberModal = ({ isOpen, onClose, eventId, onInviteSuccess }: Invite
             </div>
           </div>
 
-          <Button type="submit" variant="primary" className="w-full" disabled={loading}>
+          <GlassButton
+            type="submit"
+            variant="primary"
+            className="mt-1 min-h-11 w-full justify-center py-3 text-sm font-semibold"
+            disabled={loading}
+          >
             {loading ? "Sending invite…" : "Send invitation"}
-          </Button>
+          </GlassButton>
         </form>
       </div>
     </div>

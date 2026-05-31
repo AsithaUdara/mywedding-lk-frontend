@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import { useAuth } from "@/shared/context/AuthContext";
-import { ChevronDown, LayoutDashboard, LogOut, Settings } from "lucide-react";
+import { ChevronDown, LayoutDashboard, LogOut } from "lucide-react";
 import { cn } from "@/shared/lib/cn";
 import {
   dropdownIconWrapClass,
@@ -40,7 +40,7 @@ export default function UserDropdown() {
           "data-[open]:bg-muted"
         )}
       >
-        <span className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-sm font-semibold text-primary ring-2 ring-transparent transition-shadow group-data-[open]:ring-primary/25">
+        <span className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-accent/10 text-sm font-semibold text-accent ring-2 ring-accent/80 transition-shadow group-data-[open]:ring-accent">
           {user.photoURL ? (
             <Image src={user.photoURL} alt="" fill className="object-cover" sizes="36px" />
           ) : (
@@ -63,7 +63,7 @@ export default function UserDropdown() {
       >
         <div className="border-b border-border px-3 py-3">
           <p className="truncate text-sm font-semibold text-foreground">
-            {user.displayName || "Account"}
+            Welcome, {user.displayName || "there"}
           </p>
           <p className="mt-0.5 truncate text-xs text-muted-foreground">{user.email}</p>
         </div>
@@ -75,14 +75,6 @@ export default function UserDropdown() {
                 <LayoutDashboard size={18} strokeWidth={2} aria-hidden />
               </span>
               Dashboard
-            </Link>
-          </MenuItem>
-          <MenuItem>
-            <Link href="/settings" className={dropdownItemClass}>
-              <span className={dropdownIconWrapClass}>
-                <Settings size={18} strokeWidth={2} aria-hidden />
-              </span>
-              Account settings
             </Link>
           </MenuItem>
         </div>

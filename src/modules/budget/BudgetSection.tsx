@@ -1,14 +1,19 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/shared/context/AuthContext';
-import { getBudgetOverview, getExpenses, type BudgetOverview, type Expense } from '@/shared/lib/api/budget';
-import { useRealTime } from '@/shared/context/RealTimeContext';
-import { Wallet, PlusCircle } from 'lucide-react';
-import BudgetOverviewDisplay from './BudgetOverviewDisplay';
-import ExpenseList from './ExpenseList';
-import AddExpenseModal from './AddExpenseModal';
-import { Button } from '@/shared/components/ui';
+import React, { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/shared/context/AuthContext";
+import { getBudgetOverview, getExpenses, type BudgetOverview, type Expense } from "@/shared/lib/api/budget";
+import { useEventPermission } from "@/shared/hooks/useEventPermission";
+import { ViewerReadOnlyNotice } from "@/shared/components/ui/ViewerReadOnlyNotice";
+import { useRealTime } from "@/shared/context/RealTimeContext";
+import { PlusCircle } from "lucide-react";
+import BudgetOverviewDisplay from "./BudgetOverviewDisplay";
+import ExpenseList from "./ExpenseList";
+import AddExpenseModal from "./AddExpenseModal";
+import { GlassButton } from "@/modules/vendor/dashboard/glass-ui";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
+import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
+import { cn } from "@/shared/lib/cn";
 
 interface BudgetSectionProps {
   eventId: string;
@@ -20,6 +25,7 @@ const BudgetSection = ({ eventId }: BudgetSectionProps) => {
   const [overview, setOverview] = useState<BudgetOverview | null>(null);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { isViewer } = useEventPermission(eventId);
   const [isModalOpen, setModalOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -27,10 +33,9 @@ const BudgetSection = ({ eventId }: BudgetSectionProps) => {
     try {
       setIsLoading(true);
       const token = await user.getIdToken();
-      // Fetch overview and expenses in parallel for better performance
       const [overviewData, expensesData] = await Promise.all([
         getBudgetOverview(token, eventId),
-        getExpenses(token, eventId)
+        getExpenses(token, eventId),
       ]);
       setOverview(overviewData);
       setExpenses(expensesData);
@@ -42,58 +47,54 @@ const BudgetSection = ({ eventId }: BudgetSectionProps) => {
   }, [user, eventId]);
 
   useEffect(() => {
-    fetchData();
+    void fetchData();
   }, [fetchData, budgetVersion]);
 
   const handleExpenseAdded = () => {
-    setModalOpen(false); // Close modal
-    // fetchData(); // No longer needed, SignalR will trigger the refresh
+    setModalOpen(false);
   };
 
   return (
     <>
-      <div className="rounded-3xl border border-border bg-card p-6 shadow-sm md:p-8">
-        <div className="mb-8 flex flex-col justify-between gap-4 border-b border-border pb-6 sm:flex-row sm:items-center">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-primary/10">
-              <Wallet className="text-primary" size={24} strokeWidth={1.5} aria-hidden />
-            </div>
-            <div>
-              <h2 className="font-playfair text-2xl font-bold tracking-tight text-foreground">
-                Budget tracker
-              </h2>
-              <p className="mt-1 text-sm font-medium text-muted-foreground">
-                Keep your spending in check
-              </p>
-            </div>
+      <section className={rf.panel}>
+        <div className={cn("flex flex-col justify-between gap-4 sm:flex-row sm:items-center", rf.panelHeader)}>
+          <div>
+            <h2 className={rf.sectionTitle}>Budget tracker</h2>
+            <p className={cn("mt-1", vg.subtitle)}>Keep your spending in check</p>
           </div>
-          <Button onClick={() => setModalOpen(true)} variant="primary" className="gap-2">
-            <PlusCircle size={18} aria-hidden />
-            <span>Add expense</span>
-          </Button>
+          {!isViewer && (
+            <GlassButton type="button" variant="primary" onClick={() => setModalOpen(true)} className="gap-2">
+              <PlusCircle size={18} aria-hidden />
+              Add expense
+            </GlassButton>
+          )}
         </div>
 
-        {isLoading ? (
-          <p className="py-8 text-center text-muted-foreground">Loading budget details…</p>
-        ) : !overview ? (
-          <p className="py-8 text-center text-muted-foreground">Could not load budget information.</p>
-        ) : (
-          <div className="space-y-8">
-            <BudgetOverviewDisplay overview={overview} />
-            <ExpenseList expenses={expenses} />
-          </div>
-        )}
-      </div>
+        <div className={rf.panelBody}>
+          {isViewer && <ViewerReadOnlyNotice className="mb-6" />}
+          {isLoading ? (
+            <p className={cn("py-8 text-center", vg.subtitle)}>Loading budget details…</p>
+          ) : !overview ? (
+            <p className={cn("py-8 text-center", vg.subtitle)}>Could not load budget information.</p>
+          ) : (
+            <div className="space-y-8">
+              <BudgetOverviewDisplay overview={overview} />
+              <ExpenseList expenses={expenses} />
+            </div>
+          )}
+        </div>
+      </section>
 
-      <AddExpenseModal
-        isOpen={isModalOpen}
-        onClose={() => setModalOpen(false)}
-        eventId={eventId}
-        onExpenseAdded={handleExpenseAdded}
-      />
+      {!isViewer && (
+        <AddExpenseModal
+          isOpen={isModalOpen}
+          onClose={() => setModalOpen(false)}
+          eventId={eventId}
+          onExpenseAdded={handleExpenseAdded}
+        />
+      )}
     </>
   );
 };
 
 export default BudgetSection;
-

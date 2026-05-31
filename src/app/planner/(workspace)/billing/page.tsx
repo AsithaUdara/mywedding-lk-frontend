@@ -1,25 +1,38 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Check, Crown, Sparkles, Users, Zap } from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
-import { getPlannerOverview, PlannerOverviewResponse, updatePlannerSubscription } from "@/shared/lib/api/planner";
-import { ErrorBanner } from "@/modules/planner/components/ui";
 import {
-  Badge,
-  Button,
-  Card,
-  PageHeader,
-  PageLoadingSkeleton,
+  createPlannerSubscriptionCheckout,
+  getPlannerOverview,
+  PlannerOverviewResponse,
+} from "@/shared/lib/api/planner";
+import { submitPayHereCheckout } from "@/shared/lib/payhereCheckout";
+import {
+  ErrorBanner,
   ProgressBar,
-  SectionCard,
-  StatCard,
   SuccessBanner,
   formatLKR,
-} from "@/shared/components/ui";
+} from "@/modules/planner/components/ui";
+import { PageLoadingSkeleton } from "@/shared/components/ui";
+import {
+  GlassButton,
+  GlassPageHeader,
+  GlassSectionCard,
+  GlassStatCard,
+} from "@/modules/vendor/dashboard/glass-ui";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
+import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
 import { cn } from "@/shared/lib/cn";
+import {
+  formatPlannerPlanTier,
+  isPlannerProTier,
+} from "@/modules/planner/subscription/planTier";
+import { PlannerPaymentMethodSection } from "@/modules/planner/billing/PlannerPaymentMethodSection";
 
-const PRO_MONTHLY_LKR = 12_000;
+const PRO_MONTHLY_LKR = 6_000;
 
 const FREE_FEATURES = [
   "1 concurrent wedding",
@@ -37,6 +50,7 @@ const PRO_FEATURES = [
 
 export default function PlannerBillingPage() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
   const [overview, setOverview] = useState<PlannerOverviewResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [upgrading, setUpgrading] = useState(false);
@@ -62,6 +76,24 @@ export default function PlannerBillingPage() {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    if (searchParams.get("expired") === "1") {
+      setError(
+        "Your planner subscription has expired. Renew Planner Pro below to restore CRM access."
+      );
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    const paymentReturn = searchParams.get("payment");
+    if (paymentReturn === "success") {
+      setMessage("Payment received. Planner Pro will activate shortly after confirmation.");
+      void load();
+    } else if (paymentReturn === "cancelled") {
+      setError("Payment was cancelled. Your plan was not changed.");
+    }
+  }, [searchParams, load]);
+
   const upgrade = async () => {
     if (!user) return;
     try {
@@ -69,9 +101,15 @@ export default function PlannerBillingPage() {
       setError(null);
       setMessage(null);
       const token = await user.getIdToken();
-      await updatePlannerSubscription(token, { tier: "PlannerPro", monthlyFee: PRO_MONTHLY_LKR });
-      setMessage("Planner Pro activated successfully.");
-      await load();
+      const checkout = await createPlannerSubscriptionCheckout(token, {
+        tier: "PlannerPro",
+        monthlyFee: PRO_MONTHLY_LKR,
+      });
+      if (checkout?.checkout?.checkoutUrl) {
+        submitPayHereCheckout(checkout.checkout, { target: "_self" });
+        return;
+      }
+      setError("Could not start checkout. Please try again.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upgrade failed.");
     } finally {
@@ -82,12 +120,8 @@ export default function PlannerBillingPage() {
   const activePlan = overview?.activePlanTier ?? "Free";
   const maxConcurrentEvents = overview?.maxConcurrentEvents ?? 1;
   const activeWeddings = overview?.activeWeddings ?? 0;
-  const isPro = activePlan === "PlannerPro";
-
-  const capacityPct = useMemo(() => {
-    if (maxConcurrentEvents <= 0) return 0;
-    return Math.min(100, Math.round((activeWeddings / maxConcurrentEvents) * 100));
-  }, [activeWeddings, maxConcurrentEvents]);
+  const isPro = isPlannerProTier(activePlan);
+  const activePlanLabel = formatPlannerPlanTier(activePlan);
 
   const atCapacity = !isPro && activeWeddings >= maxConcurrentEvents;
 
@@ -96,187 +130,189 @@ export default function PlannerBillingPage() {
   }
 
   return (
-    <div className="space-y-8 pb-4">
-      <PageHeader
+    <div className="space-y-6 pb-4 md:space-y-8">
+      <GlassPageHeader
         title="Plan & billing"
         description="Manage your planner subscription, concurrent wedding limits, and upgrade when you scale."
-        badge={activePlan}
+        badge={activePlanLabel}
       />
 
       {error && <ErrorBanner message={error} />}
       {message && <SuccessBanner message={message} />}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
+        <GlassStatCard
           label="Current plan"
-          value={activePlan}
+          value={activePlanLabel}
+          sub={isPro ? "Planner Pro active" : "Free tier"}
           icon={Crown}
           iconTheme={isPro ? "accent" : "muted"}
-          index={0}
         />
-        <StatCard
+        <GlassStatCard
           label="Concurrent limit"
           value={isPro ? "Unlimited" : maxConcurrentEvents}
           sub={`${activeWeddings} in use`}
           icon={Users}
           iconTheme="primary"
-          index={1}
         />
-        <StatCard
+        <GlassStatCard
           label="Active weddings"
           value={activeWeddings}
+          sub="In your portfolio now"
           icon={Zap}
           iconTheme="success"
-          index={2}
         />
-        <StatCard
-          label="Monthly fee"
-          value={isPro ? formatLKR(PRO_MONTHLY_LKR) : "Free"}
-          sub={isPro ? "Planner Pro" : "No charge"}
-          icon={Sparkles}
-          iconTheme="accent"
-          index={3}
+        <GlassStatCard
+          label="Next billing"
+          value={
+            isPro && overview?.subscriptionEndsAt
+              ? new Date(overview.subscriptionEndsAt).toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                })
+              : "—"
+          }
+          sub={isPro ? "Planner Pro renewal" : "Free plan"}
+          icon={Crown}
+          iconTheme={isPro ? "accent" : "muted"}
         />
       </div>
 
-      <SectionCard
-        title="Capacity usage"
-        subtitle={
-          isPro
-            ? "Planner Pro — no concurrent wedding cap"
-            : `Free plan allows ${maxConcurrentEvents} active wedding at a time`
-        }
-      >
-        {isPro ? (
-          <p className="text-sm text-muted-foreground">
-            You are on <span className="font-semibold text-foreground">Planner Pro</span> with
-            unlimited concurrent client weddings.{" "}
-            <span className="tabular-nums font-semibold text-primary">{activeWeddings}</span>{" "}
-            active right now.
-          </p>
-        ) : (
-          <>
-            <ProgressBar
-              label="Concurrent weddings"
-              count={activeWeddings}
-              total={maxConcurrentEvents}
-              barClassName={atCapacity ? "bg-destructive" : "bg-primary"}
-            />
-            {atCapacity && (
-              <p className="mt-3 rounded-2xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning">
-                You have reached your plan limit. Upgrade to Planner Pro to take on more clients at
-                once.
-              </p>
-            )}
-          </>
-        )}
-      </SectionCard>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card
-          className={cn(
-            "relative flex flex-col border-border",
-            !isPro && "ring-2 ring-primary/30"
-          )}
+      {!isPro && (
+        <GlassSectionCard
+          title="Capacity usage"
+          subtitle={`Free plan allows ${maxConcurrentEvents} active wedding at a time`}
         >
-          {!isPro && (
-            <Badge variant="default" className="absolute right-4 top-4 normal-case tracking-normal">
-              Current plan
-            </Badge>
-          )}
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
-              <Zap size={22} aria-hidden />
-            </div>
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-                Starter
-              </p>
-              <p className="font-playfair text-2xl font-bold text-foreground">Free</p>
-            </div>
-          </div>
-          <p className="mt-4 text-3xl font-bold tabular-nums text-primary">
-            LKR 0
-            <span className="text-base font-normal text-muted-foreground"> / month</span>
-          </p>
-          <ul className="mt-6 flex-1 space-y-3">
-            {FREE_FEATURES.map((feature) => (
-              <li key={feature} className="flex items-start gap-2 text-sm text-muted-foreground">
-                <Check size={16} className="mt-0.5 shrink-0 text-primary" aria-hidden />
-                {feature}
-              </li>
-            ))}
-          </ul>
-          <Button variant="secondary" className="mt-8 w-full" disabled>
-            {isPro ? "Included in your history" : "Current plan"}
-          </Button>
-        </Card>
-
-        <Card
-          className={cn(
-            "relative flex flex-col overflow-hidden border-primary/25 bg-gradient-to-br from-primary/5 via-card to-accent/10",
-            isPro && "ring-2 ring-accent/50"
-          )}
-        >
-          <div
-            className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full bg-accent/15 blur-2xl"
-            aria-hidden
+          <ProgressBar
+            label="Concurrent weddings"
+            count={activeWeddings}
+            total={maxConcurrentEvents}
+            barClassName={atCapacity ? "bg-destructive" : "bg-primary"}
           />
-          {isPro && (
-            <Badge variant="accent" className="absolute right-4 top-4 normal-case tracking-normal">
-              Current plan
-            </Badge>
-          )}
-          <div className="relative flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-              <Crown size={22} aria-hidden />
-            </div>
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-accent">
-                Professional
-              </p>
-              <p className="font-playfair text-2xl font-bold text-foreground">Planner Pro</p>
-            </div>
-          </div>
-          <p className="relative mt-4 text-3xl font-bold tabular-nums text-primary">
-            {formatLKR(PRO_MONTHLY_LKR)}
-            <span className="text-base font-normal text-muted-foreground"> / month</span>
-          </p>
-          <ul className="relative mt-6 flex-1 space-y-3">
-            {PRO_FEATURES.map((feature) => (
-              <li key={feature} className="flex items-start gap-2 text-sm text-foreground">
-                <Sparkles size={16} className="mt-0.5 shrink-0 text-accent" aria-hidden />
-                {feature}
-              </li>
-            ))}
-          </ul>
-          <Button
-            type="button"
-            className="relative mt-8 w-full"
-            disabled={upgrading || isPro}
-            onClick={() => void upgrade()}
-          >
-            {isPro ? (
-              <>
-                <Check size={18} aria-hidden />
-                Active subscription
-              </>
-            ) : upgrading ? (
-              "Upgrading…"
-            ) : (
-              <>
-                <Crown size={18} aria-hidden />
-                Upgrade to Planner Pro
-              </>
-            )}
-          </Button>
-          {!isPro && (
-            <p className="relative mt-3 text-center text-[11px] text-muted-foreground">
-              Billed monthly
+          {atCapacity && (
+            <p className="mt-3 rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning backdrop-blur-sm">
+              You have reached your plan limit. Upgrade to Planner Pro to take on more clients at once.
             </p>
           )}
-        </Card>
-      </div>
+        </GlassSectionCard>
+      )}
+
+      <PlannerPaymentMethodSection
+        isPro={isPro}
+        subscriptionEndsAt={overview?.subscriptionEndsAt}
+        onUpdated={() => void load()}
+      />
+
+      <GlassSectionCard title="Choose your plan" subtitle="Compare features and upgrade via PayHere">
+        <div className="grid gap-6 lg:grid-cols-2">
+          <article
+            className={cn(
+              rf.panel,
+              "relative flex flex-col p-5 sm:p-6",
+              !isPro && "border-primary/35 ring-1 ring-primary/25"
+            )}
+          >
+            {!isPro && (
+              <span className="absolute right-4 top-4 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary ring-1 ring-primary/15">
+                Current plan
+              </span>
+            )}
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/50 text-muted-foreground ring-1 ring-white/60">
+                <Zap size={22} aria-hidden />
+              </div>
+              <div>
+                <p className={vg.label}>Starter</p>
+                <p className="font-luxury-section text-2xl font-medium text-foreground">Free</p>
+              </div>
+            </div>
+            <p className="mt-4 text-3xl font-semibold tabular-nums text-foreground">
+              LKR 0
+              <span className={cn("text-base font-normal", vg.subtitle)}> / month</span>
+            </p>
+            <ul className="mt-6 flex-1 space-y-3">
+              {FREE_FEATURES.map((feature) => (
+                <li key={feature} className={cn("flex items-start gap-2", vg.subtitle)}>
+                  <Check size={16} className="mt-0.5 shrink-0 text-primary" aria-hidden />
+                  {feature}
+                </li>
+              ))}
+            </ul>
+            <GlassButton variant="ghost" className="mt-8 w-full" disabled>
+              {isPro ? "Included with Planner Pro" : "Current plan"}
+            </GlassButton>
+          </article>
+
+          <article
+            className={cn(
+              rf.panel,
+              "relative flex flex-col overflow-hidden border-primary/25 bg-gradient-to-br from-primary/10 via-white/50 to-white/40 p-5 sm:p-6",
+              isPro && "ring-1 ring-accent/40"
+            )}
+          >
+            <div
+              className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full bg-accent/15 blur-2xl"
+              aria-hidden
+            />
+            {isPro && (
+              <span className="absolute right-4 top-4 rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent ring-1 ring-accent/15">
+                Current plan
+              </span>
+            )}
+            <div className="relative flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <Crown size={22} aria-hidden />
+              </div>
+              <div>
+                <p className={cn(vg.label, "text-accent")}>Professional</p>
+                <p className="font-luxury-section text-2xl font-medium text-foreground">Planner Pro</p>
+              </div>
+            </div>
+            <p className="relative mt-4 text-3xl font-semibold tabular-nums text-foreground">
+              {formatLKR(PRO_MONTHLY_LKR)}
+              <span className={cn("text-base font-normal", vg.subtitle)}> / month</span>
+            </p>
+            <ul className="relative mt-6 flex-1 space-y-3">
+              {PRO_FEATURES.map((feature) => (
+                <li key={feature} className={cn("flex items-start gap-2", vg.body)}>
+                  <Sparkles size={16} className="mt-0.5 shrink-0 text-accent" aria-hidden />
+                  {feature}
+                </li>
+              ))}
+            </ul>
+            {isPro ? (
+              <div
+                className={cn(
+                  "relative mt-8 flex w-full items-center justify-center gap-2 rounded-xl border border-[hsl(var(--vgo-gold)/0.35)] bg-[hsl(var(--vgo-gold)/0.12)] px-4 py-3 text-sm font-semibold text-[hsl(42_42%_38%)]"
+                )}
+              >
+                <Check size={18} aria-hidden />
+                Active subscription
+              </div>
+            ) : (
+              <GlassButton
+                type="button"
+                variant="primary"
+                className="relative mt-8 w-full gap-1.5"
+                disabled={upgrading}
+                onClick={() => void upgrade()}
+              >
+                {upgrading ? (
+                  "Redirecting to PayHere…"
+                ) : (
+                  <>
+                    <Crown size={18} aria-hidden />
+                    Upgrade to Planner Pro
+                  </>
+                )}
+              </GlassButton>
+            )}
+            {!isPro && (
+              <p className={cn("relative mt-3 text-center", vg.caption)}>Billed monthly via PayHere</p>
+            )}
+          </article>
+        </div>
+      </GlassSectionCard>
     </div>
   );
 }

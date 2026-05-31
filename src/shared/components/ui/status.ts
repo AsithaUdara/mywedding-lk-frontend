@@ -14,6 +14,7 @@ export const STATUS_BADGE_STYLES: Record<string, string> = {
   Cancelled: "bg-destructive/10 text-destructive border border-destructive/20",
   Requested: "bg-warning/15 text-warning border border-warning/25",
   AwaitingPayment: "bg-accent/15 text-accent-foreground border border-accent/30",
+  ContractSigned: "bg-primary/10 text-primary border border-primary/20",
 };
 
 export type StatusKey = keyof typeof STATUS_BADGE_STYLES;

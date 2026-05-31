@@ -12,18 +12,15 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
 import { getPlannerEvents, PlannerEventListItem } from "@/shared/lib/api/planner";
-import { ErrorBanner } from "@/modules/planner/components/ui";
+import { ErrorBanner, ProgressBar, formatLKR } from "@/modules/planner/components/ui";
+import { EmptyState, PageLoadingSkeleton } from "@/shared/components/ui";
 import {
-  Badge,
-  Button,
-  EmptyState,
-  PageHeader,
-  PageLoadingSkeleton,
-  ProgressBar,
-  SectionCard,
-  StatCard,
-  formatLKR,
-} from "@/shared/components/ui";
+  GlassButton,
+  GlassPageHeader,
+  GlassSectionCard,
+  GlassStatCard,
+} from "@/modules/vendor/dashboard/glass-ui";
+import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
 import { cn } from "@/shared/lib/cn";
 
 type RevenueFilter = "all" | "over" | "attention" | "healthy";
@@ -62,7 +59,7 @@ function PortfolioSpendChart({
           <div key={`${d.label}-${i}`} className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
             <div className="flex h-28 w-full items-end justify-center gap-1">
               <div
-                className="w-[42%] max-w-5 rounded-t-md bg-muted"
+                className="w-[42%] max-w-5 rounded-t-md bg-white/50 ring-1 ring-white/60"
                 style={{ height: `${budgetH}%` }}
                 title={`Budget ${formatLKR(d.total)}`}
               />
@@ -75,7 +72,7 @@ function PortfolioSpendChart({
                 title={`Spent ${formatLKR(d.spent)}`}
               />
             </div>
-            <span className="w-full truncate text-center text-[9px] font-medium text-muted-foreground">
+            <span className={cn("w-full truncate text-center text-[9px] font-medium", vg.caption)}>
               {d.label}
             </span>
           </div>
@@ -164,69 +161,64 @@ export default function PlannerBudgetPage() {
   }
 
   return (
-    <div className="space-y-8 pb-4">
-      <PageHeader
+    <div className="space-y-6 pb-4 md:space-y-8">
+      <GlassPageHeader
         title="Revenue & budgets"
         description="Monitor portfolio spend, remaining capacity, and per-wedding budget health."
         badge="Finance"
         action={
-          <Button href="/planner/events" variant="secondary" size="sm">
+          <GlassButton href="/planner/events" variant="ghost" className="gap-1.5">
             <Wallet size={16} aria-hidden />
             Manage events
-          </Button>
+          </GlassButton>
         }
       />
 
       {error && <ErrorBanner message={error} />}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
+        <GlassStatCard
           label="Portfolio budget"
           value={formatLKR(summary.totalBudget)}
+          sub="Total allocated"
           icon={Wallet}
           iconTheme="accent"
-          index={0}
         />
-        <StatCard
+        <GlassStatCard
           label="Total spent"
           value={formatLKR(summary.totalSpent)}
           sub={`${utilization}% utilized`}
           icon={TrendingDown}
           iconTheme="primary"
-          index={1}
         />
-        <StatCard
+        <GlassStatCard
           label="Remaining"
           value={formatLKR(remaining)}
-          sub={remaining < 0 ? "Over portfolio cap" : undefined}
+          sub={remaining < 0 ? "Over portfolio cap" : "Available capacity"}
           icon={PiggyBank}
-          iconTheme={remaining < 0 ? "rose" : "success"}
-          index={2}
+          iconTheme={remaining < 0 ? "warning" : "success"}
         />
-        <StatCard
+        <GlassStatCard
           label="At risk"
           value={summary.highUtilCount}
-          sub={
-            summary.overCount > 0 ? `${summary.overCount} over budget` : "≥ 85% utilization"
-          }
+          sub={summary.overCount > 0 ? `${summary.overCount} over budget` : "≥ 85% utilization"}
           icon={summary.overCount > 0 ? AlertTriangle : TrendingUp}
           iconTheme="warning"
-          index={3}
         />
       </div>
 
-      <SectionCard
+      <GlassSectionCard
         title="Portfolio overview"
         subtitle="Compare budget caps to spend across your top events"
       >
         {chartData.length === 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">No budget data yet.</p>
+          <p className={cn("py-8 text-center", vg.subtitle)}>No budget data yet.</p>
         ) : (
           <>
             <PortfolioSpendChart data={chartData} />
-            <div className="mt-4 flex flex-wrap gap-4 text-[11px] text-muted-foreground">
+            <div className={cn("mt-4 flex flex-wrap gap-4", vg.caption)}>
               <span className="inline-flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-sm bg-muted" aria-hidden />
+                <span className="h-2.5 w-2.5 rounded-sm bg-white/50 ring-1 ring-white/60" aria-hidden />
                 Budget cap
               </span>
               <span className="inline-flex items-center gap-1.5">
@@ -240,7 +232,7 @@ export default function PlannerBudgetPage() {
             </div>
           </>
         )}
-        <div className="mt-6 border-t border-border pt-6">
+        <div className="mt-6 border-t border-white/40 pt-6">
           <ProgressBar
             label="Portfolio utilization"
             count={summary.totalSpent}
@@ -253,13 +245,13 @@ export default function PlannerBudgetPage() {
                   : "bg-primary"
             }
           />
-          <p className="mt-2 text-right text-xs tabular-nums text-muted-foreground">
+          <p className={cn("mt-2 text-right tabular-nums", vg.caption)}>
             {formatLKR(summary.totalSpent)} of {formatLKR(summary.totalBudget)}
           </p>
         </div>
-      </SectionCard>
+      </GlassSectionCard>
 
-      <SectionCard
+      <GlassSectionCard
         title="By wedding"
         subtitle="Open event budgets to adjust categories and expenses"
         action={
@@ -270,10 +262,10 @@ export default function PlannerBudgetPage() {
                 type="button"
                 onClick={() => setRevenueFilter(f.value)}
                 className={cn(
-                  "rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-200",
+                  "rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-200",
                   revenueFilter === f.value
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-muted text-muted-foreground hover:text-foreground"
+                    ? "vgo-nav-active"
+                    : "vgo-nav-idle rf-glass-subtle vgo-glass-subtle"
                 )}
                 aria-pressed={revenueFilter === f.value}
               >
@@ -284,16 +276,16 @@ export default function PlannerBudgetPage() {
         }
       >
         {loading ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">Refreshing budgets…</p>
+          <p className={cn("py-8 text-center", vg.subtitle)}>Refreshing budgets…</p>
         ) : events.length === 0 ? (
           <EmptyState
             title="No budget data yet"
             description="Create client events with budgets to track spending across your portfolio."
             action={
-              <Button href="/planner/events" size="sm">
+              <GlassButton href="/planner/dashboard#create-event-dashboard" variant="primary" className="gap-1.5">
                 <CircleDollarSign size={16} aria-hidden />
                 Add event
-              </Button>
+              </GlassButton>
             }
             className="border-0 bg-transparent shadow-none"
           />
@@ -302,9 +294,9 @@ export default function PlannerBudgetPage() {
             title="No events match this filter"
             description="Try another budget health filter or add events with budget targets."
             action={
-              <Button type="button" size="sm" onClick={() => setRevenueFilter("all")}>
+              <GlassButton type="button" variant="primary" onClick={() => setRevenueFilter("all")}>
                 Show all events
-              </Button>
+              </GlassButton>
             }
             className="border-0 bg-transparent shadow-none"
           />
@@ -316,84 +308,86 @@ export default function PlannerBudgetPage() {
               const eventRemaining = event.totalBudget - event.spentBudget;
 
               return (
-                <li
-                  key={event.eventId}
-                  className="rounded-2xl border border-border bg-background/80 p-5 transition-all duration-200 hover:border-primary/25 hover:shadow-md"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="flex min-w-0 gap-4">
-                      <div
-                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 font-playfair text-lg font-bold text-primary"
-                        aria-hidden
-                      >
-                        {event.eventName.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="min-w-0">
-                        <h3 className="truncate text-base font-semibold text-foreground">
-                          {event.eventName}
-                        </h3>
-                        <p className="mt-0.5 truncate text-sm text-muted-foreground">
-                          {event.clientEmail || "No client email"}
-                        </p>
-                        <p className="mt-1 text-xs font-medium text-muted-foreground">
-                          {formatLKR(eventRemaining)} remaining · {pct}% used
-                        </p>
-                      </div>
-                    </div>
-                    <Button href={`/events/${event.eventId}/budget`} size="sm">
-                      Open budget
-                      <ArrowRight size={14} aria-hidden />
-                    </Button>
-                  </div>
-
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Badge variant="muted" className="normal-case tracking-normal">
-                      Budget {formatLKR(event.totalBudget)}
-                    </Badge>
-                    <Badge variant="default" className="normal-case tracking-normal">
-                      Spent {formatLKR(event.spentBudget)}
-                    </Badge>
-                    {over && (
-                      <Badge variant="destructive" className="normal-case tracking-normal">
-                        Over budget
-                      </Badge>
+                <li key={event.eventId}>
+                  <article
+                    className={cn(
+                      "rounded-xl border border-white/55 bg-white/40 p-5 backdrop-blur-sm sm:p-6",
+                      "transition-all duration-200 hover:border-[hsl(42_48%_52%/0.28)] hover:bg-white/55 hover:shadow-[0_4px_20px_hsl(345_100%_25%/0.08)]"
                     )}
-                    {!over && pct >= 85 && (
-                      <Badge variant="accent" className="normal-case tracking-normal">
-                        High utilization
-                      </Badge>
-                    )}
-                  </div>
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div className="flex min-w-0 gap-4">
+                        <div
+                          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 font-luxury-display text-lg font-bold text-primary"
+                          aria-hidden
+                        >
+                          {event.eventName.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className={cn("truncate font-medium", vg.body)}>{event.eventName}</h3>
+                          <p className={cn("mt-0.5 truncate", vg.subtitle)}>
+                            {event.clientEmail || "No client email"}
+                          </p>
+                          <p className={cn("mt-1 font-medium", vg.caption)}>
+                            {formatLKR(eventRemaining)} remaining · {pct}% used
+                          </p>
+                        </div>
+                      </div>
+                      <GlassButton href={`/events/${event.eventId}/budget`} variant="primary" className="gap-1">
+                        Open budget
+                        <ArrowRight size={14} aria-hidden />
+                      </GlassButton>
+                    </div>
 
-                  <div className="mt-4 space-y-1.5">
-                    <div className="flex justify-between text-xs">
-                      <span className="font-medium text-muted-foreground">Spend progress</span>
-                      <span className="font-semibold tabular-nums text-foreground">{pct}%</span>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-white/60 bg-white/50", vg.caption)}>
+                        Budget {formatLKR(event.totalBudget)}
+                      </span>
+                      <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary ring-1 ring-primary/15">
+                        Spent {formatLKR(event.spentBudget)}
+                      </span>
+                      {over && (
+                        <span className="rounded-full bg-destructive/10 px-2.5 py-0.5 text-xs font-medium text-destructive ring-1 ring-destructive/15">
+                          Over budget
+                        </span>
+                      )}
+                      {!over && pct >= 85 && (
+                        <span className="rounded-full bg-warning/10 px-2.5 py-0.5 text-xs font-medium text-warning ring-1 ring-warning/15">
+                          High utilization
+                        </span>
+                      )}
                     </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-muted">
-                      <div
-                        className={cn(
-                          "h-full rounded-full transition-all duration-300",
-                          over
-                            ? "bg-destructive"
-                            : pct >= 85
-                              ? "bg-warning"
-                              : "bg-primary"
-                        )}
-                        style={{ width: `${Math.min(pct, 100)}%` }}
-                        role="progressbar"
-                        aria-valuenow={pct}
-                        aria-valuemin={0}
-                        aria-valuemax={100}
-                      />
+
+                    <div className="mt-4 space-y-1.5">
+                      <div className="flex justify-between text-xs">
+                        <span className={vg.caption}>Spend progress</span>
+                        <span className="font-semibold tabular-nums text-foreground">{pct}%</span>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-white/50 ring-1 ring-white/60">
+                        <div
+                          className={cn(
+                            "h-full rounded-full transition-all duration-300",
+                            over
+                              ? "bg-destructive"
+                              : pct >= 85
+                                ? "bg-warning"
+                                : "bg-primary"
+                          )}
+                          style={{ width: `${Math.min(pct, 100)}%` }}
+                          role="progressbar"
+                          aria-valuenow={pct}
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                        />
+                      </div>
                     </div>
-                  </div>
+                  </article>
                 </li>
               );
             })}
           </ul>
         )}
-      </SectionCard>
+      </GlassSectionCard>
     </div>
   );
 }

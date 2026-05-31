@@ -26,18 +26,21 @@ import {
   WinRateSummary,
 } from "@/shared/lib/api/vendors";
 import {
-  Button,
-  Card,
   EmptyState,
   ErrorBanner,
-  PageHeader,
   PageLoadingSkeleton,
-  QuickActionLink,
-  SectionCard,
-  StatCard,
   formatLKR,
 } from "@/shared/components/ui";
 import { cn } from "@/shared/lib/cn";
+import {
+  GlassButton,
+  GlassChartCard,
+  GlassPageHeader,
+  GlassQuickActionLink,
+  GlassStatCard,
+  GlassWinRatePipeline,
+} from "./glass-ui";
+import { vg } from "./vendor-glass-theme";
 
 type AnalyticsDashboardProps = {
   /** Overview embed — KPIs + charts only */
@@ -63,15 +66,9 @@ function buildWinConic(win: WinRateSummary, total: number): string {
   )`;
 }
 
-function WeeklyViewsChart({
-  data,
-  max,
-}: {
-  data: WeeklyViewPoint[];
-  max: number;
-}) {
+function WeeklyViewsChart({ data, max }: { data: WeeklyViewPoint[]; max: number }) {
   if (data.length === 0) {
-    return <p className="text-sm text-muted-foreground">No profile views recorded yet.</p>;
+    return <p className={vg.subtitle}>No profile views recorded yet.</p>;
   }
 
   return (
@@ -82,13 +79,13 @@ function WeeklyViewsChart({
     >
       {data.map((point) => (
         <div key={point.week} className="flex flex-1 flex-col items-center gap-2">
-          <span className="text-[10px] font-bold tabular-nums text-primary">{point.views}</span>
+          <span className={cn(vg.caption, "font-medium tabular-nums text-primary")}>{point.views}</span>
           <div
-            className="w-full min-h-[4px] rounded-t-lg bg-primary transition-colors duration-300 hover:bg-primary/80"
+            className="w-full min-h-[4px] rounded-t-lg transition-colors duration-300 vgo-bar-primary hover:opacity-90"
             style={{ height: `${Math.max(8, Math.round((point.views / max) * 128))}px` }}
             title={`${point.views} views`}
           />
-          <span className="text-[10px] font-medium text-muted-foreground">{point.week}</span>
+          <span className={vg.caption}>{point.week}</span>
         </div>
       ))}
     </div>
@@ -98,30 +95,28 @@ function WeeklyViewsChart({
 function MonthlyCountChart({
   data,
   max,
-  barClassName = "bg-primary/70 hover:bg-primary",
-  valueClassName = "text-primary",
   emptyLabel,
+  valueClassName = "text-primary",
 }: {
   data: MonthlyCountPoint[];
   max: number;
-  barClassName?: string;
-  valueClassName?: string;
   emptyLabel: string;
+  valueClassName?: string;
 }) {
   if (data.length === 0) {
-    return <p className="text-sm text-muted-foreground">{emptyLabel}</p>;
+    return <p className={vg.subtitle}>{emptyLabel}</p>;
   }
 
   return (
     <div className="flex h-36 items-end gap-3" role="img" aria-label="Monthly counts">
       {data.map((row) => (
         <div key={row.month} className="flex flex-1 flex-col items-center gap-2">
-          <span className={cn("text-xs font-bold tabular-nums", valueClassName)}>{row.count}</span>
+          <span className={cn(vg.caption, "font-medium tabular-nums", valueClassName)}>{row.count}</span>
           <div
-            className={cn("w-full min-h-[4px] rounded-t-xl transition-colors", barClassName)}
+            className="w-full min-h-[4px] rounded-t-xl transition-colors vgo-bar-primary hover:opacity-90"
             style={{ height: `${Math.max(8, Math.round((row.count / max) * 100))}px` }}
           />
-          <span className="text-[10px] font-medium text-muted-foreground">{row.month}</span>
+          <span className={vg.caption}>{row.month}</span>
         </div>
       ))}
     </div>
@@ -151,7 +146,7 @@ function MonthlyEarningsChart({
             {row.amount > 0 ? formatLKR(row.amount) : "—"}
           </span>
           <div
-            className="w-full min-h-[4px] rounded-t-xl bg-accent/80 transition-colors hover:bg-accent"
+            className="w-full min-h-[4px] rounded-t-xl transition-colors vgo-bar-accent hover:opacity-90"
             style={{ height: `${Math.max(8, Math.round((row.amount / max) * 100))}px` }}
             title={formatLKR(row.amount)}
           />
@@ -220,6 +215,9 @@ export function AnalyticsDashboard({ compact = false, fullPage = false }: Analyt
   const inquiriesMax = useMemo(() => Math.max(...inquiryTrend.map((d) => d.count), 1), [inquiryTrend]);
   const totalViews = useMemo(() => profileViews.reduce((s, p) => s + p.views, 0), [profileViews]);
   const totalInquiries = useMemo(() => inquiryTrend.reduce((s, p) => s + p.count, 0), [inquiryTrend]);
+  const thisWeekViews = profileViews.length > 0 ? (profileViews[profileViews.length - 1]?.views ?? 0) : 0;
+  const thisMonthInquiries =
+    inquiryTrend.length > 0 ? (inquiryTrend[inquiryTrend.length - 1]?.count ?? 0) : 0;
   const winTotal = winRate.won + winRate.pending + winRate.lost;
   const winPct = winTotal > 0 ? Math.round((winRate.won / winTotal) * 100) : 0;
 
@@ -264,74 +262,81 @@ export function AnalyticsDashboard({ compact = false, fullPage = false }: Analyt
     <div className="grid gap-4 lg:grid-cols-12">
       {fullPage ? (
         <>
-          <SectionCard
-            title="Profile views"
-            subtitle="Weekly trend — last 6 weeks"
+          <GlassChartCard
+            label="Profile views"
+            sublabel="Weekly trend — last 6 weeks"
             className="lg:col-span-7"
           >
             <WeeklyViewsChart data={profileViews} max={viewsMax} />
-          </SectionCard>
+          </GlassChartCard>
 
-          <SectionCard title="Win rate" subtitle="Leads converted to confirmed bookings" className="lg:col-span-5">
-            <WinRateDonut winPct={winPct} winTotal={winTotal} winRate={winRate} segments={winSegments} />
-            {winRate.pending > 0 && (
-              <p className="mt-4 text-sm text-muted-foreground">
-                <span className="font-semibold text-foreground">{winRate.pending}</span> inquiries still in
-                progress — follow up in your inbox to improve win rate.
-              </p>
-            )}
-          </SectionCard>
+          <div className={cn(vg.panel, "lg:col-span-5")}>
+            <div className={vg.panelHeader}>
+              <div>
+                <h3 className={vg.sectionTitle}>Lead pipeline</h3>
+                <p className={cn(vg.caption, "mt-0.5")}>Leads converted to confirmed bookings</p>
+              </div>
+            </div>
+            <div className={vg.panelBody}>
+              <GlassWinRatePipeline winRate={winRate} winPct={winPct} winTotal={winTotal} />
+            </div>
+          </div>
 
-          <SectionCard title="Inquiry volume" subtitle="Messages received per month" className="lg:col-span-6">
+          <GlassChartCard
+            label="Inquiry volume"
+            sublabel="Messages received per month"
+            className="lg:col-span-6"
+          >
             <MonthlyCountChart
               data={inquiryTrend}
               max={inquiriesMax}
               emptyLabel="No inquiries in this period."
             />
-          </SectionCard>
+          </GlassChartCard>
 
-          <SectionCard
-            title="Earnings"
-            subtitle="Confirmed + completed bookings by service month"
+          <GlassChartCard
+            label="Earnings"
+            sublabel="Confirmed + completed bookings by service month"
             className="lg:col-span-6"
           >
             <MonthlyEarningsChart data={earningsData} max={earningsMax} />
-          </SectionCard>
+          </GlassChartCard>
         </>
       ) : (
         <>
-          <Card className="lg:col-span-7" padding>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-              Profile views
-            </p>
-            <p className="mt-0.5 text-sm font-medium text-foreground">Weekly trend</p>
-            <div className="mt-6">
-              <WeeklyViewsChart data={profileViews} max={viewsMax} />
-            </div>
-          </Card>
+          {!compact && (
+            <>
+              <GlassChartCard label="Profile views" sublabel="Weekly trend" className="lg:col-span-7">
+                <WeeklyViewsChart data={profileViews} max={viewsMax} />
+              </GlassChartCard>
 
-          <Card className="lg:col-span-5" padding>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-              Win rate breakdown
-            </p>
-            <div className="mt-4">
-              <WinRateDonut winPct={winPct} winTotal={winTotal} winRate={winRate} segments={winSegments} />
-            </div>
-          </Card>
+              <GlassChartCard label="Win rate breakdown" className="lg:col-span-5">
+                <WinRateDonut winPct={winPct} winTotal={winTotal} winRate={winRate} segments={winSegments} />
+              </GlassChartCard>
 
-          <Card className="col-span-12 lg:col-span-12" padding>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-              Inquiries received
-            </p>
-            <p className="mt-0.5 text-sm text-muted-foreground">Last 6 months</p>
-            <div className="mt-6">
-              <MonthlyCountChart
-                data={inquiryTrend}
-                max={inquiriesMax}
-                emptyLabel="No inquiries in this period."
-              />
+              <GlassChartCard label="Inquiries received" sublabel="Last 6 months" className="col-span-12 lg:col-span-12">
+                <MonthlyCountChart
+                  data={inquiryTrend}
+                  max={inquiriesMax}
+                  emptyLabel="No inquiries in this period."
+                />
+              </GlassChartCard>
+            </>
+          )}
+
+          {compact && (
+            <div className={cn(vg.panel, "col-span-12")}>
+              <div className={vg.panelHeader}>
+                <div>
+                  <h3 className={vg.sectionTitle}>Lead pipeline</h3>
+                  <p className={cn(vg.caption, "mt-0.5")}>How inquiries convert to confirmed bookings</p>
+                </div>
+              </div>
+              <div className={vg.panelBody}>
+                <GlassWinRatePipeline winRate={winRate} winPct={winPct} winTotal={winTotal} />
+              </div>
             </div>
-          </Card>
+          )}
         </>
       )}
     </div>
@@ -348,35 +353,35 @@ export function AnalyticsDashboard({ compact = false, fullPage = false }: Analyt
           icon={TrendingUp}
           action={
             <div className="flex flex-wrap justify-center gap-2">
-              <Button href="/vendor/dashboard/profile" variant="primary" size="sm">
+              <GlassButton href="/vendor/dashboard/profile" variant="primary">
                 Complete profile
-              </Button>
-              <Button href="/vendor/dashboard/services" variant="secondary" size="sm">
+              </GlassButton>
+              <GlassButton href="/vendor/dashboard/services" variant="ghost">
                 Add services
-              </Button>
+              </GlassButton>
             </div>
           }
         />
       ) : (
         <>
           <div className={cn("grid gap-4", fullPage ? "sm:grid-cols-2 lg:grid-cols-3" : "sm:grid-cols-3")}>
-            <StatCard
+            <GlassStatCard
               label="Profile views"
-              value={totalViews.toLocaleString()}
-              sub="Last 6 weeks"
+              value={compact ? thisWeekViews.toLocaleString() : totalViews.toLocaleString()}
+              sub={compact ? "This week" : "Last 6 weeks"}
               icon={Eye}
               iconTheme="primary"
               index={0}
             />
-            <StatCard
+            <GlassStatCard
               label="Inquiries received"
-              value={totalInquiries}
-              sub="Last 6 months"
+              value={compact ? thisMonthInquiries : totalInquiries}
+              sub={compact ? "This month" : "Last 6 months"}
               icon={MessageSquare}
               iconTheme="accent"
               index={1}
             />
-            <StatCard
+            <GlassStatCard
               label="Win rate"
               value={`${winPct}%`}
               sub="Leads → confirmed"
@@ -388,7 +393,7 @@ export function AnalyticsDashboard({ compact = false, fullPage = false }: Analyt
 
           {fullPage && summary && (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <StatCard
+              <GlassStatCard
                 label="Total revenue"
                 value={formatLKR(summary.totalRevenue)}
                 sub={
@@ -400,7 +405,7 @@ export function AnalyticsDashboard({ compact = false, fullPage = false }: Analyt
                 iconTheme="accent"
                 index={3}
               />
-              <StatCard
+              <GlassStatCard
                 label="Confirmed bookings"
                 value={summary.confirmedBookings}
                 sub={`${summary.completedBookings} completed`}
@@ -408,7 +413,7 @@ export function AnalyticsDashboard({ compact = false, fullPage = false }: Analyt
                 iconTheme="primary"
                 index={4}
               />
-              <StatCard
+              <GlassStatCard
                 label="Average rating"
                 value={summary.totalReviews > 0 ? summary.averageRating.toFixed(1) : "—"}
                 sub={
@@ -420,7 +425,7 @@ export function AnalyticsDashboard({ compact = false, fullPage = false }: Analyt
                 iconTheme="warning"
                 index={5}
               />
-              <StatCard
+              <GlassStatCard
                 label="Active listings"
                 value={summary.activeServices}
                 sub={`${summary.totalServices} total services`}
@@ -439,51 +444,48 @@ export function AnalyticsDashboard({ compact = false, fullPage = false }: Analyt
 
   if (fullPage) {
     return (
-      <div className="space-y-8 pb-4">
-        <PageHeader
+      <div className="space-y-6 pb-4 md:space-y-8">
+        <GlassPageHeader
           title="Analytics"
           description="Storefront reach, inquiry pipeline, bookings, and earnings — everything in one place."
           badge="Performance"
           action={
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
+            <GlassButton
+              variant="ghost"
               onClick={() => void handleRefresh()}
               disabled={refreshing}
+              className="gap-1.5"
             >
               <RefreshCw size={16} className={cn(refreshing && "animate-spin")} aria-hidden />
               Refresh
-            </Button>
+            </GlassButton>
           }
         />
 
-        <SectionCard title="Quick links" subtitle="Act on what the numbers show">
-          <div className="grid gap-3 sm:grid-cols-3">
-            <QuickActionLink
-              href="/vendor/dashboard/inquiries"
-              label="Inquiry inbox"
-              description={
-                summary && summary.unreadInquiries > 0
-                  ? `${summary.unreadInquiries} unread`
-                  : "Reply and send quotes"
-              }
-              icon={<Inbox size={18} />}
-            />
-            <QuickActionLink
-              href="/vendor/dashboard/profile"
-              label="Storefront profile"
-              description="Improve discovery & trust"
-              icon={<Store size={18} />}
-            />
-            <QuickActionLink
-              href="/vendor/dashboard/bookings"
-              label="Bookings"
-              description={`${summary?.confirmedBookings ?? 0} confirmed`}
-              icon={<Briefcase size={18} />}
-            />
-          </div>
-        </SectionCard>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <GlassQuickActionLink
+            href="/vendor/dashboard/inquiries"
+            label="Inquiry inbox"
+            description={
+              summary && summary.unreadInquiries > 0
+                ? `${summary.unreadInquiries} unread`
+                : "Reply and send quotes"
+            }
+            icon={<Inbox size={16} />}
+          />
+          <GlassQuickActionLink
+            href="/vendor/dashboard/profile"
+            label="Storefront profile"
+            description="Improve discovery & trust"
+            icon={<Store size={16} />}
+          />
+          <GlassQuickActionLink
+            href="/vendor/dashboard/bookings"
+            label="Bookings"
+            description={`${summary?.confirmedBookings ?? 0} confirmed`}
+            icon={<Briefcase size={16} />}
+          />
+        </div>
 
         {body}
       </div>
@@ -512,21 +514,19 @@ function WinRateDonut({
         role="img"
         aria-label={`Win rate ${winPct} percent`}
       >
-        <div className="absolute inset-3 flex flex-col items-center justify-center rounded-full bg-card">
-          <span className="text-2xl font-bold tabular-nums text-primary">{winPct}%</span>
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Won
-          </span>
+        <div className={vg.donutCenter}>
+          <span className={cn(vg.statValue, "text-2xl md:text-2xl")}>{winPct}%</span>
+          <span className={vg.label}>Won</span>
         </div>
       </div>
-      <ul className="min-w-[8rem] flex-1 space-y-2 text-sm">
+      <ul className={cn("min-w-[8rem] flex-1 space-y-2", vg.body)}>
         {segments.map((seg) => (
           <li key={seg.label} className="flex items-center justify-between gap-4">
-            <span className="flex items-center gap-2 text-muted-foreground">
+            <span className={cn("flex items-center gap-2", vg.subtitle)}>
               <span className={cn("h-2.5 w-2.5 rounded-full", seg.color)} aria-hidden />
               {seg.label}
             </span>
-            <span className="font-semibold tabular-nums text-foreground">{seg.value}</span>
+            <span className={cn(vg.body, "font-medium tabular-nums")}>{seg.value}</span>
           </li>
         ))}
       </ul>

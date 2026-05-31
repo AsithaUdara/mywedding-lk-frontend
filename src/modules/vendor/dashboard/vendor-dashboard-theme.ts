@@ -1,33 +1,29 @@
-/** Royal Kandyan tokens for vendor dashboard modules — no slate/indigo bento glass */
+/** @deprecated Use `rf` from `@/modules/design-system/regal-frost` */
+import { rf } from "@/modules/design-system/regal-frost/tokens";
+
 export const vd = {
-  card: "rounded-3xl border border-border bg-card shadow-sm",
-  cardPad: "rounded-3xl border border-border bg-card p-5 shadow-sm sm:p-6",
-  cardCompact: "rounded-2xl border border-border bg-card p-4 shadow-sm",
-  label: "text-[11px] font-bold uppercase tracking-widest text-muted-foreground",
-  title: "text-2xl font-bold tracking-tight text-foreground sm:text-3xl",
-  subtitle: "text-sm leading-relaxed text-muted-foreground sm:text-base",
-  metaBox: "rounded-2xl border border-border bg-muted/40 px-4 py-3",
-  messageBox:
-    "whitespace-pre-wrap rounded-2xl border border-border bg-muted/30 p-5 text-sm leading-relaxed text-foreground",
-  listDivide: "divide-y divide-border",
-  rowHover: "transition hover:bg-muted/50",
+  card: rf.panel,
+  cardPad: `${rf.panel} p-5 sm:p-6`,
+  cardCompact: `${rf.glass} rounded-2xl p-4`,
+  label: rf.label,
+  title: rf.heroTitle,
+  subtitle: rf.subtitle,
+  metaBox: `${rf.glassSubtle} rounded-2xl px-4 py-3`,
+  messageBox: `${rf.glassSubtle} whitespace-pre-wrap rounded-2xl p-5 text-sm leading-relaxed text-foreground`,
+  listDivide: "divide-y divide-border/60",
+  rowHover: "transition hover:bg-white/50",
   rowActive: "bg-primary/5",
-  iconPlanner: "bg-primary/10 text-primary",
-  iconClient: "bg-accent/15 text-accent",
-  badgePlanner: "rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary",
-  badgeClient: "rounded-full bg-accent/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-accent",
+  iconPlanner: rf.iconPrimary,
+  iconClient: "bg-[hsl(42_48%_52%/0.15)] text-[hsl(42_35%_38%)]",
+  badgePlanner:
+    "rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary",
+  badgeClient:
+    "rounded-full bg-[hsl(42_48%_52%/0.15)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[hsl(42_35%_38%)]",
   badgeNew: "rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold text-primary",
   successBanner: "rounded-2xl border border-success/30 bg-success/10 px-4 py-3 text-sm text-success",
   input:
-    "w-full resize-none rounded-2xl border border-border bg-card px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20",
-  navBtn:
-    "flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition hover:bg-muted hover:text-foreground",
+    "w-full resize-none rounded-2xl border border-border/80 bg-white/60 px-4 py-3 text-sm text-foreground outline-none backdrop-blur-sm placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20",
+  navBtn: rf.navBtn,
 } as const;
 
-export const calendarDayClass = {
-  booked: "border-success/40 bg-success/15 text-success cursor-default",
-  blocked: "border-primary bg-primary text-primary-foreground cursor-pointer",
-  available:
-    "border-border bg-card text-foreground hover:border-primary/40 hover:bg-muted/40",
-  outside: "border-transparent bg-transparent text-muted-foreground/40",
-} as const;
+export { glassCalendarDayClass as calendarDayClass } from "@/modules/design-system/regal-frost/tokens";

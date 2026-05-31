@@ -12,17 +12,16 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
 import { getPlannerEvents, PlannerEventListItem } from "@/shared/lib/api/planner";
-import { ErrorBanner } from "@/modules/planner/components/ui";
+import { PlannerBookingsTable } from "@/modules/planner/PlannerBookingsTable";
+import { ErrorBanner, ProgressBar, StatusBadge } from "@/modules/planner/components/ui";
+import { EmptyState, PageLoadingSkeleton } from "@/shared/components/ui";
 import {
-  Badge,
-  Button,
-  EmptyState,
-  PageHeader,
-  PageLoadingSkeleton,
-  ProgressBar,
-  SectionCard,
-  StatCard,
-} from "@/shared/components/ui";
+  GlassButton,
+  GlassPageHeader,
+  GlassSectionCard,
+  GlassStatCard,
+} from "@/modules/vendor/dashboard/glass-ui";
+import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
 import { cn } from "@/shared/lib/cn";
 
 type BookingFilter = "all" | "attention" | "clear";
@@ -107,21 +106,21 @@ export default function PlannerBookingsPage() {
   }
 
   return (
-    <div className="space-y-8 pb-4">
-      <PageHeader
+    <div className="space-y-6 pb-4 md:space-y-8">
+      <GlassPageHeader
         title="Bookings & payments"
         description="Track vendor request pipelines and fulfillment progress across every wedding you manage."
         badge="Operations"
         action={
           <div className="flex flex-wrap gap-2">
-            <Button href="/planner/procurement" variant="primary" size="sm">
+            <GlassButton href="/planner/procurement" variant="primary" className="gap-1.5">
               <ClipboardCheck size={16} aria-hidden />
               Procurement
-            </Button>
-            <Button href="/planner/events" variant="secondary" size="sm">
+            </GlassButton>
+            <GlassButton href="/planner/events" variant="ghost" className="gap-1.5">
               <CalendarDays size={16} aria-hidden />
               View events
-            </Button>
+            </GlassButton>
           </div>
         }
       />
@@ -129,38 +128,37 @@ export default function PlannerBookingsPage() {
       {error && <ErrorBanner message={error} />}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
+        <GlassStatCard
           label="Pending requests"
           value={totals.pending}
-          sub={eventsNeedingAction > 0 ? `${eventsNeedingAction} events` : undefined}
+          sub={eventsNeedingAction > 0 ? `${eventsNeedingAction} events need action` : "Awaiting vendor"}
           icon={Clock}
           iconTheme="warning"
-          index={0}
         />
-        <StatCard
+        <GlassStatCard
           label="Confirmed"
           value={totals.confirmed}
+          sub="Ready to execute"
           icon={CheckCircle2}
           iconTheme="primary"
-          index={1}
         />
-        <StatCard
+        <GlassStatCard
           label="Completed"
           value={totals.completed}
+          sub="Services delivered"
           icon={PartyPopper}
           iconTheme="success"
-          index={2}
         />
-        <StatCard
+        <GlassStatCard
           label="Confirm rate"
           value={`${confirmRate}%`}
+          sub="Confirmed + completed vs pending"
           icon={TrendingUp}
           iconTheme="accent"
-          index={3}
         />
       </div>
 
-      <SectionCard
+      <GlassSectionCard
         title="Portfolio pipeline"
         subtitle="Share of booking activity across all managed weddings"
       >
@@ -184,9 +182,16 @@ export default function PlannerBookingsPage() {
             barClassName="bg-success"
           />
         </div>
-      </SectionCard>
+      </GlassSectionCard>
 
-      <SectionCard
+      <GlassSectionCard
+        title="All bookings"
+        subtitle="Sync PayHere payment status when a webhook was missed"
+      >
+        <PlannerBookingsTable />
+      </GlassSectionCard>
+
+      <GlassSectionCard
         title="By wedding"
         subtitle="Open an event to approve requests and manage vendor payments"
         action={
@@ -197,10 +202,10 @@ export default function PlannerBookingsPage() {
                 type="button"
                 onClick={() => setBookingFilter(f.value)}
                 className={cn(
-                  "rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-200",
+                  "rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-200",
                   bookingFilter === f.value
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-muted text-muted-foreground hover:text-foreground"
+                    ? "vgo-nav-active"
+                    : "vgo-nav-idle rf-glass-subtle vgo-glass-subtle"
                 )}
                 aria-pressed={bookingFilter === f.value}
               >
@@ -211,16 +216,16 @@ export default function PlannerBookingsPage() {
         }
       >
         {loading ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">Refreshing bookings…</p>
+          <p className={cn("py-8 text-center", vg.subtitle)}>Refreshing bookings…</p>
         ) : events.length === 0 ? (
           <EmptyState
             title="No booking activity yet"
             description="Bookings appear when clients request vendors on weddings you manage."
             action={
-              <Button href="/planner/events" size="sm">
+              <GlassButton href="/planner/events" variant="primary" className="gap-1.5">
                 <ClipboardCheck size={16} aria-hidden />
                 Manage events
-              </Button>
+              </GlassButton>
             }
             className="border-0 bg-transparent shadow-none"
           />
@@ -229,9 +234,9 @@ export default function PlannerBookingsPage() {
             title="No events match this filter"
             description="Try “All events” or check weddings that still have pending vendor requests."
             action={
-              <Button type="button" size="sm" onClick={() => setBookingFilter("all")}>
+              <GlassButton type="button" variant="primary" onClick={() => setBookingFilter("all")}>
                 Show all events
-              </Button>
+              </GlassButton>
             }
             className="border-0 bg-transparent shadow-none"
           />
@@ -243,88 +248,89 @@ export default function PlannerBookingsPage() {
                 total > 0 ? Math.round((event.requestedBookings / total) * 100) : 0;
 
               return (
-                <li
-                  key={event.eventId}
-                  className="rounded-2xl border border-border bg-background/80 p-5 transition-all duration-200 hover:border-primary/25 hover:shadow-md"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="flex min-w-0 gap-4">
-                      <div
-                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 font-playfair text-lg font-bold text-primary"
-                        aria-hidden
-                      >
-                        {event.eventName.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="min-w-0">
-                        <h3 className="truncate text-base font-semibold text-foreground">
-                          {event.eventName}
-                        </h3>
-                        <p className="mt-0.5 truncate text-sm text-muted-foreground">
-                          {event.clientEmail || "No client email"}
-                        </p>
-                        <p className="mt-1 text-xs font-medium text-muted-foreground">
-                          {total} booking{total === 1 ? "" : "s"} tracked
-                          {event.requestedBookings > 0 && (
-                            <span className="text-warning"> · action needed</span>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                    <Button href={`/events/${event.eventId}`} size="sm">
-                      Open event
-                      <ArrowRight size={14} aria-hidden />
-                    </Button>
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <Badge
-                      variant="muted"
-                      className={cn(
-                        "normal-case tracking-normal",
-                        event.requestedBookings > 0 && "border-warning/40 bg-warning/10 text-warning"
-                      )}
-                    >
-                      Pending {event.requestedBookings}
-                    </Badge>
-                    <Badge variant="default" className="normal-case tracking-normal">
-                      Confirmed {event.confirmedBookings}
-                    </Badge>
-                    <Badge variant="accent" className="normal-case tracking-normal">
-                      Completed {event.completedBookings}
-                    </Badge>
-                    {event.status && (
-                      <Badge variant="status" status={event.status}>
-                        {event.status}
-                      </Badge>
+                <li key={event.eventId}>
+                  <article
+                    className={cn(
+                      "rounded-xl border border-white/55 bg-white/40 p-5 backdrop-blur-sm sm:p-6",
+                      "transition-all duration-200 hover:border-[hsl(42_48%_52%/0.28)] hover:bg-white/55 hover:shadow-[0_4px_20px_hsl(345_100%_25%/0.08)]"
                     )}
-                  </div>
-
-                  {total > 0 && (
-                    <div className="mt-4 space-y-1.5">
-                      <div className="flex justify-between text-xs">
-                        <span className="font-medium text-muted-foreground">Pending share</span>
-                        <span className="font-semibold tabular-nums text-foreground">
-                          {pendingPct}%
-                        </span>
-                      </div>
-                      <div className="h-2 overflow-hidden rounded-full bg-muted">
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div className="flex min-w-0 gap-4">
                         <div
-                          className="h-full rounded-full bg-warning transition-all duration-300"
-                          style={{ width: `${Math.max(pendingPct, event.requestedBookings > 0 ? 4 : 0)}%` }}
-                          role="progressbar"
-                          aria-valuenow={pendingPct}
-                          aria-valuemin={0}
-                          aria-valuemax={100}
-                        />
+                          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 font-luxury-display text-lg font-bold text-primary"
+                          aria-hidden
+                        >
+                          {event.eventName.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className={cn("truncate font-medium", vg.body)}>{event.eventName}</h3>
+                          <p className={cn("mt-0.5 truncate", vg.subtitle)}>
+                            {event.clientEmail || "No client email"}
+                          </p>
+                          <p className={cn("mt-1 font-medium", vg.caption)}>
+                            {total} booking{total === 1 ? "" : "s"} tracked
+                            {event.requestedBookings > 0 && (
+                              <span className="text-warning"> · action needed</span>
+                            )}
+                          </p>
+                        </div>
                       </div>
+                      <GlassButton href={`/events/${event.eventId}`} variant="primary" className="gap-1">
+                        Open event
+                        <ArrowRight size={14} aria-hidden />
+                      </GlassButton>
                     </div>
-                  )}
+
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <span
+                        className={cn(
+                          "rounded-full px-2.5 py-0.5 text-xs font-medium ring-1",
+                          event.requestedBookings > 0
+                            ? "bg-warning/10 text-warning ring-warning/15"
+                            : "bg-white/50 text-muted-foreground ring-white/60"
+                        )}
+                      >
+                        Pending {event.requestedBookings}
+                      </span>
+                      <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary ring-1 ring-primary/15">
+                        Confirmed {event.confirmedBookings}
+                      </span>
+                      <span className="rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-medium text-accent ring-1 ring-accent/15">
+                        Completed {event.completedBookings}
+                      </span>
+                      {event.status && <StatusBadge status={event.status} />}
+                    </div>
+
+                    {total > 0 && (
+                      <div className="mt-4 space-y-1.5">
+                        <div className="flex justify-between text-xs">
+                          <span className={vg.caption}>Pending share</span>
+                          <span className="font-semibold tabular-nums text-foreground">
+                            {pendingPct}%
+                          </span>
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-white/50 ring-1 ring-white/60">
+                          <div
+                            className="h-full rounded-full bg-warning transition-all duration-300"
+                            style={{
+                              width: `${Math.max(pendingPct, event.requestedBookings > 0 ? 4 : 0)}%`,
+                            }}
+                            role="progressbar"
+                            aria-valuenow={pendingPct}
+                            aria-valuemin={0}
+                            aria-valuemax={100}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </article>
                 </li>
               );
             })}
           </ul>
         )}
-      </SectionCard>
+      </GlassSectionCard>
     </div>
   );
 }

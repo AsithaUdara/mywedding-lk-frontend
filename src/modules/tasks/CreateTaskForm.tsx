@@ -1,12 +1,15 @@
 "use client";
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { useAuth } from '@/shared/context/AuthContext';
-import { createTask } from '@/shared/lib/api/tasks';
-import { postComment } from '@/shared/lib/api/feed';
-import { Button, inputClass } from '@/shared/components/ui';
-import { cn } from '@/shared/lib/cn';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { useAuth } from "@/shared/context/AuthContext";
+import { createTask } from "@/shared/lib/api/tasks";
+import { postComment } from "@/shared/lib/api/feed";
+import { inputClass } from "@/shared/components/ui";
+import { GlassButton } from "@/modules/vendor/dashboard/glass-ui";
+import { cn } from "@/shared/lib/cn";
+
+const glassInput = cn(inputClass, "border-white/55 bg-white/40 backdrop-blur-sm");
 
 interface CreateTaskFormProps {
   eventId: string;
@@ -16,7 +19,7 @@ interface CreateTaskFormProps {
 
 const CreateTaskForm = ({ eventId, onTaskCreated, onCancel }: CreateTaskFormProps) => {
   const { user } = useAuth();
-  const [title, setTitle] = useState('');
+  const [title, setTitle] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,18 +33,17 @@ const CreateTaskForm = ({ eventId, onTaskCreated, onCancel }: CreateTaskFormProp
     try {
       const token = await user.getIdToken();
       await createTask(token, eventId, { title });
-      
-      // Auto-trigger activity feed
+
       try {
         await postComment(token, eventId, `Added a new task: "${title}"`);
       } catch (feedError) {
         console.error("Failed to post to activity feed", feedError);
       }
-      
-      onTaskCreated(); // Notify parent to refresh
+
+      onTaskCreated();
     } catch (err: unknown) {
-      const error = err as { message?: string };
-      setError(error.message || 'Failed to create task.');
+      const apiError = err as { message?: string };
+      setError(apiError.message || "Failed to create task.");
     } finally {
       setLoading(false);
     }
@@ -50,11 +52,11 @@ const CreateTaskForm = ({ eventId, onTaskCreated, onCancel }: CreateTaskFormProp
   return (
     <motion.form
       initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-      animate={{ opacity: 1, height: 'auto', marginBottom: 24 }}
+      animate={{ opacity: 1, height: "auto", marginBottom: 24 }}
       exit={{ opacity: 0, height: 0, marginBottom: 0 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
       onSubmit={handleSubmit}
-      className="overflow-hidden rounded-xl border-2 border-primary/10 bg-primary/5 p-5 shadow-sm"
+      className="overflow-hidden rounded-xl border border-primary/20 bg-primary/5 p-5 backdrop-blur-sm"
     >
       <div className="space-y-4">
         <input
@@ -64,7 +66,7 @@ const CreateTaskForm = ({ eventId, onTaskCreated, onCancel }: CreateTaskFormProp
           placeholder="What needs to be done?"
           required
           autoFocus
-          className={cn(inputClass, "font-medium shadow-sm")}
+          className={cn(glassInput, "font-medium")}
         />
 
         {error && (
@@ -78,12 +80,12 @@ const CreateTaskForm = ({ eventId, onTaskCreated, onCancel }: CreateTaskFormProp
         )}
 
         <div className="flex justify-end gap-3 pt-2">
-          <Button type="button" variant="ghost" onClick={onCancel} disabled={loading}>
+          <GlassButton type="button" variant="ghost" onClick={onCancel} disabled={loading}>
             Cancel
-          </Button>
-          <Button type="submit" variant="primary" disabled={loading || !title.trim()}>
+          </GlassButton>
+          <GlassButton type="submit" variant="primary" disabled={loading || !title.trim()}>
             {loading ? "Adding task…" : "Add task"}
-          </Button>
+          </GlassButton>
         </div>
       </div>
     </motion.form>

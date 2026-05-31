@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { X, Mail, Lock, User as UserIcon } from "lucide-react";
 import { auth } from "@/shared/lib/firebase";
@@ -12,9 +12,12 @@ import {
   updateProfile,
 } from "firebase/auth";
 import { resolvePostLoginPath, syncUserWithBackend } from "@/shared/lib/auth/postLoginRedirect";
-import { Button, ErrorBanner, inputClass } from "@/shared/components/ui";
-import { pv } from "@/modules/vendors/public-theme";
+import { ErrorBanner, inputClass } from "@/shared/components/ui";
+import { GlassButton } from "@/modules/vendor/dashboard/glass-ui";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
 import { cn } from "@/shared/lib/cn";
+
+const glassInput = cn(inputClass, "border-white/55 bg-white/40 backdrop-blur-sm");
 
 const GoogleIcon = () => (
   <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden className="h-5 w-5">
@@ -64,6 +67,17 @@ const AuthModal = ({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add("modal-open-blur");
+    } else {
+      document.body.classList.remove("modal-open-blur");
+    }
+    return () => {
+      document.body.classList.remove("modal-open-blur");
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -137,41 +151,49 @@ const AuthModal = ({
   };
 
   return (
-    <div className={pv.modalOverlay} onClick={onClose}>
-      <div className={pv.modalPanel} onClick={(e) => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 z-[110] flex items-center justify-center bg-foreground/30 p-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="auth-modal-title"
+      onClick={onClose}
+    >
+      <div
+        className={cn(rf.panel, "relative w-full max-w-lg overflow-hidden p-6 sm:p-8")}
+        onClick={(e) => e.stopPropagation()}
+      >
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-lg p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+          className={cn(rf.navBtn, "absolute right-3 top-3")}
           aria-label="Close"
         >
-          <X size={22} />
+          <X size={20} />
         </button>
-        <h2 className="text-center font-playfair text-2xl font-bold text-foreground">
+
+        <h2 id="auth-modal-title" className={cn(rf.sectionTitle, "pr-8 text-center")}>
           {title ?? (view === "signIn" ? "Welcome back" : "Create your account")}
         </h2>
-        <p className="mb-6 mt-2 text-center text-sm leading-relaxed text-muted-foreground">
+        <p className={cn("mb-6 mt-2 text-center", rf.subtitle)}>
           {description ??
             (view === "signIn" ? "Log in to continue planning." : "Join to start planning your perfect day.")}
         </p>
 
-        <div className="space-y-3">
-          <Button
-            type="button"
-            variant="secondary"
-            className="w-full"
-            disabled={loading}
-            onClick={() => void handleGoogleSignIn()}
-          >
-            <GoogleIcon />
-            Continue with Google
-          </Button>
-        </div>
+        <GlassButton
+          type="button"
+          variant="ghost"
+          className="w-full justify-center gap-2"
+          disabled={loading}
+          onClick={() => void handleGoogleSignIn()}
+        >
+          <GoogleIcon />
+          Continue with Google
+        </GlassButton>
 
         <div className="my-6 flex items-center gap-3">
-          <hr className="flex-grow border-border" />
-          <span className="text-xs font-semibold uppercase text-muted-foreground">or</span>
-          <hr className="flex-grow border-border" />
+          <hr className="flex-grow border-white/40" />
+          <span className={cn(rf.caption, "font-semibold uppercase")}>or</span>
+          <hr className="flex-grow border-white/40" />
         </div>
 
         {error && <ErrorBanner message={error} className="mb-4" />}
@@ -191,7 +213,7 @@ const AuthModal = ({
                 onChange={(e) => setFullName(e.target.value)}
                 required
                 disabled={loading}
-                className={cn(inputClass, "pl-10 disabled:opacity-50")}
+                className={cn(glassInput, "pl-10 disabled:opacity-50")}
               />
             </div>
           )}
@@ -208,7 +230,7 @@ const AuthModal = ({
               onChange={(e) => setEmail(e.target.value)}
               required
               disabled={loading}
-              className={cn(inputClass, "pl-10 disabled:opacity-50")}
+              className={cn(glassInput, "pl-10 disabled:opacity-50")}
             />
           </div>
           <div className="relative">
@@ -224,16 +246,16 @@ const AuthModal = ({
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={loading}
-              className={cn(inputClass, "pl-10 disabled:opacity-50")}
+              className={cn(glassInput, "pl-10 disabled:opacity-50")}
             />
           </div>
 
-          <Button type="submit" variant="primary" className="w-full" disabled={loading}>
+          <GlassButton type="submit" variant="primary" className="w-full justify-center" disabled={loading}>
             {loading ? "Processing…" : view === "signIn" ? "Sign in" : "Create account"}
-          </Button>
+          </GlassButton>
         </form>
 
-        <p className="mt-6 text-center text-sm text-muted-foreground">
+        <p className={cn("mt-6 text-center", rf.subtitle)}>
           {view === "signIn" ? "Don't have an account? " : "Already have an account? "}
           <button
             type="button"

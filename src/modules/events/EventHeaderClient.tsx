@@ -1,14 +1,17 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useAuth } from "@/shared/context/AuthContext";
-import { getEventById, getOrganizers, type Organizer } from "@/shared/lib/api/events";
+import { getOrganizers, type Organizer } from "@/shared/lib/api/events";
 import Skeleton from "@/shared/components/ui/Skeleton";
 import { useUI } from "@/shared/context/UIContext";
 import { Calendar, MessageSquare } from "lucide-react";
-import { Button } from "@/shared/components/ui";
+import { GlassButton } from "@/modules/vendor/dashboard/glass-ui";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
 import { cn } from "@/shared/lib/cn";
-import { cp } from "@/modules/client/client-theme";
+import { AvatarStack } from "@/shared/components/ui/AvatarStack";
+import { useEventBranding } from "@/modules/events/EventBrandingProvider";
+import { EventPlannerBrand } from "@/modules/events/EventPlannerBrand";
 
 interface EventHeaderClientProps {
   eventId: string;
@@ -17,53 +20,51 @@ interface EventHeaderClientProps {
 const EventHeaderClient = ({ eventId }: EventHeaderClientProps) => {
   const { user } = useAuth();
   const { openHub } = useUI();
-  const [event, setEvent] = useState<{ eventName: string; eventDate: string } | null>(null);
+  const { event, branding, loading: eventLoading } = useEventBranding();
   const [team, setTeam] = useState<Organizer[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
+  const [teamLoading, setTeamLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
 
-    const fetchEventHeaderData = async () => {
+    const fetchTeam = async () => {
       try {
         const token = await user.getIdToken();
-        const [eventData, teamData] = await Promise.all([
-          getEventById(token, eventId),
-          getOrganizers(token, eventId),
-        ]);
-
-        if (eventData) {
-          setEvent(eventData);
-
-          const eventDateObj = new Date(eventData.eventDate);
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          eventDateObj.setHours(0, 0, 0, 0);
-
-          const timeDiff = eventDateObj.getTime() - today.getTime();
-          const days = Math.ceil(timeDiff / (1000 * 3600 * 24));
-          setDaysRemaining(days > 0 ? days : 0);
-        }
-
-        if (teamData) {
-          setTeam(teamData);
-        }
+        const teamData = await getOrganizers(token, eventId);
+        setTeam(teamData);
       } catch (error) {
-        console.error("Failed to fetch event header", error);
+        console.error("Failed to fetch team", error);
       } finally {
-        setLoading(false);
+        setTeamLoading(false);
       }
     };
 
-    void fetchEventHeaderData();
+    void fetchTeam();
   }, [user, eventId]);
+
+  const daysRemaining = useMemo(() => {
+    if (!event?.eventDate) return null;
+    const eventDateObj = new Date(event.eventDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    eventDateObj.setHours(0, 0, 0, 0);
+    const days = Math.ceil((eventDateObj.getTime() - today.getTime()) / (1000 * 3600 * 24));
+    return days > 0 ? days : 0;
+  }, [event?.eventDate]);
+
+  const loading = eventLoading || teamLoading;
 
   if (loading) {
     return (
-      <div className={cn(cp.panel, "mb-8")}>
-        <Skeleton className="mb-4 h-10 w-2/3 rounded-lg" />
-        <Skeleton className="h-6 w-1/3 rounded-lg" />
+      <div className={cn(rf.panel, "overflow-hidden p-0")}>
+        <div className="grid gap-6 p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_280px]">
+          <div className="space-y-3">
+            <Skeleton className="h-3 w-24 rounded-md" />
+            <Skeleton className="h-10 w-2/3 rounded-lg" />
+            <Skeleton className="h-5 w-1/2 rounded-lg" />
+          </div>
+          <Skeleton className="h-28 rounded-xl" />
+        </div>
       </div>
     );
   }
@@ -71,79 +72,79 @@ const EventHeaderClient = ({ eventId }: EventHeaderClientProps) => {
   if (!event) return null;
 
   return (
-    <div
-      className={cn(
-        "relative mb-8 flex flex-col justify-between gap-6 overflow-hidden xl:flex-row xl:items-center",
-        cp.panel
-      )}
-    >
-      <div className="pointer-events-none absolute top-0 right-0 h-[400px] w-[400px] -translate-y-1/2 translate-x-1/3 rounded-full bg-primary/5 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-0 left-0 h-[240px] w-[240px] -translate-x-1/4 translate-y-1/3 rounded-full bg-accent/10 blur-3xl" />
-
-      <div className="relative z-10 w-full text-center md:text-left xl:w-auto">
-        <h1 className="mb-3 font-playfair text-3xl font-bold tracking-tight text-foreground md:text-4xl lg:text-5xl">
-          {event.eventName}
-        </h1>
-        <div className="flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground md:justify-start">
-          <Calendar size={16} className="text-primary/70" aria-hidden />
-          <span>
-            {new Date(event.eventDate).toLocaleDateString("en-US", {
-              weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
-          </span>
+    <section className={cn(rf.panel, "overflow-hidden p-0")}>
+      {branding ? (
+        <div className="border-b border-border/50 bg-gradient-to-r from-primary/[0.06] via-white/40 to-primary/[0.03] px-6 py-5 sm:px-8">
+          <EventPlannerBrand branding={branding} variant="hero" />
         </div>
-      </div>
+      ) : null}
 
-      <div className="relative z-10 flex w-full flex-col items-stretch gap-4 sm:flex-row xl:w-auto">
-        <div className="flex flex-1 flex-col justify-between rounded-2xl border border-border bg-muted/30 p-5 sm:min-w-[220px]">
-          <div className="mb-4 flex items-center justify-between">
-            <div className="text-left">
-              <p className={cp.label}>Team hub</p>
-              <p className="text-sm font-bold text-foreground">{team.length} collaborators</p>
-            </div>
-            <div className="flex -space-x-2.5 overflow-hidden p-0.5">
-              {team.slice(0, 3).map((member) => (
-                <div
-                  key={member.userId}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-primary/10 bg-primary/10 text-[10px] font-bold text-primary ring-2 ring-card"
-                  title={`${member.firstName} ${member.lastName}`}
-                >
-                  {member.firstName[0]}
-                  {member.lastName[0]}
-                </div>
-              ))}
-              {team.length > 3 && (
-                <div className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-muted text-[10px] font-bold text-muted-foreground ring-2 ring-card">
-                  +{team.length - 3}
-                </div>
-              )}
-            </div>
+      <div className="grid lg:grid-cols-[minmax(0,1fr)_auto]">
+        <div className="border-b border-border/50 p-6 sm:p-8 lg:border-b-0 lg:border-r">
+          <p className={rf.eyebrow}>Your wedding</p>
+          <h1 className="mt-2 font-luxury-display text-3xl font-normal tracking-[0.04em] text-foreground sm:text-4xl lg:text-[2.75rem] lg:leading-tight">
+            {event.eventName}
+          </h1>
+          <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+            <Calendar size={16} className="shrink-0 text-primary/70" aria-hidden />
+            <time dateTime={event.eventDate}>
+              {new Date(event.eventDate).toLocaleDateString("en-US", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </time>
           </div>
-
-          <Button type="button" variant="primary" size="sm" onClick={openHub} className="w-full">
-            <MessageSquare size={14} aria-hidden />
-            Open team hub
-          </Button>
         </div>
 
-        {daysRemaining !== null && (
-          <div className="flex flex-1 flex-col justify-center rounded-2xl border border-border bg-primary/5 p-5 text-center sm:min-w-[160px]">
-            <p className={cp.label}>Countdown</p>
-            <div className="mt-2 flex items-baseline justify-center gap-1.5 text-primary">
-              <span className="font-playfair text-4xl font-bold leading-none md:text-5xl">
-                {daysRemaining}
-              </span>
-              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                days
-              </span>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+          <div className="flex flex-col justify-center gap-4 border-b border-border/50 p-6 sm:border-b-0 sm:border-r lg:border-b lg:border-r-0 xl:border-b-0 xl:border-r">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className={rf.label}>Team hub</p>
+                <p className="mt-1 text-sm font-semibold text-foreground">
+                  {team.length} collaborator{team.length === 1 ? "" : "s"}
+                </p>
+              </div>
+              {team.length > 0 ? (
+                <AvatarStack
+                  members={team.map((member) => ({
+                    userId: member.userId,
+                    firstName: member.firstName,
+                    lastName: member.lastName,
+                    email: member.email,
+                  }))}
+                />
+              ) : null}
             </div>
+            <GlassButton
+              type="button"
+              variant="primary"
+              onClick={openHub}
+              className="w-full justify-center gap-1.5"
+            >
+              <MessageSquare size={14} aria-hidden />
+              Open team hub
+            </GlassButton>
           </div>
-        )}
+
+          {daysRemaining !== null && (
+            <div className="flex flex-col items-center justify-center bg-primary/[0.04] px-6 py-8 text-center">
+              <p className={rf.label}>Countdown</p>
+              <div className="mt-2 flex items-end justify-center gap-1.5 text-primary">
+                <span className="font-luxury-display text-4xl font-normal leading-none sm:text-5xl">
+                  {daysRemaining}
+                </span>
+                <span className="pb-1 text-xs font-semibold uppercase tracking-[0.14em] text-primary/80">
+                  days
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </section>
   );
 };
 

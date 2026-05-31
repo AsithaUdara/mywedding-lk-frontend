@@ -10,6 +10,10 @@ import React, {
 } from "react";
 import * as signalR from "@microsoft/signalr";
 import { useAuth } from "./AuthContext";
+import {
+  releaseNotificationHub,
+  retainNotificationHub,
+} from "@/shared/lib/notificationHubManager";
 
 export type ToastNotification = {
   id: string;
@@ -46,10 +50,13 @@ function parsePayload(payload: unknown): { title: string; message: string } {
 }
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  const userRef = useRef(user);
+  userRef.current = user;
+  const userId = user?.uid ?? null;
   const [isConnected, setIsConnected] = useState(false);
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
-  const connectionRef = useRef<signalR.HubConnection | null>(null);
+  const handlersRegisteredRef = useRef(false);
 
   const pushToast = useCallback((title: string, message: string, variant: ToastNotification["variant"] = "info") => {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -64,60 +71,75 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, []);
 
   useEffect(() => {
-    if (!user) return;
-
-    let isMounted = true;
-
-    const connection = new signalR.HubConnectionBuilder()
-      .withUrl(`${process.env.NEXT_PUBLIC_API_BASE_URL}/hubs/notifications`, {
-        accessTokenFactory: () => user.getIdToken(),
-        skipNegotiation: true,
-        transport: signalR.HttpTransportType.WebSockets,
-      })
-      .withAutomaticReconnect()
-      .build();
-
-    connectionRef.current = connection;
-
-    const register = (eventName: string, title: string, variant: ToastNotification["variant"]) => {
-      connection.on(eventName, (payload: unknown) => {
-        if (!isMounted) return;
-        const parsed = parsePayload(payload);
-        pushToast(title, parsed.message, variant);
-      });
-    };
-
-    register("NotifyBookingApproved", "Booking approved", "success");
-    register("notifyBookingApproved", "Booking approved", "success");
-    register("NotifyBookingConfirmed", "Booking confirmed", "success");
-    register("notifyBookingConfirmed", "Booking confirmed", "success");
-    register("NotifyNewInquiry", "New inquiry", "info");
-    register("notifyNewInquiry", "New inquiry", "info");
-    register("NotifyProposalReceived", "New proposal", "info");
-    register("notifyProposalReceived", "New proposal", "info");
-    register("NotifyContractSigned", "Contract signed", "success");
-    register("notifyContractSigned", "Contract signed", "success");
-    register("NotifyVendorBookingDeclined", "Vendor declined", "warning");
-    register("notifyVendorBookingDeclined", "Vendor declined", "warning");
-
-    const start = async () => {
-      try {
-        await connection.start();
-        if (isMounted) setIsConnected(true);
-      } catch (err) {
-        console.error("Notification hub connection failed:", err);
-        if (isMounted) setIsConnected(false);
+    if (loading || !userId) {
+      if (!userId) {
+        setIsConnected(false);
+        releaseNotificationHub();
+        handlersRegisteredRef.current = false;
       }
+      return;
+    }
+
+    if (!process.env.NEXT_PUBLIC_API_BASE_URL) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const syncConnected = (connection: signalR.HubConnection | null) => {
+      if (cancelled || !connection) return;
+      setIsConnected(connection.state === signalR.HubConnectionState.Connected);
     };
 
-    void start();
+    void (async () => {
+      const firebaseUser = userRef.current;
+      if (!firebaseUser) return;
+
+      const connection = await retainNotificationHub(userId, () => firebaseUser.getIdToken());
+      if (cancelled || !connection) return;
+
+      if (!handlersRegisteredRef.current) {
+        const register = (
+          eventName: string,
+          title: string,
+          variant: ToastNotification["variant"]
+        ) => {
+          connection.off(eventName);
+          connection.on(eventName, (payload: unknown) => {
+            const parsed = parsePayload(payload);
+            pushToast(title, parsed.message, variant);
+          });
+        };
+
+        register("NotifyBookingApproved", "Booking approved", "success");
+        register("notifyBookingApproved", "Booking approved", "success");
+        register("NotifyBookingConfirmed", "Booking confirmed", "success");
+        register("notifyBookingConfirmed", "Booking confirmed", "success");
+        register("NotifyNewInquiry", "New inquiry", "info");
+        register("notifyNewInquiry", "New inquiry", "info");
+        register("NotifyProposalReceived", "New proposal", "info");
+        register("notifyProposalReceived", "New proposal", "info");
+        register("NotifyContractSigned", "Contract signed", "success");
+        register("notifyContractSigned", "Contract signed", "success");
+        register("NotifyVendorBookingDeclined", "Vendor declined", "warning");
+        register("notifyVendorBookingDeclined", "Vendor declined", "warning");
+
+        connection.onreconnected(() => syncConnected(connection));
+        connection.onclose(() => {
+          if (!cancelled) setIsConnected(false);
+        });
+
+        handlersRegisteredRef.current = true;
+      }
+
+      syncConnected(connection);
+    })();
 
     return () => {
-      isMounted = false;
-      connection.stop().catch(() => {});
-      connectionRef.current = null;
+      cancelled = true;
+      releaseNotificationHub();
     };
-  }, [user, pushToast]);
+  }, [loading, userId, pushToast]);
 
   return (
     <NotificationContext.Provider value={{ isConnected, toasts, dismissToast }}>

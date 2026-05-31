@@ -1,23 +1,26 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
-import { ArrowRight, Store } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
 import {
   getVendorShortlist,
   type VendorShortlistItem,
 } from "@/shared/lib/api/vendorShortlist";
-import { cp } from "@/modules/client/client-theme";
-import { cn } from "@/shared/lib/cn";
 import {
   shortlistStatusBadgeKey,
   shortlistStatusLabel,
 } from "@/modules/procurement/shortlist-utils";
-import { Badge } from "@/shared/components/ui";
+import { getStatusBadgeClass } from "@/shared/components/ui";
+import { GlassButton, GlassSectionCard } from "@/modules/vendor/dashboard/glass-ui";
+import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
+import { cn } from "@/shared/lib/cn";
+import { useEventBranding } from "@/modules/events/EventBrandingProvider";
+import { EventPlannerBrand } from "@/modules/events/EventPlannerBrand";
 
-export function MiniVendorProposals({ eventId }: { eventId: string }) {
+export function MiniVendorProposals({ eventId, className }: { eventId: string; className?: string }) {
   const { user } = useAuth();
+  const { branding } = useEventBranding();
   const [items, setItems] = useState<VendorShortlistItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -42,65 +45,63 @@ export function MiniVendorProposals({ eventId }: { eventId: string }) {
   const awaitingPayment = items.filter((i) => i.status === "BookingAccepted").length;
 
   return (
-    <div className={cn(cp.cardPad, "flex h-full flex-col")}>
-      <div className="mb-4 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-            <Store className="text-primary" size={20} aria-hidden />
-          </div>
-          <div>
-            <h3 className="font-playfair text-lg font-bold text-foreground">Vendor proposals</h3>
-            <p className="text-xs text-muted-foreground">From your planner</p>
-          </div>
-        </div>
-        <Link
-          href={`/events/${eventId}/vendors`}
-          className="text-xs font-semibold text-primary hover:underline"
-        >
+    <GlassSectionCard
+      className={className}
+      title="Vendor proposals"
+      subtitle={branding ? undefined : "From your planner"}
+      action={
+        <GlassButton href={`/events/${eventId}/vendors`} variant="ghost" className="gap-1">
           View all
-        </Link>
-      </div>
+          <ArrowRight size={14} aria-hidden />
+        </GlassButton>
+      }
+    >
+      {branding ? (
+        <div className="mb-4">
+          <EventPlannerBrand branding={branding} variant="card" />
+        </div>
+      ) : null}
 
       {loading ? (
-        <p className="text-sm text-muted-foreground">Loading proposals…</p>
+        <p className={cn("flex flex-1 items-center", vg.subtitle)}>Loading proposals…</p>
       ) : items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
+        <p className={cn("flex flex-1 items-center", vg.subtitle)}>
           Your planner has not shared vendor proposals yet.
         </p>
       ) : (
-        <ul className="space-y-3 flex-1">
+        <ul className="flex flex-1 flex-col space-y-3">
           {items.map((item) => (
             <li
               key={item.id}
-              className="rounded-xl border border-border bg-muted/20 px-3 py-2.5"
+              className="rounded-xl border border-white/55 bg-white/35 px-3 py-2.5 backdrop-blur-sm"
             >
               <div className="flex items-start justify-between gap-2">
-                <p className="text-sm font-semibold text-foreground line-clamp-1">
+                <p className={cn("line-clamp-1 font-medium", vg.body)}>
                   {item.vendorBusinessName ?? "Vendor"}
                 </p>
-                <Badge variant="status" status={shortlistStatusBadgeKey(item.status)}>
+                <span
+                  className={cn(
+                    "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                    getStatusBadgeClass(shortlistStatusBadgeKey(item.status))
+                  )}
+                >
                   {shortlistStatusLabel(item.status)}
-                </Badge>
+                </span>
               </div>
-              <p className="text-xs text-muted-foreground line-clamp-1">
-                {item.serviceName}
-              </p>
+              <p className={cn("line-clamp-1", vg.caption)}>{item.serviceName}</p>
             </li>
           ))}
         </ul>
       )}
 
       {(pendingReview > 0 || awaitingPayment > 0) && (
-        <Link
-          href={`/events/${eventId}/vendors`}
-          className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
-        >
+        <GlassButton href={`/events/${eventId}/vendors`} variant="primary" className="mt-4 gap-1.5">
           {pendingReview > 0
             ? `${pendingReview} awaiting your review`
             : `${awaitingPayment} ready for deposit`}
           <ArrowRight size={14} aria-hidden />
-        </Link>
+        </GlassButton>
       )}
-    </div>
+    </GlassSectionCard>
   );
 }

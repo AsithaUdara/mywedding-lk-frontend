@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Check } from "lucide-react";
+import { MkSection, MkSectionHeader } from "@/modules/marketing/marketing-glass-ui";
+import { mk } from "@/modules/marketing/marketing-theme";
 import { cn } from "@/shared/lib/cn";
 
 const tiers = [
@@ -49,84 +51,78 @@ const tiers = [
 
 export default function PricingTiers() {
   return (
-    <section className="py-20 md:py-28" id="pricing">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">SaaS pricing</p>
-          <h2 className="mt-3 font-playfair text-3xl font-bold text-foreground md:text-4xl">
-            Plans that scale with your agency
-          </h2>
-          <p className="mt-4 text-base text-muted-foreground md:text-lg">
-            From solo planners to multi-city studios — pick the tier that matches your client load.
-          </p>
-        </div>
+    <MkSection id="pricing" alt>
+      <MkSectionHeader
+        eyebrow="SaaS pricing"
+        title="Plans that scale with your agency"
+        subtitle="From solo planners to multi-city studios — pick the tier that matches your client load."
+      />
 
-        <div className="mt-14 grid gap-6 lg:grid-cols-3 lg:gap-8">
-          {tiers.map((tier) => (
-            <article
-              key={tier.name}
+      <div className="mt-14 grid gap-6 lg:grid-cols-3 lg:gap-8">
+        {tiers.map((tier) => (
+          <article
+            key={tier.name}
+            className={cn(
+              "flex flex-col rounded-2xl p-8 transition-all duration-200",
+              tier.highlighted
+                ? "mk-pricing-pro lg:scale-[1.02]"
+                : cn(mk.card, "border border-white/55")
+            )}
+          >
+            {tier.highlighted && (
+              <span className="mk-badge-gold mb-4 inline-flex w-fit rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider">
+                Most popular
+              </span>
+            )}
+            <p
               className={cn(
-                "flex flex-col rounded-3xl border p-8 shadow-sm transition-all duration-200",
-                tier.highlighted
-                  ? "border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/15 lg:scale-[1.02]"
-                  : "border-border bg-card hover:shadow-md"
+                "font-glass-body text-sm font-semibold uppercase tracking-wider",
+                tier.highlighted ? "text-white/80" : "text-muted-foreground"
               )}
             >
-              {tier.highlighted && (
-                <span className="mb-4 inline-flex w-fit rounded-full bg-accent/20 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-accent">
-                  Most popular
-                </span>
+              {tier.name}
+            </p>
+            <p className="font-luxury-section mt-4 text-4xl font-medium tabular-nums">
+              {tier.price}
+              <span className="text-lg font-normal opacity-80">{tier.period}</span>
+            </p>
+            <p
+              className={cn(
+                "font-glass-body mt-3 text-sm leading-relaxed",
+                tier.highlighted ? "text-white/85" : "text-muted-foreground"
               )}
-              <p
-                className={cn(
-                  "text-sm font-semibold uppercase tracking-wider",
-                  tier.highlighted ? "text-primary-foreground/80" : "text-muted-foreground"
-                )}
-              >
-                {tier.name}
-              </p>
-              <p className="mt-4 font-playfair text-4xl font-bold tabular-nums">
-                {tier.price}
-                <span className="text-lg font-normal opacity-80">{tier.period}</span>
-              </p>
-              <p
-                className={cn(
-                  "mt-3 text-sm leading-relaxed",
-                  tier.highlighted ? "text-primary-foreground/85" : "text-muted-foreground"
-                )}
-              >
-                {tier.description}
-              </p>
-              <ul className="mt-8 flex-1 space-y-3">
-                {tier.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-2.5 text-sm">
-                    <Check
-                      size={16}
-                      className={cn(
-                        "mt-0.5 flex-shrink-0",
-                        tier.highlighted ? "text-accent" : "text-primary"
-                      )}
-                      aria-hidden
-                    />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href={tier.href}
-                className={cn(
-                  "mt-8 inline-flex w-full items-center justify-center rounded-full px-6 py-3 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                  tier.highlighted
-                    ? "bg-card text-primary hover:opacity-95"
-                    : "bg-primary text-primary-foreground hover:opacity-90"
-                )}
-              >
-                {tier.cta}
-              </Link>
-            </article>
-          ))}
-        </div>
+            >
+              {tier.description}
+            </p>
+            <ul className="mt-8 flex-1 space-y-3">
+              {tier.features.map((feature) => (
+                <li key={feature} className="flex items-start gap-2.5 font-glass-body text-sm">
+                  <Check
+                    size={16}
+                    className={cn(
+                      "mt-0.5 flex-shrink-0",
+                      tier.highlighted ? "text-[hsl(42_48%_72%)]" : "text-primary"
+                    )}
+                    aria-hidden
+                  />
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
+            <Link
+              href={tier.href}
+              className={cn(
+                "mt-8 inline-flex w-full items-center justify-center rounded-xl px-6 py-3 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                tier.highlighted
+                  ? "bg-white text-primary hover:opacity-95"
+                  : mk.btnPrimary
+              )}
+            >
+              {tier.cta}
+            </Link>
+          </article>
+        ))}
       </div>
-    </section>
+    </MkSection>
   );
 }

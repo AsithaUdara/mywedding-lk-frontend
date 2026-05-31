@@ -1,8 +1,6 @@
-const BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
+import { plannerFetch } from "@/shared/lib/api/plannerHttp";
 
-function authHeaders(token: string): HeadersInit {
-  return { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
-}
+const BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export interface DraftInquiryPayload {
   plannerName: string;
@@ -39,9 +37,8 @@ export async function draftInquiryEmail(
   token: string,
   payload: DraftInquiryPayload
 ): Promise<DraftInquiryResponse> {
-  const res = await fetch(`${BASE}/api/planner/ai/draft-inquiry`, {
+  const res = await plannerFetch(token, `${BASE}/api/planner/ai/draft-inquiry`, {
     method: "POST",
-    headers: authHeaders(token),
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
@@ -55,9 +52,8 @@ export async function summarizeMeeting(
   token: string,
   payload: { eventId: string; eventName: string; meetingNotesOrTranscript: string }
 ): Promise<MeetingSummaryResponse> {
-  const res = await fetch(`${BASE}/api/planner/ai/summarize-meeting`, {
+  const res = await plannerFetch(token, `${BASE}/api/planner/ai/summarize-meeting`, {
     method: "POST",
-    headers: authHeaders(token),
     body: JSON.stringify(payload),
   });
   if (!res.ok) {

@@ -2,7 +2,11 @@
 
 import { use } from "react";
 import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 import { ContractSignPanel } from "@/modules/contracts/ContractSignPanel";
+import { RegalFrostShell } from "@/modules/design-system/regal-frost/RegalFrostShell";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
+import { cn } from "@/shared/lib/cn";
 
 export default function ContractSignPage({
   params,
@@ -12,16 +16,17 @@ export default function ContractSignPage({
   const { bookingId } = use(params);
 
   return (
-    <main className="min-h-screen bg-background px-4 py-12 font-roboto">
+    <RegalFrostShell mesh className="min-h-screen px-4 py-12">
       <div className="mx-auto max-w-lg space-y-6">
         <Link
           href="/dashboard"
-          className="text-sm font-semibold text-primary underline-offset-2 hover:underline"
+          className={cn(rf.btnGhost, "inline-flex gap-1 text-sm")}
         >
-          ← Back to dashboard
+          <ChevronLeft size={16} aria-hidden />
+          Back to dashboard
         </Link>
         <ContractSignPanel bookingId={bookingId} />
       </div>
-    </main>
+    </RegalFrostShell>
   );
 }

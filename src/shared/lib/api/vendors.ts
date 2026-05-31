@@ -1,6 +1,7 @@
 // File: src/lib/api/vendors.ts
 
 import { parseApiError } from '@/shared/lib/api/parseApiError';
+import { submitPayHereCheckout } from '@/shared/lib/payhereCheckout';
 
 // --- Define the data structures (Types) for our API responses ---
 
@@ -274,7 +275,28 @@ export const getVendorAnalytics = async (token: string): Promise<VendorAnalytics
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.message || "Failed to load vendor analytics.");
   }
-  return response.json();
+  const data = await response.json();
+  const monthlyRaw = data.monthlyEarnings ?? data.MonthlyEarnings ?? [];
+  return {
+    totalServices: Number(data.totalServices ?? data.TotalServices ?? 0),
+    activeServices: Number(data.activeServices ?? data.ActiveServices ?? 0),
+    totalBookings: Number(data.totalBookings ?? data.TotalBookings ?? 0),
+    pendingBookings: Number(data.pendingBookings ?? data.PendingBookings ?? 0),
+    confirmedBookings: Number(data.confirmedBookings ?? data.ConfirmedBookings ?? 0),
+    completedBookings: Number(data.completedBookings ?? data.CompletedBookings ?? 0),
+    totalRevenue: Number(data.totalRevenue ?? data.TotalRevenue ?? 0),
+    pendingRevenue: Number(data.pendingRevenue ?? data.PendingRevenue ?? 0),
+    averageRating: Number(data.averageRating ?? data.AverageRating ?? 0),
+    totalReviews: Number(data.totalReviews ?? data.TotalReviews ?? 0),
+    totalInquiries: Number(data.totalInquiries ?? data.TotalInquiries ?? 0),
+    unreadInquiries: Number(data.unreadInquiries ?? data.UnreadInquiries ?? 0),
+    monthlyEarnings: (Array.isArray(monthlyRaw) ? monthlyRaw : []).map(
+      (item: Record<string, unknown>) => ({
+        month: String(item.month ?? item.Month ?? ""),
+        amount: Number(item.amount ?? item.Amount ?? 0),
+      })
+    ),
+  };
 };
 
 export const getVendorDashboardServices = async (token: string): Promise<VendorDashboardService[]> => {
@@ -287,7 +309,34 @@ export const getVendorDashboardServices = async (token: string): Promise<VendorD
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.message || "Failed to fetch vendor services.");
   }
-  return response.json();
+  const data = await response.json();
+  return (Array.isArray(data) ? data : []).map((item: Record<string, unknown>) => ({
+    id: String(item.id ?? item.Id ?? ""),
+    serviceName: String(item.serviceName ?? item.ServiceName ?? ""),
+    serviceDescription:
+      item.serviceDescription != null || item.ServiceDescription != null
+        ? String(item.serviceDescription ?? item.ServiceDescription ?? "")
+        : undefined,
+    basePrice: Number(item.basePrice ?? item.BasePrice ?? 0),
+    pricingType: String(item.pricingType ?? item.PricingType ?? "Fixed"),
+    categoryName: String(item.categoryName ?? item.CategoryName ?? "Unknown"),
+    categoryId: String(item.categoryId ?? item.CategoryId ?? ""),
+    isActive: Boolean(item.isActive ?? item.IsActive),
+    status: item.status != null ? String(item.status ?? item.Status) : undefined,
+    primaryImageUrl:
+      item.primaryImageUrl != null || item.PrimaryImageUrl != null
+        ? String(item.primaryImageUrl ?? item.PrimaryImageUrl ?? "") || null
+        : null,
+    galleryUrls: ((item.galleryUrls ?? item.GalleryUrls ?? []) as unknown[]).map(String),
+    tagline:
+      item.tagline != null || item.Tagline != null
+        ? String(item.tagline ?? item.Tagline ?? "") || null
+        : null,
+    listingDetailsJson:
+      item.listingDetailsJson != null || item.ListingDetailsJson != null
+        ? String(item.listingDetailsJson ?? item.ListingDetailsJson ?? "") || null
+        : null,
+  }));
 };
 
 export const createVendorDashboardService = async (
@@ -364,7 +413,35 @@ export const deleteVendorDashboardService = async (token: string, serviceId: str
   }
 };
 
-export const getVendorBookings = async (token: string) => {
+export interface VendorBookingItem {
+  bookingId: string;
+  serviceName: string;
+  eventName: string;
+  coupleName: string;
+  finalAmount: number;
+  status: string;
+  serviceDate: string;
+}
+
+const BOOKING_STATUS_BY_NUMBER: Record<number, string> = {
+  0: "Requested",
+  1: "AwaitingPayment",
+  2: "Confirmed",
+  3: "Completed",
+  4: "Cancelled",
+  5: "ContractSigned",
+};
+
+function normalizeBookingStatus(raw: unknown): string {
+  if (typeof raw === "number") {
+    return BOOKING_STATUS_BY_NUMBER[raw] ?? String(raw);
+  }
+  const status = String(raw ?? "");
+  if (status === "Pending" || status === "pending") return "Requested";
+  return status;
+}
+
+export const getVendorBookings = async (token: string): Promise<VendorBookingItem[]> => {
   const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/bookings/vendor`;
   const response = await fetch(apiUrl, {
     method: 'GET',
@@ -374,7 +451,16 @@ export const getVendorBookings = async (token: string) => {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.message || 'Failed to fetch bookings.');
   }
-  return response.json();
+  const data = await response.json();
+  return (Array.isArray(data) ? data : []).map((item: Record<string, unknown>) => ({
+    bookingId: String(item.bookingId ?? item.BookingId ?? ""),
+    serviceName: String(item.serviceName ?? item.ServiceName ?? "Unknown"),
+    eventName: String(item.eventName ?? item.EventName ?? "Unknown"),
+    coupleName: String(item.coupleName ?? item.CoupleName ?? "Unknown"),
+    finalAmount: Number(item.finalAmount ?? item.FinalAmount ?? 0),
+    status: normalizeBookingStatus(item.status ?? item.Status),
+    serviceDate: String(item.serviceDate ?? item.ServiceDate ?? ""),
+  }));
 };
 
 export const updateBookingStatus = async (token: string, bookingId: string, status: string) => {
@@ -530,10 +616,16 @@ export const getVendorAvailability = async (token: string, month: string): Promi
     throw new Error(errorData.message || 'Failed to load availability.');
   }
   const data = await response.json();
+  const rawDetails = (data.blockedDateDetails ?? data.BlockedDateDetails ?? []) as Record<string, unknown>[];
   return {
     bookedDates: (data.bookedDates ?? data.BookedDates ?? []) as number[],
     blockedDates: (data.blockedDates ?? data.BlockedDates ?? []) as number[],
-    blockedDateDetails: (data.blockedDateDetails ?? data.BlockedDateDetails ?? []) as VendorAvailabilityMonth['blockedDateDetails'],
+    blockedDateDetails: rawDetails.map((item) => ({
+      date: String(item.date ?? item.Date ?? ''),
+      reason: item.reason != null || item.Reason != null
+        ? String(item.reason ?? item.Reason ?? '')
+        : null,
+    })),
   };
 };
 
@@ -612,7 +704,13 @@ export const markInquiryAsRead = async (token: string, inquiryId: string) => {
   return response;
 };
 
-export const getVendorSubscription = async (token: string) => {
+export interface VendorSubscriptionInfo {
+  tier: string;
+  monthlyFee: number;
+  status: string;
+}
+
+export const getVendorSubscription = async (token: string): Promise<VendorSubscriptionInfo> => {
   const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/dashboard/subscription`;
   const response = await fetch(apiUrl, {
     method: 'GET',
@@ -622,7 +720,12 @@ export const getVendorSubscription = async (token: string) => {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.message || 'Failed to load subscription.');
   }
-  return response.json();
+  const data = await response.json();
+  return {
+    tier: String(data.tier ?? data.Tier ?? 'Free'),
+    monthlyFee: Number(data.monthlyFee ?? data.MonthlyFee ?? 0),
+    status: String(data.status ?? data.Status ?? 'Active'),
+  };
 };
 
 export interface VendorBillingProfile {
@@ -644,7 +747,30 @@ export const getVendorBillingProfile = async (token: string): Promise<VendorBill
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.message || 'Failed to load payment method.');
   }
-  return response.json();
+  const data = await response.json();
+  return {
+    hasPaymentMethod: Boolean(data.hasPaymentMethod ?? data.HasPaymentMethod),
+    cardholderName:
+      data.cardholderName != null || data.CardholderName != null
+        ? String(data.cardholderName ?? data.CardholderName ?? '')
+        : undefined,
+    cardBrand:
+      data.cardBrand != null || data.CardBrand != null
+        ? String(data.cardBrand ?? data.CardBrand ?? '')
+        : undefined,
+    last4:
+      data.last4 != null || data.Last4 != null
+        ? String(data.last4 ?? data.Last4 ?? '')
+        : undefined,
+    expiryMonth:
+      data.expiryMonth != null || data.ExpiryMonth != null
+        ? Number(data.expiryMonth ?? data.ExpiryMonth)
+        : undefined,
+    expiryYear:
+      data.expiryYear != null || data.ExpiryYear != null
+        ? Number(data.expiryYear ?? data.ExpiryYear)
+        : undefined,
+  };
 };
 
 export const saveVendorBillingProfile = async (
@@ -693,17 +819,8 @@ export const createVendorSubscriptionCheckout = async (
   return response.json();
 };
 
-export function openPayHereCheckout(checkout: {
-  checkoutUrl: string;
-  order_id: string | number;
-  amount: number | string;
-  currency: string;
-}) {
-  const checkoutUrl = new URL(checkout.checkoutUrl);
-  checkoutUrl.searchParams.set('order_id', String(checkout.order_id));
-  checkoutUrl.searchParams.set('amount', String(checkout.amount));
-  checkoutUrl.searchParams.set('currency', String(checkout.currency));
-  window.location.href = checkoutUrl.toString();
+export function openPayHereCheckout(checkout: Record<string, unknown>) {
+  submitPayHereCheckout(checkout);
 }
 
 export const setVendorSubscription = async (
@@ -747,7 +864,29 @@ export const getVendorBusinessProfile = async (token: string): Promise<VendorBus
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.message || "Failed to load business profile.");
   }
-  return response.json();
+  const data = await response.json();
+  return {
+    userId: String(data.userId ?? data.UserId ?? ""),
+    businessName: String(data.businessName ?? data.BusinessName ?? ""),
+    businessDescription:
+      data.businessDescription != null || data.BusinessDescription != null
+        ? String(data.businessDescription ?? data.BusinessDescription ?? "")
+        : null,
+    websiteUrl:
+      data.websiteUrl != null || data.WebsiteUrl != null
+        ? String(data.websiteUrl ?? data.WebsiteUrl ?? "") || null
+        : null,
+    contactPhone:
+      data.contactPhone != null || data.ContactPhone != null
+        ? String(data.contactPhone ?? data.ContactPhone ?? "") || null
+        : null,
+    city: String(data.city ?? data.City ?? ""),
+    province:
+      data.province != null || data.Province != null
+        ? String(data.province ?? data.Province ?? "") || null
+        : null,
+    verificationStatus: String(data.verificationStatus ?? data.VerificationStatus ?? "Pending"),
+  };
 };
 
 export const updateVendorBusinessProfile = async (

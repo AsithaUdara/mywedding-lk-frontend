@@ -52,3 +52,21 @@ export async function resolvePostLoginPath(user: User): Promise<string> {
   const role = getRoleFromClaims(tokenResult.claims as Record<string, unknown>);
   return getDashboardPathForRole(role);
 }
+
+/** Returns a safe in-app path from ?returnUrl=, or null if invalid. */
+export function getSafeReturnUrl(returnUrl: string | null | undefined): string | null {
+  if (!returnUrl || !returnUrl.startsWith('/') || returnUrl.startsWith('//')) {
+    return null;
+  }
+  return returnUrl;
+}
+
+/** After sign-in: honor returnUrl when present, otherwise role dashboard. */
+export async function resolvePostLoginPathWithReturn(
+  user: User,
+  returnUrl: string | null | undefined
+): Promise<string> {
+  const safe = getSafeReturnUrl(returnUrl);
+  if (safe) return safe;
+  return resolvePostLoginPath(user);
+}

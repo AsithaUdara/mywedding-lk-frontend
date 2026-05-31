@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/shared/context/AuthContext";
-import { Heart, Search, Menu, X } from "lucide-react";
+import { Menu, Search, X } from "lucide-react";
 import Logo from "@/assets/MyWedding.png";
 import VendorsNavMenu from "./VendorsNavMenu";
 import UserDropdown from "./UserDropdown";
 import AuthModal from "@/modules/identity/AuthModal";
+import { HeaderSearchField } from "./HeaderSearchField";
 import { cn } from "@/shared/lib/cn";
 import { navTriggerClass } from "./dropdown-styles";
 
@@ -16,16 +18,20 @@ interface HeaderProps {
   onLoginClick?: () => void;
 }
 
-const iconButtonClass = cn(
-  "inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground/80",
-  "transition-colors duration-150 hover:bg-muted hover:text-foreground",
-  "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-);
-
 export default function Header({ onLoginClick }: HeaderProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const { user } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isModalOpen, setModalOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  const isSearchPage = pathname.startsWith("/vendors/search");
+  const showSearchBar = isSearchPage || isSearchOpen;
+
+  useEffect(() => {
+    setIsSearchOpen(isSearchPage);
+  }, [isSearchPage]);
 
   const handleLoginClick = () => {
     if (onLoginClick) onLoginClick();
@@ -34,44 +40,75 @@ export default function Header({ onLoginClick }: HeaderProps) {
 
   const closeMobile = () => setIsMobileMenuOpen(false);
 
+  const handleSearchToggle = () => {
+    setIsSearchOpen(true);
+    if (!isSearchPage) {
+      router.push("/vendors/search");
+    }
+  };
+
+  const iconButtonClass = cn(
+    "inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground/80",
+    "transition-colors duration-150 hover:bg-muted hover:text-foreground",
+    "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+  );
+
   return (
     <>
-      <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-white/95 shadow-sm backdrop-blur-md supports-[backdrop-filter]:bg-white/90">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-6 px-4 sm:px-6 lg:h-[4.5rem] lg:px-8">
+      <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-white/65 shadow-[0_4px_24px_hsl(220_25%_18%/0.06)] backdrop-blur-xl supports-[backdrop-filter]:bg-white/55">
+        <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:gap-4 sm:px-6 lg:h-[4.5rem] lg:gap-6 lg:px-8">
           <Link
             href="/"
-            className="relative block h-11 w-[170px] shrink-0 sm:h-12 sm:w-[190px] lg:h-[3.25rem] lg:w-[210px]"
+            className="relative block h-11 w-[150px] shrink-0 sm:h-12 sm:w-[170px] lg:h-[3.25rem] lg:w-[210px]"
             aria-label="MyWedding.lk home"
           >
             <Image
               src={Logo}
               alt="MyWedding.lk"
               fill
-              sizes="(max-width: 640px) 170px, 210px"
+              sizes="(max-width: 640px) 150px, 210px"
               className="object-contain object-left"
               priority
             />
           </Link>
 
           <nav
-            className="hidden flex-1 items-center justify-center gap-1 md:flex"
+            className="hidden min-w-0 flex-1 items-center justify-center gap-1 lg:flex"
             aria-label="Main"
           >
             <VendorsNavMenu />
             <Link href="/venues" className={navTriggerClass}>
               Venues
             </Link>
-            <Link href="/planner/signup" className={navTriggerClass}>
-              For planners
+            <Link href="/vendors" className={navTriggerClass}>
+              Inspiration
             </Link>
           </nav>
 
-          <div className="flex items-center gap-0.5 sm:gap-1">
-            <Link href="/vendors/search" className={cn(iconButtonClass, "hidden sm:inline-flex")} aria-label="Search vendors">
+          {showSearchBar && (
+            <div className="hidden min-w-0 flex-1 md:block md:max-w-sm lg:max-w-md xl:max-w-lg">
+              <Suspense
+                fallback={
+                  <div className="h-10 w-full animate-pulse rounded-full bg-muted/40" aria-hidden />
+                }
+              >
+                <HeaderSearchField autoFocus={isSearchOpen && !isSearchPage} />
+              </Suspense>
+            </div>
+          )}
+
+          <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
+            <button
+              type="button"
+              onClick={handleSearchToggle}
+              className={cn(
+                iconButtonClass,
+                showSearchBar && isSearchPage && "bg-muted text-foreground"
+              )}
+              aria-label="Search vendors"
+              aria-expanded={showSearchBar}
+            >
               <Search size={20} strokeWidth={2} />
-            </Link>
-            <button type="button" className={cn(iconButtonClass, "hidden sm:inline-flex")} aria-label="Saved vendors">
-              <Heart size={20} strokeWidth={2} />
             </button>
 
             <div className="mx-0.5 hidden h-6 w-px bg-border sm:block" aria-hidden />
@@ -91,7 +128,7 @@ export default function Header({ onLoginClick }: HeaderProps) {
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className={cn(iconButtonClass, "md:hidden")}
+              className={cn(iconButtonClass, "lg:hidden")}
               aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
               aria-expanded={isMobileMenuOpen}
             >
@@ -100,20 +137,33 @@ export default function Header({ onLoginClick }: HeaderProps) {
           </div>
         </div>
 
+        {showSearchBar && (
+          <div className="border-t border-border/50 px-4 py-2.5 md:hidden">
+            <Suspense
+              fallback={
+                <div className="h-10 w-full animate-pulse rounded-full bg-muted/40" aria-hidden />
+              }
+            >
+              <HeaderSearchField autoFocus={isSearchOpen && !isSearchPage} />
+            </Suspense>
+          </div>
+        )}
+
         {isMobileMenuOpen && (
           <nav
-            className="border-t border-border bg-white px-4 py-3 md:hidden"
+            className="border-t border-border bg-white px-4 py-3 lg:hidden"
             aria-label="Mobile"
           >
             <ul className="space-y-0.5">
               {[
                 { href: "/vendors", label: "Vendors" },
                 { href: "/venues", label: "Venues" },
-                { href: "/planner/signup", label: "For planners" },
+                { href: "/vendors", label: "Inspiration" },
                 { href: "/vendors/search", label: "Search vendors" },
+                { href: "/planner/signup", label: "For planners", accent: true },
                 { href: "/vendor/signup", label: "List your business", accent: true },
               ].map((item) => (
-                <li key={item.href}>
+                <li key={item.label}>
                   <Link
                     href={item.href}
                     onClick={closeMobile}

@@ -8,8 +8,11 @@ import { submitPayHereCheckout } from "@/shared/lib/payhereCheckout";
 import { postComment } from "@/shared/lib/api/feed";
 import { X, ChevronDown, Calendar } from "lucide-react";
 import { formatLKR, inputClass } from "@/shared/components/ui";
+import { GlassButton } from "@/modules/vendor/dashboard/glass-ui";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
 import { cn } from "@/shared/lib/cn";
-import { pv } from "@/modules/vendors/public-theme";
+
+const glassInput = cn(inputClass, "border-white/55 bg-white/40 backdrop-blur-sm");
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -32,13 +35,13 @@ const BookingModal = ({ isOpen, onClose, vendorName, serviceId, price }: Booking
 
   useEffect(() => {
     if (isOpen) {
-      document.body.classList.add("modal-open");
+      document.body.classList.add("modal-open-blur");
     } else {
-      document.body.classList.remove("modal-open");
+      document.body.classList.remove("modal-open-blur");
     }
 
     return () => {
-      document.body.classList.remove("modal-open");
+      document.body.classList.remove("modal-open-blur");
     };
   }, [isOpen]);
 
@@ -127,43 +130,46 @@ const BookingModal = ({ isOpen, onClose, vendorName, serviceId, price }: Booking
 
   return (
     <div
-      className="modal-container fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[110] flex items-center justify-center bg-foreground/30 p-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="booking-modal-title"
       onClick={onClose}
     >
       <div
-        className={cn(
-          "relative max-h-[85vh] w-full max-w-lg overflow-y-auto p-6 shadow-2xl sm:p-8",
-          pv.card
-        )}
+        className={cn(rf.panel, "relative max-h-[85vh] w-full max-w-lg overflow-y-auto p-6 sm:p-8")}
         onClick={(e) => e.stopPropagation()}
       >
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-lg p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+          className={cn(rf.navBtn, "absolute right-3 top-3")}
           aria-label="Close"
         >
-          <X size={22} />
+          <X size={20} />
         </button>
-        <h2 className="mb-2 text-center font-playfair text-2xl font-bold text-foreground sm:text-3xl">
+
+        <h2 id="booking-modal-title" className={cn(rf.sectionTitle, "mb-2 pr-8 text-center")}>
           Confirm your booking
         </h2>
-        <p className="mb-6 text-center text-sm text-muted-foreground">
+        <p className={cn("mb-6 text-center", rf.subtitle)}>
           You are booking <span className="font-semibold text-foreground">{vendorName}</span>.
         </p>
+
         {error && (
-          <p className="mb-4 rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-center text-sm text-destructive">
+          <p className="mb-4 rounded-xl border border-destructive/25 bg-destructive/10 p-3 text-center text-sm text-destructive backdrop-blur-sm">
             {error}
           </p>
         )}
         {success && (
-          <p className="mb-4 rounded-xl border border-success/20 bg-success/5 p-3 text-center text-sm text-success">
+          <p className="mb-4 rounded-xl border border-success/25 bg-success/10 p-3 text-center text-sm text-success backdrop-blur-sm">
             {success}
           </p>
         )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="eventSelect" className={cn("mb-2 block", pv.label)}>
+            <label htmlFor="eventSelect" className={cn("mb-2 block", rf.label)}>
               Select your event
             </label>
             <div className="relative">
@@ -175,7 +181,7 @@ const BookingModal = ({ isOpen, onClose, vendorName, serviceId, price }: Booking
                     onChange={(e) => setSelectedEventId(e.target.value)}
                     required
                     disabled={!!success}
-                    className={cn(inputClass, "appearance-none pr-10 disabled:opacity-70")}
+                    className={cn(glassInput, "appearance-none pr-10 disabled:opacity-70")}
                   >
                     {bookableEvents.map((event) => (
                       <option key={event.id} value={event.id}>
@@ -190,16 +196,17 @@ const BookingModal = ({ isOpen, onClose, vendorName, serviceId, price }: Booking
                   />
                 </>
               ) : (
-                <p className="rounded-xl border border-border bg-muted/50 p-3 text-sm text-muted-foreground">
-                  No events you can book for. Create an event on your dashboard, or ask the owner
-                  to give you <strong className="text-foreground">Editor</strong> access (Viewers
-                  cannot book vendors).
+                <p className="rounded-xl border border-white/55 bg-white/35 p-3 text-sm text-muted-foreground backdrop-blur-sm">
+                  No events you can book for yet. Your wedding planner creates celebrations and
+                  invites you by email. After you accept, you need{" "}
+                  <strong className="text-foreground">Editor</strong> access to book vendors (Viewers
+                  cannot book).
                 </p>
               )}
             </div>
           </div>
           <div>
-            <label htmlFor="serviceDate" className={cn("mb-2 block", pv.label)}>
+            <label htmlFor="serviceDate" className={cn("mb-2 block", rf.label)}>
               Service date
             </label>
             <div className="relative">
@@ -215,26 +222,27 @@ const BookingModal = ({ isOpen, onClose, vendorName, serviceId, price }: Booking
                 onChange={(e) => setServiceDate(e.target.value)}
                 required
                 disabled={!!success}
-                className={cn(inputClass, "pl-11 disabled:opacity-70")}
+                className={cn(glassInput, "pl-11 disabled:opacity-70")}
               />
             </div>
           </div>
-          <div className="border-t border-border pt-4 text-center">
-            <p className="text-sm text-muted-foreground">Total amount</p>
+          <div className="border-t border-white/40 pt-4 text-center">
+            <p className={rf.caption}>Total amount</p>
             <p className="text-3xl font-bold text-primary">{formatLKR(price)}</p>
           </div>
           {success ? (
-            <button type="button" onClick={onClose} className={cn("w-full", pv.primaryBtn)}>
+            <GlassButton type="button" variant="primary" className="w-full justify-center" onClick={onClose}>
               Close
-            </button>
+            </GlassButton>
           ) : (
-            <button
+            <GlassButton
               type="submit"
+              variant="primary"
+              className="w-full justify-center"
               disabled={loading || bookableEvents.length === 0}
-              className={cn("w-full", pv.primaryBtn)}
             >
               {loading ? "Creating request…" : "Request & pay deposit"}
-            </button>
+            </GlassButton>
           )}
         </form>
       </div>

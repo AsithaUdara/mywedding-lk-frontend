@@ -6,41 +6,27 @@ import { useRouter } from "next/navigation";
 import Header from "@/shared/components/layout/Header";
 import Footer from "@/shared/components/layout/Footer";
 import EventList from "@/modules/events/EventList";
-import CreateEventModal from "@/modules/events/CreateEventModal";
-import EventSetupModal from "@/modules/events/EventSetupModal";
-import { getEvents } from "@/shared/lib/api/events";
+import { getEvents, type WeddingEventSummary } from "@/shared/lib/api/events";
+import { PageLoadingSkeleton, ErrorBanner } from "@/shared/components/ui";
 import {
-  Button,
-  PageHeader,
-  SectionCard,
-  StatCard,
-  PageLoadingSkeleton,
-  ErrorBanner,
-  Badge,
-} from "@/shared/components/ui";
+  GlassButton,
+  GlassPageHeader,
+  GlassSectionCard,
+  GlassStatCard,
+} from "@/modules/vendor/dashboard/glass-ui";
+import { RegalFrostShell } from "@/modules/design-system/regal-frost/RegalFrostShell";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
+import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
 import { CalendarDays, Heart, Sparkles } from "lucide-react";
-import { cp } from "@/modules/client/client-theme";
 import { cn } from "@/shared/lib/cn";
-
-interface EventSummary {
-  id: string;
-  eventName: string;
-  eventDate: string;
-}
 
 const DashboardPage = () => {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
-  const [events, setEvents] = useState<EventSummary[]>([]);
+  const [events, setEvents] = useState<WeddingEventSummary[]>([]);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const [isCreateOpen, setCreateOpen] = useState(false);
-  const [isSetupOpen, setSetupOpen] = useState(false);
-  const [newEventInfo, setNewEventInfo] = useState<{ eventId: string; eventName: string } | null>(
-    null
-  );
 
   const fetchEvents = useCallback(async () => {
     if (!user) return;
@@ -71,17 +57,6 @@ const DashboardPage = () => {
     router.replace(`/events/${events[0].id}`);
   }, [isLoadingEvents, events, router]);
 
-  const handleEventCreated = (newEvent: { eventId: string; eventName: string }) => {
-    setNewEventInfo(newEvent);
-    setSetupOpen(true);
-  };
-
-  const handleSetupClosed = () => {
-    setSetupOpen(false);
-    setNewEventInfo(null);
-    void fetchEvents();
-  };
-
   const nextEvent = useMemo(() => {
     if (events.length === 0) return null;
     const sorted = [...events].sort(
@@ -99,56 +74,40 @@ const DashboardPage = () => {
 
   if (authLoading || !user) {
     return (
-      <div className={cn("min-h-screen", cp.page)}>
+      <RegalFrostShell mesh className="min-h-screen">
         <PageLoadingSkeleton />
-      </div>
+      </RegalFrostShell>
     );
   }
 
   return (
-    <div className={cn("flex min-h-screen flex-col", cp.page)}>
+    <RegalFrostShell mesh className="flex min-h-screen flex-col">
       <Header onLoginClick={() => {}} />
 
       <main className="relative mx-auto w-full max-w-7xl flex-grow px-4 py-10 sm:px-6 sm:py-12 lg:px-8 lg:py-14">
-        <div
-          className="pointer-events-none absolute -top-24 right-0 h-72 w-72 rounded-full bg-primary/5 blur-3xl"
-          aria-hidden
-        />
-        <div
-          className="pointer-events-none absolute top-48 -left-16 h-64 w-64 rounded-full bg-accent/10 blur-3xl"
-          aria-hidden
-        />
-
-        <PageHeader
-          className="relative mb-10 lg:mb-12"
+        <GlassPageHeader
+          className="mb-8 lg:mb-10"
           badge={
-            <Badge variant="accent" className="inline-flex items-center gap-1.5">
+            <span className={cn(rf.badge, "inline-flex items-center gap-1.5")}>
               <Sparkles size={12} aria-hidden />
               Your wedding workspace
-            </Badge>
+            </span>
           }
           title={`Welcome back, ${displayName}`}
-          description="Plan every detail in one calm space — timelines, budget, vendors, and collaboration for your celebration."
-          action={
-            <Button type="button" variant="primary" onClick={() => setCreateOpen(true)}>
-              Create new event
-            </Button>
-          }
+          description="Your planner sets up your celebration. Open an event you've been invited to — budget, vendors, and team live there."
         />
 
-        <section className="relative mb-10 grid gap-4 sm:grid-cols-3 lg:mb-12">
-          <StatCard
+        <section className="mb-8 grid gap-4 sm:grid-cols-3 lg:mb-10">
+          <GlassStatCard
             label="Active events"
             value={isLoadingEvents ? "—" : events.length}
             sub="Celebrations you're planning"
             icon={Heart}
-            iconTheme="rose"
+            iconTheme="primary"
           />
-          <StatCard
+          <GlassStatCard
             label="Next milestone"
-            value={
-              isLoadingEvents ? "—" : nextEvent ? nextEvent.eventName : "No events yet"
-            }
+            value={isLoadingEvents ? "—" : nextEvent ? nextEvent.eventName : "No events yet"}
             sub={
               nextEvent
                 ? new Date(nextEvent.eventDate).toLocaleDateString(undefined, {
@@ -157,12 +116,12 @@ const DashboardPage = () => {
                     day: "numeric",
                     year: "numeric",
                   })
-                : "Create an event to begin"
+                : "Waiting for your planner's invitation"
             }
             icon={CalendarDays}
             iconTheme="accent"
           />
-          <StatCard
+          <GlassStatCard
             label="Planning status"
             value={isLoadingEvents ? "—" : events.length > 0 ? "In progress" : "Ready"}
             sub={
@@ -171,50 +130,50 @@ const DashboardPage = () => {
                 : "Start with your first celebration"
             }
             icon={Sparkles}
-            iconTheme="primary"
+            iconTheme="success"
           />
         </section>
 
-        <SectionCard
+        <GlassSectionCard
           title="Your events"
           subtitle="Select a celebration to manage guests, budget, tasks, and vendors."
           action={
             !isLoadingEvents && events.length > 0 ? (
-              <Badge variant="muted">
+              <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-white/60 bg-white/50", vg.caption)}>
                 {events.length} {events.length === 1 ? "event" : "events"}
-              </Badge>
+              </span>
             ) : undefined
           }
         >
           {error && <ErrorBanner message={error} className="mb-6" />}
 
           {isLoadingEvents ? (
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="py-8">
               <PageLoadingSkeleton />
+            </div>
+          ) : events.length === 0 ? (
+            <div
+              className={cn(
+                "rounded-xl border border-dashed border-white/60 bg-white/25 px-6 py-10 text-center backdrop-blur-sm"
+              )}
+            >
+              <p className={cn("font-medium", vg.body)}>No celebrations linked yet</p>
+              <p className={cn("mt-2", vg.subtitle)}>
+                Weddings on MyWedding.lk are created by your planner. When they invite you, use the
+                link in your email to sign in and access your event here.
+              </p>
+              <GlassButton href="/login?returnUrl=/dashboard" variant="ghost" className="mt-4">
+                Sign in with invitation
+              </GlassButton>
             </div>
           ) : (
             <EventList events={events} isLoading={false} />
           )}
-        </SectionCard>
+        </GlassSectionCard>
       </main>
 
       <Footer />
-
-      <CreateEventModal
-        isOpen={isCreateOpen}
-        onClose={() => setCreateOpen(false)}
-        onEventCreated={handleEventCreated}
-      />
-
-      {isSetupOpen && newEventInfo && (
-        <EventSetupModal
-          isOpen={isSetupOpen}
-          onClose={handleSetupClosed}
-          eventId={newEventInfo.eventId}
-          eventName={newEventInfo.eventName}
-        />
-      )}
-    </div>
+    </RegalFrostShell>
   );
 };
 

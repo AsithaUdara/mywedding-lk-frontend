@@ -7,6 +7,8 @@ import { Button, EmptyState } from "@/shared/components/ui";
 import { Vendor } from "@/shared/lib/api/vendors";
 import { mapVendorToCardProps } from "@/shared/lib/vendorMedia";
 import { Package } from "lucide-react";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
+import { cn } from "@/shared/lib/cn";
 
 interface Props {
   vendors: Vendor[];
@@ -59,7 +61,7 @@ export function VendorsHubAllGrid({ vendors, loading }: Props) {
 
   return (
     <section>
-      <h2 className="mb-8 font-playfair text-3xl font-bold text-foreground sm:text-4xl">
+      <h2 className={cn("mb-8", rf.marketingSectionTitle)}>
         All vendors in Sri Lanka
       </h2>
       <div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">

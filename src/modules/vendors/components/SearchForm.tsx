@@ -2,10 +2,10 @@
 
 import React, { useMemo } from "react";
 import { Search } from "lucide-react";
-import Link from "next/link";
 import SearchableDropdown from "@/shared/components/ui/SearchableDropdown";
 import allVendorsData from "@/shared/lib/data/vendors.json";
-import { pv } from "@/modules/vendors/public-theme";
+import { GlassButton } from "@/modules/vendor/dashboard/glass-ui";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
 import { cn } from "@/shared/lib/cn";
 
 interface SearchFormProps {
@@ -34,9 +34,9 @@ const SearchForm = ({ type }: SearchFormProps) => {
   }, [type]);
 
   return (
-    <div className={cn("w-full max-w-lg p-6 shadow-xl", pv.card)}>
-      <h1 className="font-playfair text-3xl font-bold text-foreground sm:text-4xl">{title}</h1>
-      <p className="mt-2 mb-6 text-sm text-muted-foreground">
+    <div className={cn(rf.panel, "w-full max-w-lg p-6 sm:p-8")}>
+      <h1 className={cn(rf.heroTitle, "text-3xl sm:text-4xl")}>{title}</h1>
+      <p className={cn("mt-2 mb-6", rf.subtitle)}>
         {type === "venue"
           ? "Shortlist venues for your clients — inquire with your planner to proceed."
           : "Browse verified vendors — inquire with your planner to request quotes."}
@@ -44,7 +44,7 @@ const SearchForm = ({ type }: SearchFormProps) => {
 
       <div className="space-y-4">
         <div>
-          <label className={cn("mb-1 block", pv.label)}>
+          <label className={cn("mb-1 block", rf.label)}>
             {type === "venue" ? "Venue name" : "Category / vendor"}
           </label>
           <SearchableDropdown
@@ -53,17 +53,15 @@ const SearchForm = ({ type }: SearchFormProps) => {
           />
         </div>
         <div>
-          <label className={cn("mb-1 block", pv.label)}>Location</label>
+          <label className={cn("mb-1 block", rf.label)}>Location</label>
           <SearchableDropdown options={allLocations} placeholder="e.g., Colombo" />
         </div>
       </div>
 
-      <Link href="/vendors/search" className="mt-6 block">
-        <button type="button" className={cn("flex w-full items-center justify-center gap-2", pv.primaryBtn)}>
-          <Search size={20} aria-hidden />
-          Browse vendors
-        </button>
-      </Link>
+      <GlassButton href="/vendors/search" variant="primary" className="mt-6 w-full justify-center gap-2">
+        <Search size={20} aria-hidden />
+        Browse vendors
+      </GlassButton>
     </div>
   );
 };

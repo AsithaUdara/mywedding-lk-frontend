@@ -3,7 +3,8 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Heart, Star } from "lucide-react";
+import { ChevronLeft, ChevronRight, Star } from "lucide-react";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
 import { cn } from "@/shared/lib/cn";
 
 interface VendorCardProps {
@@ -38,16 +39,7 @@ const VendorCard = ({ vendor }: VendorCardProps) => {
   return (
     <Link href={`/vendor/${vendor.id}`} className="group block">
       <div className="cursor-pointer">
-        <div className="relative mb-2 aspect-square w-full overflow-hidden rounded-2xl border border-border bg-muted">
-          <button
-            type="button"
-            className="absolute right-3 top-3 z-10 rounded-full bg-foreground/20 p-1 transition hover:bg-foreground/40"
-            aria-label="Save to favorites"
-            onClick={(e) => e.preventDefault()}
-          >
-            <Heart size={22} className="text-primary-foreground" strokeWidth={1.5} />
-          </button>
-
+        <div className="relative mb-2 aspect-[4/3] w-full overflow-hidden rounded-2xl border border-white/55 bg-white/30 ring-1 ring-white/60 backdrop-blur-sm">
           <Image
             src={vendor.images[currentImage]}
             alt={vendor.name}
@@ -61,14 +53,14 @@ const VendorCard = ({ vendor }: VendorCardProps) => {
               <button
                 type="button"
                 onClick={prevImage}
-                className="rounded-full bg-card/90 p-1.5 shadow-md hover:bg-card"
+                className={cn(rf.glassSubtle, "rounded-full p-1.5 shadow-md backdrop-blur-sm")}
               >
                 <ChevronLeft size={18} />
               </button>
               <button
                 type="button"
                 onClick={nextImage}
-                className="rounded-full bg-card/90 p-1.5 shadow-md hover:bg-card"
+                className={cn(rf.glassSubtle, "rounded-full p-1.5 shadow-md backdrop-blur-sm")}
               >
                 <ChevronRight size={18} />
               </button>
@@ -80,16 +72,16 @@ const VendorCard = ({ vendor }: VendorCardProps) => {
             <div className="flex flex-wrap items-center gap-1.5">
               <h3 className="truncate text-base font-semibold text-foreground">{vendor.name}</h3>
               {vendor.isVerified && (
-                <span className="inline-flex rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-success">
+                <span className="inline-flex rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-success ring-1 ring-success/15">
                   Verified
                 </span>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className={cn("text-sm", rf.subtitle)}>
               {vendor.category} · {vendor.location}
             </p>
             {vendor.totalReviews > 0 && (
-              <p className="text-xs text-muted-foreground">
+              <p className={rf.caption}>
                 {vendor.totalReviews} review{vendor.totalReviews === 1 ? "" : "s"}
               </p>
             )}
@@ -100,10 +92,16 @@ const VendorCard = ({ vendor }: VendorCardProps) => {
           </div>
         </div>
         <p className="mt-1 text-sm">
-          <span className="font-semibold text-foreground">
-            LKR {vendor.price.toLocaleString()}
-          </span>
-          <span className="text-muted-foreground"> starting</span>
+          {vendor.price > 0 ? (
+            <>
+              <span className="font-semibold text-foreground">
+                LKR {vendor.price.toLocaleString()}
+              </span>
+              <span className={rf.subtitle}> starting</span>
+            </>
+          ) : (
+            <span className={cn("font-medium", rf.subtitle)}>Packages coming soon</span>
+          )}
         </p>
       </div>
     </Link>

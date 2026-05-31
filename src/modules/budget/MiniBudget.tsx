@@ -4,15 +4,15 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/shared/context/AuthContext";
 import { getBudgetOverview, type BudgetOverview } from "@/shared/lib/api/budget";
 import { useRealTime } from "@/shared/context/RealTimeContext";
-import { Wallet, ArrowRight } from "lucide-react";
-import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import Skeleton from "@/shared/components/ui/Skeleton";
 import { motion } from "framer-motion";
 import { formatLKR } from "@/shared/components/ui";
-import { cp } from "@/modules/client/client-theme";
+import { GlassButton, GlassSectionCard } from "@/modules/vendor/dashboard/glass-ui";
+import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
 import { cn } from "@/shared/lib/cn";
 
-const MiniBudget = ({ eventId }: { eventId: string }) => {
+const MiniBudget = ({ eventId, className }: { eventId: string; className?: string }) => {
   const { user } = useAuth();
   const { budgetVersion } = useRealTime();
   const [overview, setOverview] = useState<BudgetOverview | null>(null);
@@ -37,10 +37,10 @@ const MiniBudget = ({ eventId }: { eventId: string }) => {
 
   if (isLoading) {
     return (
-      <div className={cp.panel}>
+      <GlassSectionCard className={className} title="Budget tracker" subtitle="Spend vs plan">
         <Skeleton className="mb-6 h-8 w-1/3 rounded-lg" />
         <Skeleton className="h-20 w-full rounded-xl" />
-      </div>
+      </GlassSectionCard>
     );
   }
 
@@ -52,29 +52,26 @@ const MiniBudget = ({ eventId }: { eventId: string }) => {
       : 0;
 
   return (
-    <div className={cp.panel}>
-      <div className="mb-6 flex items-center justify-between border-b border-border pb-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-            <Wallet className="text-primary" size={16} strokeWidth={2} aria-hidden />
-          </div>
-          <h2 className={cp.sectionTitle}>Budget tracker</h2>
-        </div>
-        <Link
-          href={`/events/${eventId}/budget`}
-          className="flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-primary transition-colors hover:text-primary/80"
-        >
-          Manage <ArrowRight size={14} aria-hidden />
-        </Link>
-      </div>
-
-      <div className="space-y-4">
+    <GlassSectionCard
+      className={className}
+      title="Budget tracker"
+      subtitle="Spend vs plan for this celebration"
+      action={
+        <GlassButton href={`/events/${eventId}/budget`} variant="ghost" className="gap-1">
+          Manage
+          <ArrowRight size={14} aria-hidden />
+        </GlassButton>
+      }
+    >
+      <div className="flex flex-1 flex-col justify-center space-y-4">
         <div>
           <div className="mb-2 flex items-end justify-between">
-            <span className={cp.label}>Usage</span>
-            <span className="text-lg font-bold text-foreground">{spentPercentage.toFixed(0)}%</span>
+            <span className={vg.label}>Usage</span>
+            <span className="text-lg font-semibold tabular-nums text-foreground">
+              {spentPercentage.toFixed(0)}%
+            </span>
           </div>
-          <div className="h-3 w-full overflow-hidden rounded-full bg-muted">
+          <div className="h-3 w-full overflow-hidden rounded-full bg-white/50 ring-1 ring-white/60">
             <motion.div
               className="relative h-full rounded-full bg-primary"
               initial={{ width: 0 }}
@@ -85,21 +82,23 @@ const MiniBudget = ({ eventId }: { eventId: string }) => {
         </div>
 
         <div className="grid grid-cols-2 gap-3 pt-2">
-          <div className="rounded-xl border border-border bg-muted/30 p-3">
-            <p className={cn(cp.label, "mb-1")}>Spent</p>
-            <p className="text-sm font-bold text-primary">{formatLKR(overview.totalSpent)}</p>
+          <div className="rounded-xl border border-white/55 bg-white/35 p-3 backdrop-blur-sm">
+            <p className={cn(vg.label, "mb-1")}>Spent</p>
+            <p className="text-sm font-semibold tabular-nums text-foreground">
+              {formatLKR(overview.totalSpent)}
+            </p>
           </div>
           <div
             className={cn(
-              "rounded-xl border p-3",
+              "rounded-xl border p-3 backdrop-blur-sm",
               overview.remainingBudget < 0
-                ? "border-destructive/20 bg-destructive/5"
-                : "border-success/20 bg-success/5"
+                ? "border-destructive/25 bg-destructive/10"
+                : "border-success/25 bg-success/10"
             )}
           >
             <p
               className={cn(
-                cp.label,
+                vg.label,
                 "mb-1",
                 overview.remainingBudget < 0 ? "text-destructive" : "text-success"
               )}
@@ -108,7 +107,7 @@ const MiniBudget = ({ eventId }: { eventId: string }) => {
             </p>
             <p
               className={cn(
-                "text-sm font-bold",
+                "text-sm font-semibold tabular-nums",
                 overview.remainingBudget < 0 ? "text-destructive" : "text-success"
               )}
             >
@@ -117,7 +116,7 @@ const MiniBudget = ({ eventId }: { eventId: string }) => {
           </div>
         </div>
       </div>
-    </div>
+    </GlassSectionCard>
   );
 };
 

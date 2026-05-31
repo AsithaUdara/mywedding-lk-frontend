@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Header from "@/shared/components/layout/Header";
+import { RegalFrostShell } from "@/modules/design-system/regal-frost/RegalFrostShell";
+import { cn } from "@/shared/lib/cn";
 
 export default function VendorLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -14,10 +16,10 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
   const hidePublicHeader = isDashboard || isLoginPage || isSignupPage || isPublicProfile;
 
   return (
-    <div className="flex min-h-screen flex-col bg-background font-roboto">
+    <RegalFrostShell className={cn("flex min-h-screen flex-col", isDashboard && "bg-transparent")}>
       {!hidePublicHeader && <Header />}
 
-      <main className="flex-grow">{children}</main>
+      <main className={cn("flex-grow", isDashboard && "min-h-screen")}>{children}</main>
 
       {!hidePublicHeader && (
         <footer className="border-t border-border bg-white py-10">
@@ -37,6 +39,6 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
           </div>
         </footer>
       )}
-    </div>
+    </RegalFrostShell>
   );
 }

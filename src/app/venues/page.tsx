@@ -10,6 +10,9 @@ import StyleCard from "@/modules/vendors/components/StyleCard";
 import HeroWithSearch from "@/app/vendors/components/HeroWithSearch";
 import { Button } from "@/shared/components/ui";
 import allVendorsData from "@/shared/lib/data/vendors.json";
+import { RegalFrostShell } from "@/modules/design-system/regal-frost/RegalFrostShell";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
+import { cn } from "@/shared/lib/cn";
 
 type VenueJson = (typeof allVendorsData)[number];
 
@@ -54,8 +57,8 @@ const VenuesHubPage = () => {
   ];
 
   return (
-    <>
-      <main className="bg-background font-roboto">
+    <RegalFrostShell>
+      <main>
         <Header onLoginClick={() => setAuthModalOpen(true)} />
         <HeroWithSearch
           imageUrl="https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=1600&q=80"
@@ -75,7 +78,7 @@ const VenuesHubPage = () => {
           </HorizontalScrollSection>
 
           <section>
-            <h2 className="mb-8 font-playfair text-3xl font-bold text-foreground sm:text-4xl">
+            <h2 className={cn("mb-8", rf.marketingSectionTitle)}>
               Venues for every style
             </h2>
             <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
@@ -86,7 +89,7 @@ const VenuesHubPage = () => {
           </section>
 
           <section>
-            <h2 className="mb-8 font-playfair text-3xl font-bold text-foreground sm:text-4xl">
+            <h2 className={cn("mb-8", rf.marketingSectionTitle)}>
               All venues in Sri Lanka
             </h2>
             <div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
@@ -104,7 +107,7 @@ const VenuesHubPage = () => {
         <Footer />
       </main>
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setAuthModalOpen(false)} />
-    </>
+    </RegalFrostShell>
   );
 };
 

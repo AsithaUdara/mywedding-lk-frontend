@@ -23,7 +23,8 @@ export {
 import React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { getStatusBadgeClass } from "@/shared/components/ui";
+import { getStatusBadgeClass, formatLKR } from "@/shared/components/ui";
+import { cn } from "@/shared/lib/cn";
 
 /** Planner KPI tile — supports legacy `color` gradient icon box API */
 export function StatCard({
@@ -80,22 +81,41 @@ export function BudgetBarChart({
 }: {
   data: { label: string; spent: number; total: number }[];
 }) {
-  const max = Math.max(...data.map((d) => Math.max(d.spent, d.total, 1)), 1);
   return (
-    <div className="flex h-28 items-end gap-2">
+    <div className="space-y-4">
       {data.map((d, i) => {
-        const height = Math.max(8, Math.round((Math.max(d.spent, d.total) / max) * 100));
-        const over = d.spent > d.total && d.total > 0;
+        const utilization =
+          d.total > 0 ? Math.min(100, Math.round((d.spent / d.total) * 100)) : 0;
+        const overBudget = d.spent > d.total && d.total > 0;
+
         return (
-          <div key={i} className="flex flex-1 flex-col items-center gap-1">
-            <motion.div
-              className={`w-full rounded-t-md ${over ? "bg-destructive/70" : "bg-primary/70"}`}
-              style={{ height: `${height}%` }}
-              initial={{ scaleY: 0, originY: 1 }}
-              animate={{ scaleY: 1 }}
-              transition={{ duration: 0.4, delay: i * 0.04 }}
-            />
-            <span className="w-full truncate text-center text-[9px] text-muted-foreground">{d.label}</span>
+          <div key={`${d.label}-${i}`} className="space-y-1.5">
+            <div className="flex items-baseline justify-between gap-3 text-xs">
+              <span className="min-w-0 truncate font-medium text-foreground" title={d.label}>
+                {d.label}
+              </span>
+              <span className="shrink-0 tabular-nums text-muted-foreground">
+                {formatLKR(d.spent)} / {formatLKR(d.total)}
+              </span>
+            </div>
+            <div className="h-2.5 overflow-hidden rounded-full bg-white/50 ring-1 ring-white/60">
+              <div
+                className={cn(
+                  "h-full rounded-full transition-all duration-300",
+                  overBudget ? "bg-destructive" : utilization >= 90 ? "bg-warning" : "bg-primary"
+                )}
+                style={{ width: `${utilization > 0 ? Math.max(utilization, 4) : 0}%` }}
+                role="progressbar"
+                aria-valuenow={utilization}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={`${d.label}: ${utilization}% spent`}
+              />
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              {utilization}% of budget spent
+              {d.spent === 0 && d.total > 0 ? " · none recorded yet" : ""}
+            </p>
           </div>
         );
       })}

@@ -1,8 +1,8 @@
 import React from "react";
-import Link from "next/link";
 import { Calendar, ArrowRight } from "lucide-react";
-import { Button } from "@/shared/components/ui";
-import { cp } from "@/modules/client/client-theme";
+import { GlassButton } from "@/modules/vendor/dashboard/glass-ui";
+import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
+import { cn } from "@/shared/lib/cn";
 
 interface EventCardProps {
   event: {
@@ -22,22 +22,28 @@ const EventCard = ({ event }: EventCardProps) => {
 
   return (
     <article
-      className={`group flex flex-col justify-between transition-all duration-300 hover:border-primary/25 hover:shadow-md ${cp.cardPad}`}
+      className={cn(
+        "group flex flex-col justify-between rounded-xl border border-white/55 bg-white/40 p-5 backdrop-blur-sm sm:p-6",
+        "transition-all duration-200 hover:border-[hsl(42_48%_52%/0.28)] hover:bg-white/55 hover:shadow-[0_4px_20px_hsl(345_100%_25%/0.08)]"
+      )}
     >
       <div>
-        <h3 className="font-playfair text-2xl font-bold tracking-tight text-foreground">
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 font-luxury-display text-lg font-bold text-primary">
+          {event.eventName.charAt(0).toUpperCase()}
+        </div>
+        <h3 className="font-luxury-section text-xl font-medium tracking-tight text-foreground">
           {event.eventName}
         </h3>
-        <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+        <div className={cn("mt-3 flex items-center gap-2", vg.subtitle)}>
           <Calendar size={16} className="shrink-0 text-primary/70" strokeWidth={2} aria-hidden />
           <span>{formattedDate}</span>
         </div>
       </div>
       <div className="mt-8 flex justify-end">
-        <Button href={`/events/${event.id}`} variant="primary" size="sm">
+        <GlassButton href={`/events/${event.id}`} variant="primary" className="gap-1.5">
           Open
-          <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
-        </Button>
+          <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" aria-hidden />
+        </GlassButton>
       </div>
     </article>
   );

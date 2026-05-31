@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Check, CreditCard, Loader2, Send, Store, X } from "lucide-react";
-import Link from "next/link";
 import {
   approveShortlistItem,
   getVendorShortlist,
@@ -11,21 +10,24 @@ import {
   type VendorShortlistItem,
 } from "@/shared/lib/api/vendorShortlist";
 import {
-  Badge,
-  Button,
-  EmptyState,
   ErrorBanner,
   SuccessBanner,
   formatLKR,
-} from "@/shared/components/ui";
+} from "@/modules/planner/components/ui";
 import {
   shortlistStatusBadgeKey,
   shortlistStatusLabel,
 } from "@/modules/procurement/shortlist-utils";
 import { AddShortlistProposalModal } from "@/modules/procurement/AddShortlistProposalModal";
 import { useAuth } from "@/shared/context/AuthContext";
+import { useEventPermission } from "@/shared/hooks/useEventPermission";
+import { ViewerReadOnlyNotice } from "@/shared/components/ui/ViewerReadOnlyNotice";
 import { createDepositCheckout, getBookingPaymentStatus } from "@/shared/lib/api/vendors";
 import { submitPayHereCheckout } from "@/shared/lib/payhereCheckout";
+import { EmptyState, getStatusBadgeClass } from "@/shared/components/ui";
+import { GlassButton } from "@/modules/vendor/dashboard/glass-ui";
+import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
+import { cn } from "@/shared/lib/cn";
 
 type Mode = "planner" | "client";
 
@@ -38,6 +40,8 @@ type Props = {
 
 export function VendorShortlistPanel({ eventId, mode, pollBookingId }: Props) {
   const { user } = useAuth();
+  const { isViewer } = useEventPermission(eventId);
+  const canActAsClient = mode === "client" && !isViewer;
   const [items, setItems] = useState<VendorShortlistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -198,7 +202,9 @@ export function VendorShortlistPanel({ eventId, mode, pollBookingId }: Props) {
     <div className="space-y-6">
       {paymentPolling && (
         <div
-          className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-4"
+          className={cn(
+            "flex items-center gap-3 rounded-xl border border-primary/25 bg-primary/10 px-4 py-4 backdrop-blur-sm"
+          )}
           role="status"
         >
           <Loader2 className="h-5 w-5 shrink-0 animate-spin text-primary" aria-hidden />
@@ -209,31 +215,29 @@ export function VendorShortlistPanel({ eventId, mode, pollBookingId }: Props) {
       )}
       {paymentSuccess && <SuccessBanner message={paymentSuccess} />}
       {error && <ErrorBanner message={error} />}
+      {mode === "client" && isViewer && <ViewerReadOnlyNotice />}
 
       {mode === "planner" && (
         <div className="flex flex-wrap items-center gap-3">
-          <Button type="button" variant="primary" onClick={() => setAddOpen(true)} className="gap-2">
+          <GlassButton type="button" variant="primary" onClick={() => setAddOpen(true)} className="gap-2">
             <Store size={16} aria-hidden />
             Add proposal
-          </Button>
+          </GlassButton>
           {draftIds.length > 0 && (
-            <Button
+            <GlassButton
               type="button"
-              variant="secondary"
+              variant="ghost"
               className="gap-2"
               disabled={actionId === "send-all"}
               onClick={() => void handleSendToClient()}
             >
               <Send size={16} aria-hidden />
               {actionId === "send-all" ? "Sending…" : `Send ${draftIds.length} draft(s) to client`}
-            </Button>
+            </GlassButton>
           )}
-          <Link
-            href="/vendors"
-            className="text-sm font-semibold text-primary hover:underline"
-          >
+          <GlassButton href="/vendors" variant="ghost">
             Browse vendor directory
-          </Link>
+          </GlassButton>
         </div>
       )}
 
@@ -248,31 +252,37 @@ export function VendorShortlistPanel({ eventId, mode, pollBookingId }: Props) {
           }
         />
       ) : (
-        <ul className="space-y-4">
+        <ul className="space-y-4" role="list">
           {items.map((item) => (
-            <li
-              key={item.id}
-              className="rounded-2xl border border-border bg-card p-5 shadow-sm transition-shadow hover:shadow-md"
-            >
+            <li key={item.id}>
+              <article
+                className={cn(
+                  "rounded-xl border border-white/55 bg-white/40 p-5 backdrop-blur-sm sm:p-6",
+                  "transition-all duration-200 hover:border-[hsl(42_48%_52%/0.28)] hover:bg-white/55"
+                )}
+              >
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-semibold text-foreground">
-                      {item.vendorBusinessName ?? "Vendor"}
-                    </h3>
-                    <Badge variant="status" status={shortlistStatusBadgeKey(item.status)}>
+                    <h3 className={cn("font-medium", vg.body)}>{item.vendorBusinessName ?? "Vendor"}</h3>
+                    <span
+                      className={cn(
+                        "rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                        getStatusBadgeClass(shortlistStatusBadgeKey(item.status))
+                      )}
+                    >
                       {shortlistStatusLabel(item.status)}
-                    </Badge>
+                    </span>
                   </div>
-                  <p className="mt-1 text-sm text-muted-foreground">
+                  <p className={cn("mt-1", vg.subtitle)}>
                     {item.serviceName ?? "Service"}
                     {item.categoryLabel ? ` · ${item.categoryLabel}` : ""}
                   </p>
-                  <p className="mt-2 text-lg font-bold text-primary">
+                  <p className="mt-2 text-lg font-semibold tabular-nums text-foreground">
                     {formatLKR(item.proposedAmount)}
                   </p>
                   {item.serviceDate && (
-                    <p className="mt-1 text-xs text-muted-foreground">
+                    <p className={cn("mt-1", vg.caption)}>
                       Service date:{" "}
                       {new Date(item.serviceDate).toLocaleDateString(undefined, {
                         dateStyle: "medium",
@@ -280,62 +290,58 @@ export function VendorShortlistPanel({ eventId, mode, pollBookingId }: Props) {
                     </p>
                   )}
                   {item.plannerNotes && (
-                    <p className="mt-3 rounded-xl bg-muted/40 px-3 py-2 text-sm text-foreground">
+                    <p className={cn("mt-3 rounded-xl border border-white/55 bg-white/35 px-3 py-2", vg.body)}>
                       {item.plannerNotes}
                     </p>
                   )}
                 </div>
 
                 <div className="flex flex-shrink-0 flex-wrap gap-2">
-                  {mode === "client" && item.status === "SentToClient" && (
+                  {canActAsClient && item.status === "SentToClient" && (
                     <>
-                      <Button
+                      <GlassButton
                         type="button"
                         variant="primary"
-                        size="sm"
                         className="gap-1"
                         disabled={actionId === item.id}
                         onClick={() => void handleApprove(item.id, false)}
                       >
                         <Check size={14} aria-hidden />
                         Approve
-                      </Button>
-                      <Button
+                      </GlassButton>
+                      <GlassButton
                         type="button"
-                        variant="secondary"
-                        size="sm"
-                        className="gap-1 !text-destructive"
+                        variant="ghost"
+                        className="gap-1 text-destructive"
                         disabled={actionId === item.id}
                         onClick={() => void handleApprove(item.id, true)}
                       >
                         <X size={14} aria-hidden />
                         Decline
-                      </Button>
+                      </GlassButton>
                     </>
                   )}
-                  {mode === "client" && item.status === "ClientApproved" && (
-                    <Button
+                  {canActAsClient && item.status === "ClientApproved" && (
+                    <GlassButton
                       type="button"
                       variant="primary"
-                      size="sm"
                       disabled={actionId === item.id}
                       onClick={() => void handleRequestBooking(item.id)}
                     >
                       {actionId === item.id ? "Requesting…" : "Request booking"}
-                    </Button>
+                    </GlassButton>
                   )}
                   {mode === "client" && item.status === "DepositPaid" && (
-                    <span className="rounded-full bg-success/15 px-3 py-1.5 text-xs font-semibold text-success">
+                    <span className="rounded-full bg-success/15 px-3 py-1.5 text-xs font-semibold text-success ring-1 ring-success/20">
                       Deposit paid
                     </span>
                   )}
-                  {mode === "client" &&
+                  {canActAsClient &&
                     item.vendorBookingId &&
                     item.status === "BookingAccepted" && (
-                      <Button
+                      <GlassButton
                         type="button"
-                        variant="accent"
-                        size="sm"
+                        variant="primary"
                         className="gap-1"
                         disabled={actionId === `pay-${item.vendorBookingId}` || paymentPolling}
                         onClick={() => void handlePayDeposit(item.vendorBookingId!)}
@@ -344,28 +350,26 @@ export function VendorShortlistPanel({ eventId, mode, pollBookingId }: Props) {
                         {actionId === `pay-${item.vendorBookingId}`
                           ? "Opening checkout…"
                           : "Pay deposit"}
-                      </Button>
+                      </GlassButton>
                     )}
                   {item.status === "Declined" && (
-                    <span className="rounded-full bg-muted px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+                    <span className={cn("rounded-full bg-white/50 px-3 py-1.5 text-xs font-semibold ring-1 ring-white/60", vg.caption)}>
                       Vendor unavailable
                     </span>
                   )}
-                  {mode === "client" && item.status === "BookingRequested" && item.vendorBookingId && (
-                    <span className="rounded-full bg-muted px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+                  {canActAsClient && item.status === "BookingRequested" && item.vendorBookingId && (
+                    <span className={cn("rounded-full bg-white/50 px-3 py-1.5 text-xs font-semibold ring-1 ring-white/60", vg.caption)}>
                       Awaiting vendor response
                     </span>
                   )}
                   {item.vendorBookingId && item.status !== "BookingRequested" && (
-                    <Link
-                      href={`/contracts/sign/${item.vendorBookingId}`}
-                      className="inline-flex items-center rounded-full border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-muted"
-                    >
+                    <GlassButton href={`/contracts/sign/${item.vendorBookingId}`} variant="ghost">
                       View contract
-                    </Link>
+                    </GlassButton>
                   )}
                 </div>
               </div>
+              </article>
             </li>
           ))}
         </ul>

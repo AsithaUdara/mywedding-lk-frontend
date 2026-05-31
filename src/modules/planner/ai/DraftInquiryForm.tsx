@@ -6,9 +6,12 @@ import { useAuth } from "@/shared/context/AuthContext";
 import { draftInquiryEmail } from "@/shared/lib/api/plannerAi";
 import { getVendorCategories, type VendorCategory } from "@/shared/lib/api/vendors";
 import type { PlannerEventListItem } from "@/shared/lib/api/planner";
-import { Button, ErrorBanner, inputClass } from "@/modules/planner/components/ui";
+import { ErrorBanner, inputClass } from "@/modules/planner/components/ui";
+import { GlassButton, GlassSectionCard } from "@/modules/vendor/dashboard/glass-ui";
+import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
 import { cn } from "@/shared/lib/cn";
-import { glassCardClass } from "./styles";
+
+const glassInput = cn(inputClass, "border-white/55 bg-white/40 backdrop-blur-sm");
 
 interface DraftInquiryFormProps {
   events: PlannerEventListItem[];
@@ -87,37 +90,31 @@ export function DraftInquiryForm({ events }: DraftInquiryFormProps) {
   }, [user, selectedEvent, vendorBusinessName, vendorCategory, venue, styleNotes]);
 
   return (
-    <section className={glassCardClass} aria-labelledby="draft-inquiry-heading">
-      <div className="mb-6 flex flex-wrap items-start gap-4">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-          <Mail size={22} aria-hidden />
+    <GlassSectionCard
+      title="Draft vendor inquiry"
+      subtitle="Generate a polished outreach email for a vendor category and client wedding."
+      action={
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <Mail size={18} aria-hidden />
         </div>
-        <div>
-          <h2 id="draft-inquiry-heading" className="font-playfair text-xl font-bold text-foreground md:text-2xl">
-            Draft vendor inquiry
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Generate a polished outreach email for a vendor category and client wedding.
-          </p>
-        </div>
-      </div>
-
+      }
+    >
       {error && <ErrorBanner message={error} className="mb-4" />}
 
       {events.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Create a client event before drafting inquiries.</p>
+        <p className={vg.subtitle}>Create a client event before drafting inquiries.</p>
       ) : (
         <div className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label htmlFor="draft-event" className="mb-1.5 block text-sm font-semibold text-foreground">
+              <label htmlFor="draft-event" className={cn("mb-1.5 block font-semibold", vg.body)}>
                 Client event
               </label>
               <select
                 id="draft-event"
                 value={eventId}
                 onChange={(e) => setEventId(e.target.value)}
-                className={inputClass}
+                className={glassInput}
               >
                 {events.map((ev) => (
                   <option key={ev.eventId} value={ev.eventId}>
@@ -127,14 +124,14 @@ export function DraftInquiryForm({ events }: DraftInquiryFormProps) {
               </select>
             </div>
             <div>
-              <label htmlFor="draft-category" className="mb-1.5 block text-sm font-semibold text-foreground">
+              <label htmlFor="draft-category" className={cn("mb-1.5 block font-semibold", vg.body)}>
                 Vendor category
               </label>
               <select
                 id="draft-category"
                 value={vendorCategory}
                 onChange={(e) => setVendorCategory(e.target.value)}
-                className={inputClass}
+                className={glassInput}
               >
                 {categories.length === 0 ? (
                   <option value="">Loading categories…</option>
@@ -150,7 +147,7 @@ export function DraftInquiryForm({ events }: DraftInquiryFormProps) {
           </div>
 
           <div>
-            <label htmlFor="draft-vendor" className="mb-1.5 block text-sm font-semibold text-foreground">
+            <label htmlFor="draft-vendor" className={cn("mb-1.5 block font-semibold", vg.body)}>
               Vendor business name
             </label>
             <input
@@ -159,14 +156,14 @@ export function DraftInquiryForm({ events }: DraftInquiryFormProps) {
               value={vendorBusinessName}
               onChange={(e) => setVendorBusinessName(e.target.value)}
               placeholder="e.g. Ceylon Lens Studio"
-              className={inputClass}
+              className={glassInput}
             />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label htmlFor="draft-venue" className="mb-1.5 block text-sm font-semibold text-foreground">
-                Venue <span className="font-normal text-muted-foreground">(optional)</span>
+              <label htmlFor="draft-venue" className={cn("mb-1.5 block font-semibold", vg.body)}>
+                Venue <span className={cn("font-normal", vg.subtitle)}>(optional)</span>
               </label>
               <input
                 id="draft-venue"
@@ -174,12 +171,12 @@ export function DraftInquiryForm({ events }: DraftInquiryFormProps) {
                 value={venue}
                 onChange={(e) => setVenue(e.target.value)}
                 placeholder="e.g. Galle Face Hotel"
-                className={inputClass}
+                className={glassInput}
               />
             </div>
             <div>
-              <label htmlFor="draft-style" className="mb-1.5 block text-sm font-semibold text-foreground">
-                Style notes <span className="font-normal text-muted-foreground">(optional)</span>
+              <label htmlFor="draft-style" className={cn("mb-1.5 block font-semibold", vg.body)}>
+                Style notes <span className={cn("font-normal", vg.subtitle)}>(optional)</span>
               </label>
               <input
                 id="draft-style"
@@ -187,34 +184,40 @@ export function DraftInquiryForm({ events }: DraftInquiryFormProps) {
                 value={styleNotes}
                 onChange={(e) => setStyleNotes(e.target.value)}
                 placeholder="e.g. candid documentary, warm tones"
-                className={inputClass}
+                className={glassInput}
               />
             </div>
           </div>
 
-          <Button type="button" onClick={() => void handleGenerate()} disabled={loading || !selectedEvent}>
+          <GlassButton
+            type="button"
+            variant="primary"
+            className="gap-1.5"
+            onClick={() => void handleGenerate()}
+            disabled={loading || !selectedEvent}
+          >
             {loading ? (
               <Loader2 size={16} className="animate-spin" aria-hidden />
             ) : (
               <Sparkles size={16} aria-hidden />
             )}
             {loading ? "Generating…" : "Generate"}
-          </Button>
+          </GlassButton>
 
           {draftText && (
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <label htmlFor="draft-output" className="text-sm font-semibold text-foreground">
+                <label htmlFor="draft-output" className={cn("font-semibold", vg.body)}>
                   Email draft
                 </label>
                 {isSimulated && (
-                  <span className="rounded-full bg-accent/15 px-2.5 py-0.5 text-xs font-semibold text-accent-foreground">
+                  <span className="rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent ring-1 ring-accent/15">
                     AI mock mode
                   </span>
                 )}
               </div>
               {subject && (
-                <p className="text-xs text-muted-foreground">
+                <p className={vg.caption}>
                   Subject line: <span className="font-medium text-foreground">{subject}</span>
                 </p>
               )}
@@ -223,15 +226,12 @@ export function DraftInquiryForm({ events }: DraftInquiryFormProps) {
                 value={draftText}
                 onChange={(e) => setDraftText(e.target.value)}
                 rows={14}
-                className={cn(
-                  inputClass,
-                  "min-h-[280px] resize-y font-mono text-[13px] leading-relaxed"
-                )}
+                className={cn(glassInput, "min-h-[280px] resize-y font-mono text-[13px] leading-relaxed")}
               />
             </div>
           )}
         </div>
       )}
-    </section>
+    </GlassSectionCard>
   );
 }

@@ -11,13 +11,16 @@ import { VENDOR_IMAGE_PLACEHOLDER } from "@/shared/lib/vendorMedia";
 import type { VendorDetail } from "@/shared/lib/api/vendors";
 import { useVendorDetailAuth } from "@/modules/vendors/context/VendorDetailAuthContext";
 import { formatLKR } from "@/shared/components/ui";
+import { GlassButton } from "@/modules/vendor/dashboard/glass-ui";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
 import { cn } from "@/shared/lib/cn";
-import { pv } from "@/modules/vendors/public-theme";
 
 interface VendorDetailContentProps {
   vendor: VendorDetail;
   mapUrl: string;
 }
+
+const sectionDivide = "border-b border-white/40 pb-10";
 
 export default function VendorDetailContent({ vendor, mapUrl }: VendorDetailContentProps) {
   const { requireAuth } = useVendorDetailAuth();
@@ -59,9 +62,9 @@ export default function VendorDetailContent({ vendor, mapUrl }: VendorDetailCont
   const locationLabel = [vendor.city, vendor.province, "Sri Lanka"].filter(Boolean).join(", ");
 
   return (
-    <div className={pv.page}>
+    <div className="flex-1">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <nav className="border-b border-border py-4">
+        <nav className="border-b border-white/40 py-4">
           <Link
             href="/vendors"
             className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground transition hover:text-primary"
@@ -71,12 +74,12 @@ export default function VendorDetailContent({ vendor, mapUrl }: VendorDetailCont
           </Link>
         </nav>
 
-        <header className="border-b border-border py-6">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-primary">Vendor profile</p>
-          <h1 className="mt-1 font-playfair text-2xl font-bold tracking-tight text-foreground sm:text-3xl lg:text-4xl">
+        <header className="border-b border-white/40 py-6">
+          <p className={rf.eyebrow}>Vendor profile</p>
+          <h1 className={cn(rf.heroTitle, "mt-1 text-2xl sm:text-3xl lg:text-4xl")}>
             {vendor.businessName}
           </h1>
-          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted-foreground">
+          <div className={cn("mt-3 flex flex-wrap items-center gap-x-3 gap-y-2", rf.subtitle)}>
             {reviewCount > 0 ? (
               <span className="inline-flex items-center gap-1 font-semibold text-foreground">
                 <Star size={15} className="fill-accent text-accent" aria-hidden />
@@ -86,7 +89,7 @@ export default function VendorDetailContent({ vendor, mapUrl }: VendorDetailCont
             ) : (
               <span>New listing · No reviews yet</span>
             )}
-            <span className="hidden text-border sm:inline" aria-hidden>
+            <span className="hidden text-muted-foreground/40 sm:inline" aria-hidden>
               ·
             </span>
             <span className="inline-flex items-center gap-1">
@@ -95,7 +98,7 @@ export default function VendorDetailContent({ vendor, mapUrl }: VendorDetailCont
             </span>
             {isVerified && (
               <>
-                <span className="hidden text-border sm:inline" aria-hidden>
+                <span className="hidden text-muted-foreground/40 sm:inline" aria-hidden>
                   ·
                 </span>
                 <span className="inline-flex items-center gap-1 font-medium text-success">
@@ -111,7 +114,7 @@ export default function VendorDetailContent({ vendor, mapUrl }: VendorDetailCont
                 href={vendor.websiteUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={pv.linkBtn}
+                className={cn(rf.btnGhost, "inline-flex gap-1.5")}
               >
                 <Globe size={14} aria-hidden />
                 Visit website
@@ -127,23 +130,24 @@ export default function VendorDetailContent({ vendor, mapUrl }: VendorDetailCont
         <div className="grid gap-12 pb-16 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-16">
           <div className="min-w-0 space-y-10">
             {vendor.businessDescription && (
-              <section className={pv.sectionDivide}>
-                <h2 className={pv.sectionTitle}>About this vendor</h2>
-                <p className="mt-4 whitespace-pre-line text-base leading-relaxed text-muted-foreground">
+              <section className={sectionDivide}>
+                <h2 className={rf.sectionTitle}>About this vendor</h2>
+                <p className={cn("mt-4 whitespace-pre-line text-base leading-relaxed", rf.subtitle)}>
                   {vendor.businessDescription}
                 </p>
               </section>
             )}
 
-            <section className={pv.sectionDivide}>
-              <h2 className={pv.sectionTitle}>Services & packages</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
+            <section className={sectionDivide}>
+              <h2 className={rf.sectionTitle}>Services & packages</h2>
+              <p className={cn("mt-1", rf.subtitle)}>
                 Select a service to see pricing in the booking panel.
               </p>
               <div className="mt-6">
                 <ServiceList
                   services={services}
                   vendorName={vendor.businessName}
+                  vendorId={vendor.userId}
                   selectedServiceId={selectedServiceId}
                   onSelectService={setSelectedServiceId}
                   bookingMode="panel"
@@ -151,9 +155,9 @@ export default function VendorDetailContent({ vendor, mapUrl }: VendorDetailCont
               </div>
             </section>
 
-            <section className={pv.sectionDivide}>
+            <section className={sectionDivide}>
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className={pv.sectionTitle}>
+                <h2 className={rf.sectionTitle}>
                   Reviews
                   {reviewCount > 0 && (
                     <span className="ml-2 text-base font-normal text-muted-foreground">
@@ -161,14 +165,15 @@ export default function VendorDetailContent({ vendor, mapUrl }: VendorDetailCont
                     </span>
                   )}
                 </h2>
-                <button
+                <GlassButton
                   type="button"
+                  variant="ghost"
+                  className="gap-1.5"
                   onClick={() => requireAuth("review", () => undefined)}
-                  className={pv.linkBtn}
                 >
                   <PenLine size={14} aria-hidden />
                   Write a review
-                </button>
+                </GlassButton>
               </div>
               {reviewCount > 0 ? (
                 <div className="mt-6 grid gap-6 sm:grid-cols-2">
@@ -188,16 +193,14 @@ export default function VendorDetailContent({ vendor, mapUrl }: VendorDetailCont
                   ))}
                 </div>
               ) : (
-                <p className="mt-4 text-sm text-muted-foreground">
-                  No reviews yet. Be the first to book and share feedback.
-                </p>
+                <p className={cn("mt-4", rf.subtitle)}>No reviews yet. Be the first to book and share feedback.</p>
               )}
             </section>
 
             <section>
-              <h2 className={pv.sectionTitle}>Location</h2>
-              <p className="mt-2 text-sm text-muted-foreground">{locationLabel}</p>
-              <div className="mt-4 overflow-hidden rounded-2xl border border-border">
+              <h2 className={rf.sectionTitle}>Location</h2>
+              <p className={cn("mt-2", rf.subtitle)}>{locationLabel}</p>
+              <div className="mt-4 overflow-hidden rounded-2xl border border-white/55 ring-1 ring-white/60">
                 <iframe
                   src={mapUrl}
                   width="100%"
@@ -230,7 +233,7 @@ export default function VendorDetailContent({ vendor, mapUrl }: VendorDetailCont
         </div>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card p-4 shadow-[0_-4px_20px_rgba(128,0,32,0.08)] lg:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/55 bg-white/40 p-4 shadow-[0_-4px_20px_hsl(345_100%_25%/0.08)] backdrop-blur-xl lg:hidden">
         <div className="mx-auto flex max-w-lg items-center justify-between gap-4">
           <div className="min-w-0">
             <p className="text-lg font-bold text-primary">
@@ -238,7 +241,7 @@ export default function VendorDetailContent({ vendor, mapUrl }: VendorDetailCont
               <span className="text-sm font-normal text-muted-foreground"> / event</span>
             </p>
             {selectedService && (
-              <p className="truncate text-xs text-muted-foreground">{selectedService.serviceName}</p>
+              <p className={cn("truncate", rf.caption)}>{selectedService.serviceName}</p>
             )}
           </div>
           <BookingPanel

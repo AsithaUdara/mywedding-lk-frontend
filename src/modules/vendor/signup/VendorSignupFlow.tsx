@@ -19,7 +19,12 @@ import {
   Sparkles,
   User,
 } from "lucide-react";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, type User as FirebaseUser } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  updateProfile,
+  type User as FirebaseUser,
+} from "firebase/auth";
 import { auth } from "@/shared/lib/firebase";
 import { registerVendor } from "@/shared/lib/api/vendors";
 import {
@@ -29,18 +34,23 @@ import {
   VENDOR_SIGNUP_STEPS,
   VendorSignupForm,
 } from "./constants";
-
 import { ErrorBanner, inputClass } from "@/modules/vendor/dashboard/ui";
+import { GlassButton } from "@/modules/vendor/dashboard/glass-ui";
+import { glassAuthAsideClass } from "@/modules/design-system/regal-frost/GlassAuthLayout";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
 import { cn } from "@/shared/lib/cn";
+
+const glassInput = cn(inputClass, "border-white/55 bg-white/40 backdrop-blur-sm");
 
 function StepSidebar({ step }: { step: number }) {
   return (
-    <aside className="relative hidden overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/85 p-10 text-primary-foreground lg:flex lg:w-[380px] lg:flex-col lg:justify-between">
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative z-10"
-      >
+    <aside
+      className={cn(
+        glassAuthAsideClass,
+        "relative hidden overflow-hidden lg:flex lg:w-[380px] lg:flex-col lg:justify-between"
+      )}
+    >
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -49,7 +59,7 @@ function StepSidebar({ step }: { step: number }) {
           <Briefcase size={14} />
           Vendor partner program
         </motion.div>
-        <h2 className="font-playfair text-3xl font-bold leading-tight">
+        <h2 className="font-luxury-display text-3xl font-normal leading-tight tracking-[0.04em]">
           List your business on Sri Lanka&apos;s wedding marketplace
         </h2>
         <p className="mt-4 text-sm leading-relaxed text-white/75">
@@ -64,31 +74,31 @@ function StepSidebar({ step }: { step: number }) {
           return (
             <div
               key={s.id}
-              className={`flex items-start gap-4 rounded-2xl border px-4 py-3 transition ${
+              className={cn(
+                "flex items-start gap-4 rounded-2xl border px-4 py-3 transition",
                 active
                   ? "border-white/30 bg-white/10"
                   : done
                     ? "border-success/40 bg-success/15"
                     : "border-white/10 bg-white/5"
-              }`}
+              )}
             >
               <motion.div
                 initial={false}
-                animate={{
-                  scale: active ? 1.05 : 1,
-                }}
-                className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl text-sm font-bold ${
+                animate={{ scale: active ? 1.05 : 1 }}
+                className={cn(
+                  "flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl text-sm font-bold",
                   done
                     ? "bg-success text-success-foreground"
                     : active
-                      ? "bg-card text-foreground"
+                      ? "bg-white/90 text-foreground"
                       : "bg-white/15 text-white/60"
-                }`}
+                )}
               >
                 {done ? <CheckCircle2 size={18} /> : s.id}
               </motion.div>
               <div>
-                <p className={`text-sm font-semibold ${active ? "text-white" : "text-white/80"}`}>
+                <p className={cn("text-sm font-semibold", active ? "text-white" : "text-white/80")}>
                   {s.title}
                 </p>
                 <p className="text-xs text-white/55">{s.subtitle}</p>
@@ -127,34 +137,36 @@ function MobileStepper({ step }: { step: number }) {
             className="flex flex-1 flex-col items-center gap-2"
           >
             <div
-              className={`flex h-9 w-9 items-center justify-center rounded-xl text-sm font-bold transition ${
+              className={cn(
+                "flex h-9 w-9 items-center justify-center rounded-xl text-sm font-bold transition",
                 step > s.id
                   ? "bg-success text-success-foreground"
                   : step === s.id
                     ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
-                    : "bg-muted text-muted-foreground"
-              }`}
+                    : "bg-white/50 text-muted-foreground ring-1 ring-white/60"
+              )}
             >
               {step > s.id ? <CheckCircle2 size={16} /> : s.id}
             </div>
             <p
-              className={`hidden text-center text-[10px] font-semibold sm:block ${
+              className={cn(
+                "hidden text-center text-[10px] font-semibold sm:block",
                 step === s.id ? "text-foreground" : "text-muted-foreground"
-              }`}
+              )}
             >
               {s.title}
             </p>
           </motion.div>
         ))}
       </div>
-      <motion.div className="mt-3 h-1 overflow-hidden rounded-full bg-muted">
+      <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/50 ring-1 ring-white/60">
         <motion.div
           className="h-full rounded-full bg-primary"
           initial={{ width: 0 }}
           animate={{ width: `${((step - 1) / (VENDOR_SIGNUP_STEPS.length - 1)) * 100}%` }}
           transition={{ duration: 0.4 }}
         />
-      </motion.div>
+      </div>
     </div>
   );
 }
@@ -167,7 +179,7 @@ function FieldLabel({
   children: React.ReactNode;
 }) {
   return (
-    <label className="mb-1.5 flex items-center gap-2 text-sm font-semibold text-foreground">
+    <label className={cn("mb-1.5 flex items-center gap-2", rf.label)}>
       {icon}
       {children}
     </label>
@@ -226,6 +238,8 @@ export default function VendorSignupFlow() {
   };
 
   const handleSignup = async () => {
+    if (!form.agreeTerms) return;
+
     setLoading(true);
     setError(null);
     try {
@@ -240,7 +254,6 @@ export default function VendorSignupFlow() {
       } catch (createErr: unknown) {
         const createCode = (createErr as { code?: string }).code;
         if (createCode === "auth/email-already-in-use") {
-          // Resume signup when Firebase user exists from a prior failed backend call
           const signInCredential = await signInWithEmailAndPassword(
             auth,
             form.email.trim(),
@@ -257,7 +270,10 @@ export default function VendorSignupFlow() {
       const firebaseErr = err as { code?: string };
       if (firebaseErr.code === "auth/email-already-in-use") {
         setError("An account already exists with this email. Sign in instead.");
-      } else if (firebaseErr.code === "auth/wrong-password" || firebaseErr.code === "auth/invalid-credential") {
+      } else if (
+        firebaseErr.code === "auth/wrong-password" ||
+        firebaseErr.code === "auth/invalid-credential"
+      ) {
         setError(
           "This email is already registered with a different password. Sign in or reset your password."
         );
@@ -280,7 +296,7 @@ export default function VendorSignupFlow() {
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-5xl overflow-hidden rounded-3xl border border-border bg-card shadow-xl"
+      className={cn(rf.panel, "mx-auto flex min-h-[calc(100vh-4rem)] max-w-5xl overflow-hidden")}
     >
       <StepSidebar step={step} />
 
@@ -292,11 +308,11 @@ export default function VendorSignupFlow() {
         <MobileStepper step={step} />
 
         <div className="mb-8">
-          <p className="text-xs font-bold uppercase tracking-widest text-primary">
+          <p className={rf.eyebrow}>
             Step {step} of {VENDOR_SIGNUP_STEPS.length}
           </p>
-          <h1 className="mt-2 font-playfair text-3xl font-bold text-foreground">{stepMeta.title}</h1>
-          <p className="mt-1 text-muted-foreground">{stepMeta.subtitle}</p>
+          <h1 className={cn(rf.sectionTitle, "mt-2 text-3xl")}>{stepMeta.title}</h1>
+          <p className={cn("mt-1", rf.subtitle)}>{stepMeta.subtitle}</p>
         </div>
 
         {error && <ErrorBanner message={error} className="mb-6" />}
@@ -318,24 +334,32 @@ export default function VendorSignupFlow() {
                       type="text"
                       autoComplete="given-name"
                       placeholder="Priya"
-                      className={inputClass}
+                      className={glassInput}
                       value={form.firstName}
                       onChange={(e) => patch({ firstName: e.target.value })}
                     />
                   </motion.div>
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.05 }}
+                  >
                     <FieldLabel>Last name</FieldLabel>
                     <input
                       type="text"
                       autoComplete="family-name"
                       placeholder="Fernando"
-                      className={inputClass}
+                      className={glassInput}
                       value={form.lastName}
                       onChange={(e) => patch({ lastName: e.target.value })}
                     />
                   </motion.div>
                 </div>
-                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
                   <FieldLabel icon={<Mail size={15} className="text-muted-foreground" />}>
                     Work email
                   </FieldLabel>
@@ -343,12 +367,16 @@ export default function VendorSignupFlow() {
                     type="email"
                     autoComplete="email"
                     placeholder="hello@yourbusiness.lk"
-                    className={inputClass}
+                    className={glassInput}
                     value={form.email}
                     onChange={(e) => patch({ email: e.target.value })}
                   />
                 </motion.div>
-                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15 }}
+                >
                   <FieldLabel icon={<Lock size={15} className="text-muted-foreground" />}>
                     Password
                   </FieldLabel>
@@ -356,11 +384,11 @@ export default function VendorSignupFlow() {
                     type="password"
                     autoComplete="new-password"
                     placeholder="Minimum 8 characters"
-                    className={inputClass}
+                    className={glassInput}
                     value={form.password}
                     onChange={(e) => patch({ password: e.target.value })}
                   />
-                  <p className="mt-1.5 text-xs text-muted-foreground">
+                  <p className={cn("mt-1.5", rf.caption)}>
                     You&apos;ll use this to access bookings, inquiries, and payouts.
                   </p>
                 </motion.div>
@@ -382,11 +410,11 @@ export default function VendorSignupFlow() {
                   <input
                     type="text"
                     placeholder="e.g. Cinnamon Grand Weddings"
-                    className={inputClass}
+                    className={glassInput}
                     value={form.businessName}
                     onChange={(e) => patch({ businessName: e.target.value })}
                   />
-                  <p className="mt-1.5 text-xs text-muted-foreground">
+                  <p className={cn("mt-1.5", rf.caption)}>
                     Shown on your public vendor profile and search results.
                   </p>
                 </div>
@@ -401,26 +429,28 @@ export default function VendorSignupFlow() {
                           key={cat.id}
                           type="button"
                           onClick={() => patch({ category: cat.id })}
-                          className={`flex items-center gap-3 rounded-xl border-2 p-4 text-left transition ${
+                          className={cn(
+                            "flex items-center gap-3 rounded-xl border-2 p-4 text-left transition-all",
                             selected
-                              ? "border-primary bg-primary/5 shadow-md shadow-primary/10"
-                              : "border-border bg-muted/30 hover:border-primary/20 hover:bg-card"
-                          }`}
+                              ? "border-primary/40 bg-primary/10 ring-2 ring-primary/15"
+                              : "border-white/55 bg-white/40 backdrop-blur-sm hover:border-[hsl(42_48%_52%/0.28)] hover:bg-white/55"
+                          )}
                         >
                           <motion.div
                             initial={false}
                             animate={{ scale: selected ? 1.05 : 1 }}
-                            className={`rounded-lg p-2.5 ${
+                            className={cn(
+                              "rounded-lg p-2.5",
                               selected
-                                ? "bg-primary text-white"
-                                : "bg-card text-muted-foreground shadow-sm"
-                            }`}
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-white/50 text-muted-foreground ring-1 ring-white/60"
+                            )}
                           >
                             {cat.icon}
                           </motion.div>
                           <motion.div initial={false} animate={{ opacity: selected ? 1 : 0.85 }}>
                             <p className="text-sm font-semibold text-foreground">{cat.name}</p>
-                            <p className="text-xs text-muted-foreground">{cat.description}</p>
+                            <p className={rf.caption}>{cat.description}</p>
                           </motion.div>
                         </button>
                       );
@@ -436,7 +466,7 @@ export default function VendorSignupFlow() {
                     <input
                       type="text"
                       placeholder="Colombo"
-                      className={inputClass}
+                      className={glassInput}
                       value={form.city}
                       onChange={(e) => patch({ city: e.target.value })}
                       required
@@ -449,7 +479,7 @@ export default function VendorSignupFlow() {
                     <input
                       type="tel"
                       placeholder="+94 7X XXX XXXX"
-                      className={inputClass}
+                      className={glassInput}
                       value={form.contactPhone}
                       onChange={(e) => patch({ contactPhone: e.target.value })}
                       required
@@ -462,49 +492,41 @@ export default function VendorSignupFlow() {
 
           {step === 3 && (
             <motion.div key="review" {...slide} className="flex flex-1 flex-col space-y-6">
-              <div className="rounded-2xl border border-border bg-muted/40 p-6">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                  Application summary
-                </p>
+              <div className="rounded-2xl border border-white/55 bg-white/35 p-6 backdrop-blur-sm">
+                <p className={rf.label}>Application summary</p>
                 <dl className="mt-4 space-y-3 text-sm">
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex justify-between gap-4 border-b border-border/80 pb-3">
-                    <dt className="text-muted-foreground">Account owner</dt>
-                    <dd className="font-semibold text-foreground text-right">
-                      {form.firstName} {form.lastName}
-                    </dd>
-                  </motion.div>
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="flex justify-between gap-4 border-b border-border/80 pb-3">
-                    <dt className="text-muted-foreground">Email</dt>
-                    <dd className="font-semibold text-foreground text-right">{form.email}</dd>
-                  </motion.div>
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="flex justify-between gap-4 border-b border-border/80 pb-3">
-                    <dt className="text-muted-foreground">Business</dt>
-                    <dd className="font-semibold text-foreground text-right">{form.businessName}</dd>
-                  </motion.div>
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="flex justify-between gap-4 border-b border-border/80 pb-3">
-                    <dt className="text-muted-foreground">Category</dt>
-                    <dd className="font-semibold text-foreground text-right">
-                      {getCategoryLabel(form.category)}
-                    </dd>
-                  </motion.div>
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="flex justify-between gap-4 border-b border-border/80 pb-3">
-                    <dt className="text-muted-foreground">Location</dt>
-                    <dd className="font-semibold text-foreground text-right">{form.city}</dd>
-                  </motion.div>
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="flex justify-between gap-4">
-                    <dt className="text-muted-foreground">Contact phone</dt>
-                    <dd className="font-semibold text-foreground text-right">{form.contactPhone}</dd>
-                  </motion.div>
+                  {[
+                    ["Account owner", `${form.firstName} ${form.lastName}`],
+                    ["Email", form.email],
+                    ["Business", form.businessName],
+                    ["Category", getCategoryLabel(form.category)],
+                    ["Location", form.city],
+                    ["Contact phone", form.contactPhone],
+                  ].map(([label, value], index, arr) => (
+                    <motion.div
+                      key={label}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className={cn(
+                        "flex justify-between gap-4",
+                        index < arr.length - 1 && "border-b border-white/40 pb-3"
+                      )}
+                    >
+                      <dt className={rf.subtitle}>{label}</dt>
+                      <dd className="text-right font-semibold text-foreground">{value}</dd>
+                    </motion.div>
+                  ))}
                 </dl>
               </div>
 
-              <div className="flex items-start gap-4 rounded-2xl border border-border bg-card p-5">
-                <div className="rounded-xl bg-primary/10 p-3 text-primary">
+              <div className="flex items-start gap-4 rounded-2xl border border-white/55 bg-white/40 p-5 backdrop-blur-sm">
+                <div className="rounded-xl bg-primary/10 p-3 text-primary ring-1 ring-primary/15">
                   <ShieldCheck size={22} />
                 </div>
                 <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
                   <p className="font-semibold text-foreground">Partner terms</p>
-                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                  <p className={cn("mt-1 leading-relaxed", rf.subtitle)}>
                     MyWedding.lk charges a{" "}
                     <span className="font-semibold text-primary">5% commission</span> on successful
                     bookings. Respond to inquiries within 24 hours and maintain the service quality
@@ -513,14 +535,14 @@ export default function VendorSignupFlow() {
                 </motion.div>
               </div>
 
-              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border p-4 transition hover:border-primary/30 hover:bg-primary/5">
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/55 bg-white/35 p-4 backdrop-blur-sm transition hover:border-primary/30 hover:bg-primary/5">
                 <input
                   type="checkbox"
                   className="mt-1 h-4 w-4 rounded accent-primary"
                   checked={form.agreeTerms}
                   onChange={(e) => patch({ agreeTerms: e.target.checked })}
                 />
-                <span className="text-sm text-muted-foreground">
+                <span className={cn("text-sm", rf.subtitle)}>
                   I agree to the{" "}
                   <Link href="#" className="font-semibold text-primary hover:underline">
                     partner terms
@@ -532,19 +554,20 @@ export default function VendorSignupFlow() {
           )}
         </AnimatePresence>
 
-        <div className="mt-auto flex items-center justify-between gap-4 border-t border-border pt-8">
+        <div className="mt-auto flex items-center justify-between gap-4 border-t border-white/40 pt-8">
           {step > 1 ? (
-            <button
+            <GlassButton
               type="button"
+              variant="ghost"
               onClick={() => setStep((s) => s - 1)}
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-50"
+              className="gap-2"
             >
-              <ChevronLeft size={18} />
+              <ChevronLeft size={18} aria-hidden />
               Back
-            </button>
+            </GlassButton>
           ) : (
-            <p className="text-sm text-muted-foreground">
+            <p className={cn("text-sm", rf.subtitle)}>
               Already a partner?{" "}
               <Link href="/vendor/login" className="font-semibold text-primary hover:underline">
                 Sign in
@@ -553,21 +576,23 @@ export default function VendorSignupFlow() {
           )}
 
           {step < 3 ? (
-            <button
+            <GlassButton
               type="button"
+              variant="primary"
               disabled={(step === 1 && !accountValid) || (step === 2 && !businessValid)}
               onClick={() => setStep((s) => s + 1)}
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white shadow-lg shadow-primary/25 transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="gap-2 px-6 py-3"
             >
               Continue
-              <ChevronRight size={18} />
-            </button>
+              <ChevronRight size={18} aria-hidden />
+            </GlassButton>
           ) : (
-            <button
+            <GlassButton
               type="button"
+              variant="primary"
               disabled={!form.agreeTerms || loading}
-              onClick={handleSignup}
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-white shadow-lg shadow-primary/25 transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={() => void handleSignup()}
+              className="gap-2 px-6 py-3"
             >
               {loading ? (
                 <>
@@ -577,10 +602,10 @@ export default function VendorSignupFlow() {
               ) : (
                 <>
                   Create vendor account
-                  <ArrowRight size={18} />
+                  <ArrowRight size={18} aria-hidden />
                 </>
               )}
-            </button>
+            </GlassButton>
           )}
         </div>
       </motion.div>

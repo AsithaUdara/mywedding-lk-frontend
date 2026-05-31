@@ -7,7 +7,10 @@ import {
   createPlannerEvent,
   type CreatePlannerEventPayload,
 } from "@/shared/lib/api/planner";
-import { Button, inputClass } from "@/modules/planner/components/ui";
+import { inputClass } from "@/modules/planner/components/ui";
+import { GlassButton } from "@/modules/vendor/dashboard/glass-ui";
+import { cn } from "@/shared/lib/cn";
+import { todayForDateInput } from "@/shared/lib/format";
 import { isPlannerSubscriptionLimitError } from "./errors";
 import { PlannerUpgradeModal } from "./PlannerUpgradeModal";
 
@@ -17,6 +20,9 @@ const DEFAULT: CreatePlannerEventPayload = {
   totalBudget: 0,
   clientEmail: "",
 };
+
+const modalInput = cn(inputClass, "border-border bg-white");
+const minWeddingDate = todayForDateInput();
 
 type Props = {
   onCreated?: () => void;
@@ -34,6 +40,10 @@ export function PlannerCreateEventForm({ onCreated, className }: Props) {
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    if (form.eventDate < minWeddingDate) {
+      setError("Wedding date cannot be in the past.");
+      return;
+    }
     try {
       setCreating(true);
       setError(null);
@@ -71,7 +81,7 @@ export function PlannerCreateEventForm({ onCreated, className }: Props) {
               required
               value={form.eventName}
               onChange={(e) => setForm((f) => ({ ...f, eventName: e.target.value }))}
-              className={inputClass}
+              className={modalInput}
               placeholder="Amaya & Dev — Garden Wedding"
             />
           </div>
@@ -83,9 +93,10 @@ export function PlannerCreateEventForm({ onCreated, className }: Props) {
               id="pe-date"
               type="date"
               required
+              min={minWeddingDate}
               value={form.eventDate}
               onChange={(e) => setForm((f) => ({ ...f, eventDate: e.target.value }))}
-              className={inputClass}
+              className={modalInput}
             />
           </div>
           <div>
@@ -101,7 +112,7 @@ export function PlannerCreateEventForm({ onCreated, className }: Props) {
               onChange={(e) =>
                 setForm((f) => ({ ...f, totalBudget: Number(e.target.value) || 0 }))
               }
-              className={inputClass}
+              className={modalInput}
             />
           </div>
           <div className="sm:col-span-2">
@@ -114,19 +125,19 @@ export function PlannerCreateEventForm({ onCreated, className }: Props) {
               required
               value={form.clientEmail ?? ""}
               onChange={(e) => setForm((f) => ({ ...f, clientEmail: e.target.value }))}
-              className={inputClass}
+              className={modalInput}
               placeholder="client@email.com"
             />
           </div>
         </div>
-        <Button type="submit" className="mt-5 gap-2" disabled={creating}>
+        <GlassButton type="submit" variant="primary" className="mt-5 gap-2" disabled={creating}>
           {creating ? (
             <Loader2 size={16} className="animate-spin" aria-hidden />
           ) : (
             <CalendarPlus size={16} aria-hidden />
           )}
           {creating ? "Creating…" : "Create wedding"}
-        </Button>
+        </GlassButton>
       </form>
 
       <PlannerUpgradeModal

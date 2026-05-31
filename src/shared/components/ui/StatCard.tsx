@@ -3,6 +3,7 @@
 import React, { isValidElement } from "react";
 import { LucideIcon } from "lucide-react";
 import { cn } from "@/shared/lib/cn";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
 
 function isRenderableIcon(icon: LucideIcon | React.ReactNode): icon is LucideIcon {
   if (icon == null || isValidElement(icon)) return false;
@@ -96,10 +97,7 @@ export function StatCard({
 
   return (
     <div
-      className={cn(
-        "flex items-center gap-4 rounded-3xl border border-border bg-card p-5 shadow-sm transition-transform duration-200 hover:-translate-y-0.5",
-        className
-      )}
+      className={cn(rf.statCard, className)}
       style={{ animationDelay: `${delay}ms` }}
     >
       {iconNode}

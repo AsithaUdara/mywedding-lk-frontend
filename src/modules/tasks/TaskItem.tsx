@@ -11,16 +11,17 @@ import { StatusBadge } from "@/shared/components/ui";
 interface TaskItemProps {
   task: Task;
   eventId: string;
+  readOnly?: boolean;
   onStatusChange: () => void;
 }
 
-const TaskItem = ({ task, eventId, onStatusChange }: TaskItemProps) => {
+const TaskItem = ({ task, eventId, readOnly = false, onStatusChange }: TaskItemProps) => {
   const { user } = useAuth();
   const [isUpdating, setIsUpdating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleCheckboxChange = async () => {
-    if (!user || isUpdating) return;
+    if (!user || isUpdating || readOnly) return;
     setIsUpdating(true);
     setErrorMessage(null);
 
@@ -50,28 +51,40 @@ const TaskItem = ({ task, eventId, onStatusChange }: TaskItemProps) => {
   return (
     <div
       className={cn(
-        "group flex flex-col gap-2 rounded-xl border bg-card p-4 transition-all",
+        "group flex flex-col gap-2 rounded-xl border border-white/55 bg-white/40 p-4 backdrop-blur-sm transition-all",
         isCompleted
-          ? "border-border opacity-75"
-          : "border-border shadow-sm hover:border-primary/25 hover:shadow-md"
+          ? "opacity-75"
+          : "hover:border-[hsl(42_48%_52%/0.28)] hover:bg-white/55 hover:shadow-[0_4px_16px_hsl(345_100%_25%/0.06)]"
       )}
     >
       <div className="flex items-center gap-4">
-        <button
-          type="button"
-          onClick={() => void handleCheckboxChange()}
-          disabled={isUpdating}
-          className={cn(
-            "flex h-6 w-6 flex-shrink-0 cursor-pointer items-center justify-center rounded-full border-2 transition-all",
-            isCompleted
-              ? "scale-95 border-primary bg-primary"
-              : "border-border bg-card hover:border-primary group-hover:scale-105",
-            isUpdating && "cursor-wait opacity-50"
-          )}
-          aria-label={isCompleted ? "Mark incomplete" : "Mark complete"}
-        >
-          {isCompleted && <Check size={14} strokeWidth={3} className="text-primary-foreground" />}
-        </button>
+        {readOnly ? (
+          <div
+            className={cn(
+              "flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border-2",
+              isCompleted ? "border-primary/40 bg-primary/20" : "border-white/60 bg-white/50"
+            )}
+            aria-hidden
+          >
+            {isCompleted && <Check size={14} strokeWidth={3} className="text-primary" />}
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => void handleCheckboxChange()}
+            disabled={isUpdating}
+            className={cn(
+              "flex h-6 w-6 flex-shrink-0 cursor-pointer items-center justify-center rounded-full border-2 transition-all",
+              isCompleted
+                ? "scale-95 border-primary bg-primary"
+                : "border-white/60 bg-white/50 hover:border-primary group-hover:scale-105",
+              isUpdating && "cursor-wait opacity-50"
+            )}
+            aria-label={isCompleted ? "Mark incomplete" : "Mark complete"}
+          >
+            {isCompleted && <Check size={14} strokeWidth={3} className="text-primary-foreground" />}
+          </button>
+        )}
 
         <div className="min-w-0 flex-grow">
           <p

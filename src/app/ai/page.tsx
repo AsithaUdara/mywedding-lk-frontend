@@ -1,12 +1,30 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Sparkles, Bot } from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
 import { getEvents } from "@/shared/lib/api/events";
-import { generateAiItinerary, getAiItinerary, getAiVendorRecommendations, saveAiItinerary } from "@/shared/lib/api/ai";
+import {
+  generateAiItinerary,
+  getAiItinerary,
+  getAiVendorRecommendations,
+  saveAiItinerary,
+} from "@/shared/lib/api/ai";
 import AIChatWidget from "@/modules/ai/AIChatWidget";
-import { Button, Card, ErrorBanner, inputClass } from "@/shared/components/ui";
+import { ErrorBanner, inputClass } from "@/shared/components/ui";
+import {
+  GlassButton,
+  GlassSectionCard,
+} from "@/modules/vendor/dashboard/glass-ui";
+import { RegalFrostShell } from "@/modules/design-system/regal-frost/RegalFrostShell";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
 import { cn } from "@/shared/lib/cn";
+
+const glassInput = cn(inputClass, "border-white/55 bg-white/40 backdrop-blur-sm");
+const glassInputSm = cn(glassInput, "px-2 py-1 text-xs");
+
+const glassRow =
+  "rounded-xl border border-white/55 bg-white/40 p-3 backdrop-blur-sm transition-all hover:border-[hsl(42_48%_52%/0.28)] hover:bg-white/55";
 
 interface EventSummary {
   id: string;
@@ -17,9 +35,13 @@ export default function AiPlanningPage() {
   const { user } = useAuth();
   const [events, setEvents] = useState<EventSummary[]>([]);
   const [eventId, setEventId] = useState("");
-  const [recommendations, setRecommendations] = useState<Array<{ vendorId: string; businessName: string; score: number; reason: string }>>([]);
+  const [recommendations, setRecommendations] = useState<
+    Array<{ vendorId: string; businessName: string; score: number; reason: string }>
+  >([]);
   const [itineraryId, setItineraryId] = useState("");
-  const [itinerary, setItinerary] = useState<Array<{ id: string; title: string; description?: string; startsAt: string; endsAt: string }>>([]);
+  const [itinerary, setItinerary] = useState<
+    Array<{ id: string; title: string; description?: string; startsAt: string; endsAt: string }>
+  >([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,7 +57,7 @@ export default function AiPlanningPage() {
         setError(err instanceof Error ? err.message : "Failed to load events.");
       }
     };
-    load();
+    void load();
   }, [user]);
 
   const runAi = async () => {
@@ -78,19 +100,25 @@ export default function AiPlanningPage() {
   };
 
   return (
-    <main className="min-h-screen bg-background px-4 py-10 font-roboto">
+    <RegalFrostShell mesh className="min-h-screen px-4 py-10">
       <section className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-2 sm:p-8">
-          <h1 className="font-playfair text-2xl font-bold text-foreground">AI Wedding Intelligence</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Get smart vendor matchmaking and auto-generated wedding day timelines.
-          </p>
-
-          <div className="mt-5 flex flex-col gap-3 md:flex-row">
+        <GlassSectionCard
+          className="lg:col-span-2"
+          title="AI Wedding Intelligence"
+          subtitle="Smart vendor matchmaking and auto-generated wedding day timelines"
+          action={
+            <div className="hidden items-center gap-2 sm:flex">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/15">
+                <Sparkles size={18} strokeWidth={2} aria-hidden />
+              </div>
+            </div>
+          }
+        >
+          <div className="flex flex-col gap-3 md:flex-row">
             <select
               value={eventId}
               onChange={(e) => setEventId(e.target.value)}
-              className={cn(inputClass, "md:min-w-[220px]")}
+              className={cn(glassInput, "md:min-w-[220px]")}
             >
               {events.map((event) => (
                 <option key={event.id} value={event.id}>
@@ -98,9 +126,16 @@ export default function AiPlanningPage() {
                 </option>
               ))}
             </select>
-            <Button onClick={() => void runAi()} disabled={loading || !eventId} variant="primary">
+            <GlassButton
+              type="button"
+              variant="primary"
+              onClick={() => void runAi()}
+              disabled={loading || !eventId}
+              className="gap-1.5"
+            >
+              <Sparkles size={14} aria-hidden />
               {loading ? "Analyzing…" : "Run AI matchmaking"}
-            </Button>
+            </GlassButton>
           </div>
 
           {error && (
@@ -111,16 +146,18 @@ export default function AiPlanningPage() {
 
           <div className="mt-6 grid gap-6 md:grid-cols-2">
             <div>
-              <h2 className="text-lg font-bold text-foreground">Recommended Vendors</h2>
+              <h2 className={rf.sectionTitle}>Recommended vendors</h2>
               <div className="mt-3 space-y-2">
                 {recommendations.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No recommendations yet.</p>
+                  <p className={cn("rounded-xl border border-dashed border-white/60 bg-white/25 py-6 text-center", rf.subtitle)}>
+                    No recommendations yet. Run matchmaking to see vendor picks.
+                  </p>
                 ) : (
                   recommendations.map((item) => (
-                    <div key={item.vendorId} className="rounded-xl border border-border p-3">
+                    <div key={item.vendorId} className={glassRow}>
                       <p className="font-semibold text-foreground">{item.businessName}</p>
-                      <p className="text-xs text-muted-foreground">Score: {item.score.toFixed(2)}</p>
-                      <p className="text-sm text-muted-foreground">{item.reason}</p>
+                      <p className={cn("mt-0.5", rf.caption)}>Score: {item.score.toFixed(2)}</p>
+                      <p className={cn("mt-1 text-sm", rf.subtitle)}>{item.reason}</p>
                     </div>
                   ))
                 )}
@@ -128,14 +165,16 @@ export default function AiPlanningPage() {
             </div>
 
             <div>
-              <h2 className="text-lg font-bold text-foreground">Generated Itinerary</h2>
+              <h2 className={rf.sectionTitle}>Generated itinerary</h2>
               <div className="mt-3 space-y-2">
                 {itinerary.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No itinerary generated yet.</p>
+                  <p className={cn("rounded-xl border border-dashed border-white/60 bg-white/25 py-6 text-center", rf.subtitle)}>
+                    No itinerary generated yet.
+                  </p>
                 ) : (
                   <>
                     {itinerary.map((item, index) => (
-                      <div key={item.id} className="rounded-xl border border-border p-3">
+                      <div key={item.id} className={cn(glassRow, "space-y-2")}>
                         <input
                           value={item.title}
                           onChange={(e) =>
@@ -143,50 +182,68 @@ export default function AiPlanningPage() {
                               prev.map((x, i) => (i === index ? { ...x, title: e.target.value } : x))
                             )
                           }
-                          className="w-full border-b border-border pb-1 font-semibold text-foreground outline-none"
+                          className={cn(
+                            glassInput,
+                            "border-0 border-b border-white/55 bg-transparent px-0 font-semibold text-foreground shadow-none focus:bg-white/30"
+                          )}
                         />
-                        <div className="mt-2 grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-2 gap-2">
                           <input
                             type="datetime-local"
                             value={new Date(item.startsAt).toISOString().slice(0, 16)}
                             onChange={(e) =>
                               setItinerary((prev) =>
-                                prev.map((x, i) => (i === index ? { ...x, startsAt: new Date(e.target.value).toISOString() } : x))
+                                prev.map((x, i) =>
+                                  i === index
+                                    ? { ...x, startsAt: new Date(e.target.value).toISOString() }
+                                    : x
+                                )
                               )
                             }
-                            className="rounded border border-border px-2 py-1 text-xs"
+                            className={glassInputSm}
                           />
                           <input
                             type="datetime-local"
                             value={new Date(item.endsAt).toISOString().slice(0, 16)}
                             onChange={(e) =>
                               setItinerary((prev) =>
-                                prev.map((x, i) => (i === index ? { ...x, endsAt: new Date(e.target.value).toISOString() } : x))
+                                prev.map((x, i) =>
+                                  i === index
+                                    ? { ...x, endsAt: new Date(e.target.value).toISOString() }
+                                    : x
+                                )
                               )
                             }
-                            className="rounded border border-border px-2 py-1 text-xs"
+                            className={glassInputSm}
                           />
                         </div>
                       </div>
                     ))}
-                    <Button onClick={() => void saveItinerary()} variant="primary" className="text-sm">
+                    <GlassButton type="button" variant="primary" onClick={() => void saveItinerary()}>
                       Save itinerary
-                    </Button>
+                    </GlassButton>
                   </>
                 )}
               </div>
             </div>
           </div>
-        </Card>
+        </GlassSectionCard>
 
-        <Card className="relative min-h-[200px] sm:p-8">
-          <h2 className="mb-3 text-lg font-bold text-foreground">AI Assistant</h2>
-          <p className="mb-2 text-xs text-muted-foreground">
-            Use the floating chat to ask style, vendor, and budget questions.
-          </p>
+        <GlassSectionCard
+          title="AI Assistant"
+          subtitle="Ask style, vendor, and budget questions in the chat"
+        >
+          <div className="flex flex-col items-center gap-4 py-6 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15">
+              <Bot size={28} strokeWidth={1.75} aria-hidden />
+            </div>
+            <p className={rf.subtitle}>
+              Use the floating chat button in the bottom-right corner for quick planning help.
+            </p>
+          </div>
           <AIChatWidget />
-        </Card>
+        </GlassSectionCard>
       </section>
-    </main>
+    </RegalFrostShell>
   );
 }

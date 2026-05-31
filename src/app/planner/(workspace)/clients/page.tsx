@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
@@ -17,16 +16,15 @@ import {
   PlannerEventListItem,
   updatePlannerEventStage,
 } from "@/shared/lib/api/planner";
-import { ErrorBanner } from "@/modules/planner/components/ui";
+import { ErrorBanner, formatLKR } from "@/modules/planner/components/ui";
+import { EmptyState, PageLoadingSkeleton } from "@/shared/components/ui";
 import {
-  Badge,
-  Button,
-  EmptyState,
-  PageHeader,
-  PageLoadingSkeleton,
-  StatCard,
-  formatLKR,
-} from "@/shared/components/ui";
+  GlassButton,
+  GlassPageHeader,
+  GlassStatCard,
+} from "@/modules/vendor/dashboard/glass-ui";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
+import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
 import { cn } from "@/shared/lib/cn";
 
 type ClientCard = {
@@ -44,17 +42,17 @@ type ClientCard = {
 const STAGES: EventLifecycleStage[] = ["Lead", "Onboarding", "Planning", "Execution", "Archived"];
 
 const STAGE_ACCENT: Record<EventLifecycleStage, string> = {
-  Lead: "border-t-muted-foreground/40",
+  Lead: "border-t-muted-foreground/50",
   Onboarding: "border-t-warning",
   Planning: "border-t-accent",
   Execution: "border-t-primary",
   Archived: "border-t-border",
 };
 
-const priorityVariant: Record<ClientCard["priority"], "default" | "accent" | "muted"> = {
-  High: "default",
-  Medium: "accent",
-  Low: "muted",
+const PRIORITY_PILL: Record<ClientCard["priority"], string> = {
+  High: "bg-primary/10 text-primary ring-1 ring-primary/15",
+  Medium: "bg-warning/10 text-warning ring-1 ring-warning/15",
+  Low: "bg-white/50 text-muted-foreground ring-1 ring-white/60",
 };
 
 function completionForStage(stage: EventLifecycleStage): number {
@@ -120,7 +118,7 @@ export default function PlannerClientsPage() {
   }, [user]);
 
   useEffect(() => {
-    load();
+    void load();
   }, [load]);
 
   const totalValue = useMemo(() => clients.reduce((sum, c) => sum + c.budget, 0), [clients]);
@@ -166,42 +164,42 @@ export default function PlannerClientsPage() {
   }
 
   return (
-    <div className="space-y-8 pb-4">
+    <div className="space-y-6 pb-4 md:space-y-8">
       {error && <ErrorBanner message={error} />}
 
-      <PageHeader
+      <GlassPageHeader
         title="Clients pipeline"
-        description="Drag and drop each client event through lifecycle stages — from lead to archived."
+        description="Drag each client event through lifecycle stages — from lead to archived."
         badge="CRM"
         action={
-          <Button href="/planner/events" size="sm">
+          <GlassButton href="/planner/dashboard#create-event-dashboard" variant="primary" className="gap-1.5">
             <UserRoundPlus size={16} aria-hidden />
             Add new lead
-          </Button>
+          </GlassButton>
         }
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard
+        <GlassStatCard
           label="Managed clients"
           value={clients.length}
+          sub="Events in your portfolio"
           icon={Users}
           iconTheme="primary"
-          index={0}
         />
-        <StatCard
+        <GlassStatCard
           label="Pipeline value"
-          value={formatLKR(totalValue)}
+          value={totalValue > 0 ? formatLKR(totalValue) : "—"}
+          sub="Total wedding budgets"
           icon={CircleDollarSign}
           iconTheme="accent"
-          index={1}
         />
-        <StatCard
+        <GlassStatCard
           label="Active / progress"
           value={`${activeCount} · ${weightedProgress}%`}
+          sub="In onboarding through execution"
           icon={CalendarClock}
           iconTheme="success"
-          index={2}
         />
       </div>
 
@@ -210,10 +208,11 @@ export default function PlannerClientsPage() {
           title="No clients in your pipeline"
           description="Create a client event to start tracking lifecycle stages."
           action={
-            <Button href="/planner/events" size="sm">
+            <GlassButton href="/planner/events" variant="primary">
               Create first event
-            </Button>
+            </GlassButton>
           }
+          className={cn(rf.panel, "border-0 shadow-none")}
         />
       ) : (
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
@@ -229,23 +228,26 @@ export default function PlannerClientsPage() {
                   setDraggingId(null);
                 }}
                 className={cn(
-                  "rounded-3xl border border-border bg-card p-4 shadow-sm",
-                  "border-t-4",
+                  rf.panel,
+                  "border-t-4 p-4 sm:p-5",
                   STAGE_ACCENT[stage]
                 )}
               >
-                <div className="mb-4 flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                    {stage}
-                  </p>
+                <div className="mb-4 flex items-center justify-between gap-2">
+                  <p className={vg.label}>{stage}</p>
                   <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold tabular-nums text-primary">
                     {stageItems.length}
                   </span>
                 </div>
 
-                <div className="space-y-3 min-h-[120px]">
+                <div className="min-h-[120px] space-y-3">
                   {stageItems.length === 0 && (
-                    <div className="rounded-2xl border border-dashed border-border bg-muted/40 px-3 py-8 text-center text-xs text-muted-foreground">
+                    <div
+                      className={cn(
+                        "rounded-xl border border-dashed border-white/60 bg-white/25 px-3 py-8 text-center",
+                        vg.caption
+                      )}
+                    >
                       Drop client here
                     </div>
                   )}
@@ -259,15 +261,16 @@ export default function PlannerClientsPage() {
                       }}
                       onDragEnd={() => setDraggingId(null)}
                       className={cn(
-                        "cursor-grab rounded-2xl border border-border bg-background p-4 shadow-sm transition-all duration-200",
-                        "active:cursor-grabbing hover:border-primary/25 hover:shadow-md",
+                        "cursor-grab rounded-xl border border-white/55 bg-white/40 p-4 backdrop-blur-sm",
+                        "transition-all duration-200 active:cursor-grabbing",
+                        "hover:border-[hsl(42_48%_52%/0.28)] hover:bg-white/55 hover:shadow-[0_4px_20px_hsl(345_100%_25%/0.08)]",
                         (draggingId === client.id || savingId === client.id) && "opacity-60"
                       )}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-foreground">{client.title}</p>
-                          <p className="truncate text-xs text-muted-foreground">{client.couple}</p>
+                          <p className={cn("truncate font-medium", vg.body)}>{client.title}</p>
+                          <p className={cn("truncate", vg.caption)}>{client.couple}</p>
                         </div>
                         <GripVertical
                           size={14}
@@ -275,8 +278,8 @@ export default function PlannerClientsPage() {
                           aria-hidden
                         />
                       </div>
-                      <p className="mt-2 truncate text-[11px] text-muted-foreground">{client.email}</p>
-                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+                      <p className={cn("mt-2 truncate", vg.caption)}>{client.email}</p>
+                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/50 ring-1 ring-white/60">
                         <div
                           className="h-full rounded-full bg-primary transition-all duration-300"
                           style={{ width: `${Math.max(client.completion, 8)}%` }}
@@ -287,12 +290,19 @@ export default function PlannerClientsPage() {
                         />
                       </div>
                       <div className="mt-3 flex items-center justify-between">
-                        <Badge variant={priorityVariant[client.priority]}>{client.priority}</Badge>
-                        <span className="text-[11px] font-medium tabular-nums text-muted-foreground">
+                        <span
+                          className={cn(
+                            "rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                            PRIORITY_PILL[client.priority]
+                          )}
+                        >
+                          {client.priority}
+                        </span>
+                        <span className={cn("font-medium tabular-nums", vg.caption)}>
                           {client.completion}%
                         </span>
                       </div>
-                      <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground">
+                      <div className={cn("mt-3 flex items-center justify-between", vg.caption)}>
                         <span>
                           {new Date(client.weddingDate).toLocaleDateString(undefined, {
                             month: "short",
@@ -300,13 +310,10 @@ export default function PlannerClientsPage() {
                             year: "numeric",
                           })}
                         </span>
-                        <Link
-                          href={`/events/${client.id}`}
-                          className="inline-flex items-center gap-0.5 font-semibold text-primary hover:underline"
-                        >
+                        <GlassButton href={`/events/${client.id}`} variant="ghost" className="gap-0.5 px-2 py-1">
                           Open
                           <ArrowRight size={12} aria-hidden />
-                        </Link>
+                        </GlassButton>
                       </div>
                     </article>
                   ))}

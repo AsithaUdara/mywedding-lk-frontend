@@ -1,36 +1,35 @@
-/* Royal Kandyan design system — Phase 0 tokens */
+/* Regal Frost design system — global tokens */
 
 @import "tailwindcss";
 
 /* === Semantic HSL tokens (canonical palette) === */
 @layer base {
   :root {
-    --background: 32 50% 99%; /* #FFFDF9 bright warm ivory */
-    --foreground: 240 10% 3.9%;
+    --background: 220 14% 95%; /* porcelain frost */
+    --foreground: 220 25% 18%;
 
-    --sidebar: 240 6% 10%; /* #18181B charcoal */
+    --sidebar: 220 20% 16%;
     --sidebar-foreground: 0 0% 98%;
-    --sidebar-muted: 240 5% 64%;
-    --sidebar-border: 240 4% 16%;
+    --sidebar-muted: 220 8% 62%;
+    --sidebar-border: 220 14% 22%;
 
     --primary: 345 100% 25%; /* #800020 deep maroon */
     --primary-foreground: 0 0% 100%;
 
-    --accent: 46 65% 52%; /* #D4AF37 rich gold */
-    --accent-foreground: 240 5.9% 10%;
+    --accent: 42 48% 52%; /* antique gold */
+    --accent-foreground: 0 0% 100%;
 
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card-foreground: 220 25% 18%;
 
-    --muted: 32 35% 96%;
-    --muted-foreground: 240 4% 46%;
+    --muted: 220 14% 92%;
+    --muted-foreground: 220 10% 42%;
 
-    /* B2B workspace sidebar — warm linen, separate from ivory canvas + white cards */
-    --workspace-sidebar: 32 38% 94%;
-    --workspace-sidebar-border: 46 26% 86%;
+    --workspace-sidebar: 220 14% 92%;
+    --workspace-sidebar-border: 220 14% 86%;
 
-    --border: 46 30% 90%; /* soft gold border */
-    --input: 46 25% 92%;
+    --border: 220 14% 88%;
+    --input: 220 14% 90%;
     --ring: 345 100% 25%;
 
     --destructive: 0 72% 51%;
@@ -47,13 +46,19 @@
     /* Legacy aliases — prefer semantic tokens in new code */
     --color-primary: #800020;
     --color-accent: #d4af37;
-    --color-cream: #fffdf9;
+    --color-cream: #eef0f4;
     --color-charcoal: #18181b;
     --color-accent-light: #f4e8c8;
     --color-gold-bright: #d4af37;
     --color-gold-dark: #b8962e;
     --color-royal-burgundy: #800020;
     --color-royal-cream: #fcfaf8;
+
+    /* Self-hosted stacks — no build-time fetch (avoids Google Fonts SSL errors). */
+    --font-roboto: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, Roboto,
+      "Helvetica Neue", Arial, sans-serif;
+    --font-playfair: "Playfair Display", Georgia, "Palatino Linotype", "Book Antiqua",
+      Palatino, "Times New Roman", Times, serif;
   }
 }
 
@@ -168,20 +173,87 @@
   background-size: 60px 60px;
 }
 
-/* Bright marketing landing (DREAMDAY-style warm ivory) */
+/* Bright marketing landing — Regal Frost porcelain base */
 .marketing-page {
+  --mk-porcelain: 220 14% 95%;
+  --mk-maroon: 345 100% 25%;
+  --mk-gold: 42 48% 52%;
+  --mk-slate: 220 25% 18%;
+
   background: linear-gradient(
     180deg,
-    #fffffe 0%,
-    #fffdf9 28%,
-    #fffcf6 55%,
-    #fff9f2 100%
+    hsl(var(--mk-porcelain)) 0%,
+    hsl(220 16% 93%) 40%,
+    hsl(220 16% 92%) 100%
   );
   min-height: 100vh;
 }
 
+.marketing-regal-frost,
+.regal-frost-shell {
+  position: relative;
+  isolation: isolate;
+}
+
+.marketing-regal-frost .mk-glass-panel {
+  border: 1px solid hsl(220 14% 88% / 0.85);
+  background: hsl(0 0% 100% / 0.62);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow:
+    0 4px 24px hsl(var(--mk-slate) / 0.07),
+    inset 0 1px 0 hsl(0 0% 100% / 0.85);
+}
+
+.marketing-regal-frost .mk-glass-subtle {
+  border: 1px solid hsl(220 14% 88% / 0.65);
+  background: hsl(0 0% 100% / 0.42);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.marketing-regal-frost .mk-section-alt {
+  background: hsl(0 0% 100% / 0.35);
+  border-top: 1px solid hsl(220 14% 88% / 0.5);
+  border-bottom: 1px solid hsl(220 14% 88% / 0.5);
+}
+
+.marketing-regal-frost .mk-pricing-pro {
+  border-color: hsl(var(--mk-maroon));
+  background: hsl(var(--mk-maroon));
+  color: hsl(0 0% 100%);
+  box-shadow: 0 8px 32px hsl(var(--mk-maroon) / 0.25);
+}
+
+.marketing-regal-frost .mk-badge-gold {
+  background: hsl(var(--mk-gold) / 0.2);
+  color: hsl(0 0% 100%);
+  border: 1px solid hsl(var(--mk-gold) / 0.45);
+}
+
+.consumer-hero {
+  padding-bottom: 2.5rem;
+}
+
+.consumer-hero-bg {
+  background-color: hsl(345 30% 28%);
+  background-image: url("https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=1920&q=80");
+  background-size: cover;
+  background-position: center;
+}
+
+.consumer-hero-curve {
+  line-height: 0;
+}
+
+@media (min-width: 768px) {
+  .consumer-hero {
+    padding-bottom: 3rem;
+  }
+}
+
 .marketing-page .marketing-section-alt {
-  background-color: #ffffff;
+  background-color: hsl(0 0% 100% / 0.35);
 }
 
 /* Editorial hero — arched “glass” columns */
@@ -438,12 +510,14 @@
 }
 
 .marketing-hero .search-bar-enhanced {
-  background: linear-gradient(145deg, #ffffff, #fefefe);
-  border: 2px solid hsl(var(--border));
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.55);
   transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(24, 24, 27, 0.08);
+  box-shadow: 0 8px 32px hsl(345 100% 25% / 0.08);
 }
 
 .marketing-hero .search-bar-enhanced::before {
@@ -480,6 +554,33 @@
   transition: all 0.2s ease;
   overflow: hidden;
   z-index: 3;
+}
+
+.marketing-hero .sword-button-enhanced::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.2) 40%,
+    rgba(255, 255, 255, 0.6) 50%,
+    rgba(255, 255, 255, 0.2) 60%,
+    transparent 100%
+  );
+  animation: elegantButtonShine 2.5s ease-in-out 3.1s forwards;
+}
+
+@keyframes elegantButtonShine {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
 }
 
 .marketing-hero .sword-button-enhanced:hover {
@@ -545,17 +646,24 @@
   }
 }
 
-/* Vendor listing editor — ivory shell (not dashboard shimmer) */
+/* Vendor listing editor — Regal Frost glass panels */
 .listing-editor-page {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  flex: 1 1 auto;
   min-height: 100vh;
-  background: hsl(var(--background));
   color: hsl(var(--foreground));
 }
 
 .listing-editor-header {
-  background: hsl(var(--card));
-  border-bottom: 1px solid hsl(var(--border));
-  box-shadow: 0 4px 24px rgba(128, 0, 32, 0.04);
+  width: 100%;
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 4px 24px hsl(345 100% 25% / 0.06);
 }
 
 .listing-editor-header::after {
@@ -574,21 +682,26 @@
 }
 
 .listing-editor-card {
-  background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
-  border-radius: var(--radius);
-  box-shadow: 0 4px 24px rgba(128, 0, 32, 0.06);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 1rem;
+  box-shadow: 0 8px 32px hsl(345 100% 25% / 0.08);
 }
 
 .listing-editor-preview-card {
-  background: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
-  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 1rem;
 }
 
 .listing-editor-input {
-  background-color: hsl(var(--background));
-  border: 1px solid hsl(var(--border));
+  background-color: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(8px);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
@@ -599,7 +712,7 @@
 }
 
 .listing-editor-upload-zone {
-  background: hsl(var(--muted));
+  background: rgba(255, 255, 255, 0.35);
   border: 2px dashed hsl(var(--accent) / 0.45);
   transition: border-color 0.2s, background 0.2s;
 }
@@ -609,21 +722,406 @@
 }
 
 .listing-editor-chip-inactive {
-  background: hsl(var(--background));
-  border: 1px solid hsl(var(--border));
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 .listing-editor-surface-muted {
-  background: hsl(var(--muted));
-  border: 1px solid hsl(var(--border));
+  background: rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.45);
 }
 
 .listing-editor-step-done {
-  background: hsl(var(--primary) / 0.08);
+  background: hsl(var(--primary) / 0.1);
   color: hsl(var(--primary));
+  border: 1px solid hsl(var(--primary) / 0.2);
 }
 
 .listing-editor-step-pending {
-  background: hsl(var(--muted));
-  color: hsl(var(--muted-foreground));
+  background: hsl(0 0% 100% / 0.45);
+  color: hsl(220 10% 42%);
+  border: 1px solid hsl(0 0% 100% / 0.55);
 }
+
+.regal-frost-shell .listing-editor-step-pending:hover,
+.listing-editor-page .listing-editor-step-pending:hover {
+  background: hsl(0 0% 100% / 0.55);
+  color: hsl(var(--vgo-maroon));
+}
+
+/* === Vendor dashboard overview — Regal Frost glassmorphism === */
+@layer utilities {
+  .font-glass-body {
+    font-family: var(--font-glass-body), "DM Sans", system-ui, sans-serif;
+  }
+
+  .font-luxury-display {
+    font-family: var(--font-luxury-display), "Cinzel", Georgia, serif;
+    letter-spacing: 0.06em;
+  }
+
+  .font-luxury-section {
+    font-family: var(--font-luxury-section), "Cormorant Garamond", Georgia, serif;
+    letter-spacing: -0.01em;
+  }
+}
+
+/* Palette: Porcelain Frost · Royal Maroon · Antique Gold */
+.regal-frost-shell,
+.vendor-glass-overview {
+  --vgo-porcelain: 220 14% 95%;
+  --vgo-maroon: 345 100% 25%;
+  --vgo-gold: 42 48% 52%;
+  --vgo-slate: 220 25% 18%;
+
+  font-family: var(--font-glass-body), "DM Sans", system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+/* Frosted glass surfaces — cool tint, stronger depth */
+.regal-frost-shell .rf-glass-panel,
+.regal-frost-shell .vgo-glass-panel,
+.vendor-glass-overview .vgo-glass-panel {
+  border: 1px solid hsl(220 14% 88% / 0.85);
+  background: hsl(0 0% 100% / 0.62);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow:
+    0 4px 24px hsl(var(--vgo-slate) / 0.07),
+    0 1px 0 hsl(var(--vgo-gold) / 0.12) inset,
+    inset 0 1px 0 hsl(0 0% 100% / 0.85);
+}
+
+.regal-frost-shell .rf-glass-subtle,
+.regal-frost-shell .vgo-glass-subtle,
+.vendor-glass-overview .vgo-glass-subtle {
+  border: 1px solid hsl(220 14% 88% / 0.65);
+  background: hsl(0 0% 100% / 0.42);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Cool mesh canvas — no warm blush tones */
+.regal-frost-shell.vgo-flex-shell,
+.vendor-glass-overview.vgo-flex-shell {
+  position: relative;
+  display: flex;
+  min-height: 100vh;
+  isolation: isolate;
+  overflow: visible;
+  background: linear-gradient(
+    155deg,
+    hsl(var(--vgo-porcelain)) 0%,
+    hsl(220 16% 92%) 45%,
+    hsl(220 18% 88%) 100%
+  );
+}
+
+.regal-frost-shell .vgo-mesh-orb,
+.vendor-glass-overview .vgo-mesh-orb {
+  position: fixed;
+  z-index: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(90px);
+}
+
+.regal-frost-shell .vgo-mesh-orb--gold,
+.vendor-glass-overview .vgo-mesh-orb--gold {
+  top: -6%;
+  right: 8%;
+  width: 26rem;
+  height: 26rem;
+  background: hsl(var(--vgo-gold) / 0.35);
+}
+
+.regal-frost-shell .vgo-mesh-orb--maroon,
+.vendor-glass-overview .vgo-mesh-orb--maroon {
+  bottom: 0;
+  left: 10%;
+  width: 24rem;
+  height: 24rem;
+  background: hsl(var(--vgo-maroon) / 0.18);
+}
+
+.regal-frost-shell .vgo-mesh-orb--slate,
+.vendor-glass-overview .vgo-mesh-orb--slate {
+  top: 35%;
+  right: 25%;
+  width: 20rem;
+  height: 20rem;
+  background: hsl(var(--vgo-slate) / 0.08);
+}
+
+/* Floating glass sidebar */
+.regal-frost-shell .vgo-sidebar,
+.vendor-glass-overview .vgo-sidebar {
+  position: sticky;
+  top: 0.75rem;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 1.5rem);
+  margin: 0.75rem 0 0.75rem 0.75rem;
+  flex-shrink: 0;
+  overflow: visible;
+  border-radius: 1.25rem;
+  border: 1px solid hsl(220 14% 88% / 0.9);
+  background: hsl(0 0% 100% / 0.62);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow:
+    0 8px 40px hsl(var(--vgo-slate) / 0.1),
+    0 1px 0 hsl(var(--vgo-gold) / 0.15) inset,
+    inset 0 1px 0 hsl(0 0% 100% / 0.9);
+}
+
+.regal-frost-shell .vgo-sidebar-nav,
+.vendor-glass-overview .vgo-sidebar-nav {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.regal-frost-shell .vgo-sidebar-brand,
+.vendor-glass-overview .vgo-sidebar-brand {
+  flex-shrink: 0;
+  border-color: hsl(220 14% 88% / 0.5);
+}
+
+.regal-frost-shell .vgo-sidebar-footer,
+.vendor-glass-overview .vgo-sidebar-footer {
+  flex-shrink: 0;
+  border-color: hsl(220 14% 88% / 0.5);
+}
+
+.regal-frost-shell .vgo-sidebar-group-label,
+.vendor-glass-overview .vgo-sidebar-group-label {
+  color: hsl(220 10% 42%);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* Nav — bold maroon pill active state */
+.regal-frost-shell .vgo-nav-active,
+.vendor-glass-overview .vgo-nav-active {
+  background: hsl(var(--vgo-maroon));
+  color: hsl(0 0% 100%);
+  border: 1px solid hsl(var(--vgo-maroon));
+  box-shadow: 0 4px 16px hsl(var(--vgo-maroon) / 0.35);
+}
+
+.regal-frost-shell .vgo-nav-active .vgo-nav-icon,
+.vendor-glass-overview .vgo-nav-active .vgo-nav-icon {
+  background: hsl(0 0% 100% / 0.18);
+  color: hsl(0 0% 100%);
+}
+
+.regal-frost-shell .vgo-nav-idle,
+.vendor-glass-overview .vgo-nav-idle {
+  color: hsl(220 10% 42%);
+}
+
+.regal-frost-shell .vgo-nav-idle:hover,
+.vendor-glass-overview .vgo-nav-idle:hover{
+  background: hsl(0 0% 100% / 0.55);
+  color: hsl(var(--vgo-maroon));
+}
+
+.regal-frost-shell .vgo-nav-idle:hover .vgo-nav-icon,
+.vendor-glass-overview .vgo-nav-idle:hover .vgo-nav-icon{
+  background: hsl(var(--vgo-maroon) / 0.08);
+  color: hsl(var(--vgo-maroon));
+}
+
+.regal-frost-shell .vgo-sidebar .vgo-user-card,
+.vendor-glass-overview .vgo-sidebar .vgo-user-card {
+  border-color: hsl(220 14% 88% / 0.65);
+  background: hsl(0 0% 100% / 0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.regal-frost-shell .vgo-sidebar-toggle,
+.vendor-glass-overview .vgo-sidebar-toggle {
+  border: 1px solid hsl(0 0% 100% / 0.95);
+  background: hsl(0 0% 100% / 0.96);
+  color: hsl(var(--vgo-maroon));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow:
+    0 2px 8px hsl(var(--vgo-slate) / 0.1),
+    0 0 0 1px hsl(220 14% 88% / 0.5),
+    inset 0 1px 0 hsl(0 0% 100%);
+  transition: background 200ms, color 200ms, box-shadow 200ms, border-color 200ms;
+}
+
+.regal-frost-shell .vgo-sidebar-toggle:hover,
+.vendor-glass-overview .vgo-sidebar-toggle:hover{
+  background: hsl(0 0% 100%);
+  color: hsl(var(--vgo-maroon));
+  border-color: hsl(0 0% 100%);
+  box-shadow:
+    0 4px 16px hsl(var(--vgo-slate) / 0.14),
+    0 0 0 1px hsl(var(--vgo-maroon) / 0.15),
+    inset 0 1px 0 hsl(0 0% 100%);
+}
+
+.regal-frost-shell .vgo-upgrade-btn,
+.vendor-glass-overview .vgo-upgrade-btn {
+  border: none;
+  background: hsl(var(--vgo-gold));
+  color: hsl(0 0% 100%);
+  box-shadow: 0 4px 16px hsl(var(--vgo-gold) / 0.4);
+}
+
+.regal-frost-shell .vgo-upgrade-btn:hover,
+.vendor-glass-overview .vgo-upgrade-btn:hover{
+  opacity: 0.92;
+  box-shadow: 0 6px 20px hsl(var(--vgo-gold) / 0.45);
+}
+
+/* Main canvas */
+.regal-frost-shell .vgo-canvas,
+.vendor-glass-overview .vgo-canvas {
+  position: relative;
+  z-index: 10;
+  flex: 1;
+  min-width: 0;
+  min-height: 100vh;
+  background: transparent;
+}
+
+.regal-frost-shell .vgo-topbar,
+.vendor-glass-overview .vgo-topbar {
+  border: 1px solid hsl(220 14% 88% / 0.85);
+  background: hsl(0 0% 100% / 0.62);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow:
+    0 4px 24px hsl(var(--vgo-slate) / 0.07),
+    0 1px 0 hsl(var(--vgo-gold) / 0.12) inset,
+    inset 0 1px 0 hsl(0 0% 100% / 0.85);
+}
+
+.regal-frost-shell .vgo-search,
+.vendor-glass-overview .vgo-search {
+  border-color: hsl(220 14% 88% / 0.7);
+  background: hsl(0 0% 100% / 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.regal-frost-shell .vgo-search:focus,
+.vendor-glass-overview .vgo-search:focus{
+  border-color: hsl(var(--vgo-maroon) / 0.45);
+  background: hsl(0 0% 100% / 0.72);
+  box-shadow: 0 0 0 3px hsl(var(--vgo-maroon) / 0.12);
+}
+
+.regal-frost-shell .vgo-bar-primary,
+.vendor-glass-overview .vgo-bar-primary {
+  background: hsl(var(--vgo-maroon));
+}
+
+.regal-frost-shell .vgo-bar-accent,
+.vendor-glass-overview .vgo-bar-accent {
+  background: hsl(var(--vgo-gold));
+}
+
+/* Workspace plan tier badges — separate from vgo-topbar-btn so PRO gold is not overridden */
+.regal-frost-shell .vgo-plan-pro-badge,
+.vendor-glass-overview .vgo-plan-pro-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 9999px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border: 1px solid hsl(42 55% 38% / 0.55);
+  background: linear-gradient(
+    180deg,
+    hsl(42 52% 62%) 0%,
+    hsl(var(--vgo-gold)) 48%,
+    hsl(42 42% 42%) 100%
+  );
+  color: hsl(0 0% 100%);
+  box-shadow:
+    0 1px 2px hsl(42 40% 28% / 0.4),
+    0 4px 14px hsl(var(--vgo-gold) / 0.45),
+    inset 0 1px 0 hsl(0 0% 100% / 0.35);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.regal-frost-shell a.vgo-plan-pro-badge:hover,
+.vendor-glass-overview a.vgo-plan-pro-badge:hover {
+  color: hsl(0 0% 100%);
+  transform: translateY(-1px);
+  box-shadow:
+    0 2px 4px hsl(42 40% 28% / 0.4),
+    0 6px 18px hsl(var(--vgo-gold) / 0.52),
+    inset 0 1px 0 hsl(0 0% 100% / 0.35);
+}
+
+.regal-frost-shell .vgo-plan-free-badge,
+.vendor-glass-overview .vgo-plan-free-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 9999px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border: 1px solid hsl(220 14% 88% / 0.85);
+  background: hsl(0 0% 100% / 0.55);
+  color: hsl(var(--vgo-slate) / 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.regal-frost-shell a.vgo-plan-free-badge:hover,
+.vendor-glass-overview a.vgo-plan-free-badge:hover {
+  color: hsl(var(--vgo-maroon));
+  border-color: hsl(var(--vgo-maroon) / 0.22);
+  background: hsl(0 0% 100% / 0.82);
+}
+
+.regal-frost-shell .vgo-topbar-btn,
+.vendor-glass-overview .vgo-topbar-btn {
+  border-color: hsl(220 14% 88% / 0.7);
+  background: hsl(0 0% 100% / 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.regal-frost-shell .vgo-topbar-btn:hover,
+.vendor-glass-overview .vgo-topbar-btn:hover{
+  background: hsl(0 0% 100% / 0.78);
+  color: hsl(var(--vgo-maroon));
+  border-color: hsl(var(--vgo-maroon) / 0.2);
+}
+
+.regal-frost-shell .vgo-pro-card,
+.vendor-glass-overview .vgo-pro-card {
+  border-color: hsl(220 14% 88% / 0.65);
+  background: hsl(0 0% 100% / 0.42);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: inset 0 1px 0 hsl(var(--vgo-gold) / 0.1);
+}
+

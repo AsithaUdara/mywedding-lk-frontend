@@ -21,7 +21,13 @@ import {
   PlannerNavGroup,
   PlannerWorkspaceShell,
 } from "@/shared/components/layout/PlannerWorkspaceShell";
-import { Button } from "@/shared/components/ui";
+import {
+  PlannerCreateEventProvider,
+  usePlannerCreateEventModal,
+} from "@/modules/planner/subscription/PlannerCreateEventProvider";
+import { PlannerBrandingProvider, usePlannerBranding } from "@/modules/planner/branding/PlannerBrandingProvider";
+import { GlassButton } from "@/modules/vendor/dashboard/glass-ui";
+import { WorkspacePlanBadge } from "@/shared/components/layout/WorkspacePlanBadge";
 
 const NAV_GROUPS: PlannerNavGroup[] = [
   {
@@ -54,10 +60,32 @@ const NAV_GROUPS: PlannerNavGroup[] = [
 
 export default function PlannerWorkspaceLayout({ children }: { children: React.ReactNode }) {
   return (
+    <PlannerBrandingProvider>
+      <PlannerCreateEventProvider>
+        <PlannerWorkspaceLayoutInner>{children}</PlannerWorkspaceLayoutInner>
+      </PlannerCreateEventProvider>
+    </PlannerBrandingProvider>
+  );
+}
+
+function PlannerPlanBadge() {
+  const { profile, loading } = usePlannerBranding();
+  const isPro = profile?.activePlanTier === "PlannerPro";
+  const tier = loading ? "…" : isPro ? "PRO" : "FREE";
+
+  return (
+    <WorkspacePlanBadge tier={tier} href="/planner/billing" title="Plan & billing" />
+  );
+}
+
+function PlannerWorkspaceLayoutInner({ children }: { children: React.ReactNode }) {
+  const { openCreateEventModal } = usePlannerCreateEventModal();
+
+  return (
     <PlannerWorkspaceShell
       navGroups={NAV_GROUPS}
       sidebarFooter={
-        <div className="mx-3 mb-3 overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/8 via-card to-accent/10 p-4 shadow-sm">
+        <div className="vgo-pro-card mx-3 mb-3 overflow-hidden rounded-2xl border p-4">
           <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">Automation</p>
           <p className="mt-1 text-sm font-semibold text-foreground">AI Copilot</p>
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
@@ -74,10 +102,15 @@ export default function PlannerWorkspaceLayout({ children }: { children: React.R
       }
       topBarActions={
         <>
-          <Button href="/planner/events" size="sm" className="hidden md:inline-flex">
+          <GlassButton
+            type="button"
+            variant="primary"
+            className="hidden gap-1.5 md:inline-flex"
+            onClick={openCreateEventModal}
+          >
             <Plus size={14} aria-hidden />
             New event
-          </Button>
+          </GlassButton>
           <button
             type="button"
             className="relative rounded-full border border-border bg-card p-2 text-muted-foreground transition-colors duration-200 hover:border-primary/30 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -86,6 +119,7 @@ export default function PlannerWorkspaceLayout({ children }: { children: React.R
             <Bell size={20} />
             <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full border-2 border-card bg-primary" />
           </button>
+          <PlannerPlanBadge />
         </>
       }
     >

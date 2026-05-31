@@ -5,13 +5,12 @@ import { useAuth } from "@/shared/context/AuthContext";
 import { getActivityFeed, type ActivityFeedItem } from "@/shared/lib/api/feed";
 import { getTasksForEvent } from "@/shared/lib/api/tasks";
 import { useRealTime } from "@/shared/context/RealTimeContext";
-import { MessageSquare } from "lucide-react";
 import ActivityItem from "./ActivityItem";
 import Skeleton from "@/shared/components/ui/Skeleton";
-import { cp } from "@/modules/client/client-theme";
-import { cn } from "@/shared/lib/cn";
+import { GlassSectionCard } from "@/modules/vendor/dashboard/glass-ui";
+import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
 
-const RecentActivitiesHub = ({ eventId }: { eventId: string }) => {
+const RecentActivitiesHub = ({ eventId, className }: { eventId: string; className?: string }) => {
   const { user } = useAuth();
   const { activityVersion, checklistVersion } = useRealTime();
   const [items, setItems] = useState<ActivityFeedItem[]>([]);
@@ -49,14 +48,11 @@ const RecentActivitiesHub = ({ eventId }: { eventId: string }) => {
   const displayCount = Math.max(4, 3 + tasksShown);
 
   return (
-    <div className={cn(cp.panel, "flex h-full flex-col md:p-8")}>
-      <div className="mb-6 flex flex-shrink-0 items-center gap-4 border-b border-border pb-4">
-        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary/10">
-          <MessageSquare className="text-primary" size={20} strokeWidth={1.5} aria-hidden />
-        </div>
-        <h2 className={cp.sectionTitle}>Recent activity</h2>
-      </div>
-
+    <GlassSectionCard
+      className={className}
+      title="Recent activity"
+      subtitle="Updates from your planning team"
+    >
       <div className="flex min-h-0 flex-1 flex-col">
         {isLoading ? (
           <div className="space-y-4">
@@ -65,8 +61,8 @@ const RecentActivitiesHub = ({ eventId }: { eventId: string }) => {
             <Skeleton className="h-12 w-full rounded-xl" />
           </div>
         ) : items.length === 0 ? (
-          <div className="py-8 text-center">
-            <p className={cp.label}>No recent activities</p>
+          <div className="flex flex-1 items-center justify-center py-8 text-center">
+            <p className={vg.label}>No recent activities</p>
           </div>
         ) : (
           <div className="flex flex-col gap-5">
@@ -76,7 +72,7 @@ const RecentActivitiesHub = ({ eventId }: { eventId: string }) => {
           </div>
         )}
       </div>
-    </div>
+    </GlassSectionCard>
   );
 };
 

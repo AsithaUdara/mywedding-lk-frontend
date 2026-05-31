@@ -1,5 +1,7 @@
 import React from "react";
 import Image from "next/image";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
+import { cn } from "@/shared/lib/cn";
 
 interface ImageGalleryProps {
   images: string[];
@@ -20,7 +22,7 @@ const ImageGallery = ({ images, vendorName }: ImageGalleryProps) => {
 
   return (
     <>
-      <div className="relative aspect-[4/3] overflow-hidden rounded-2xl sm:hidden">
+      <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-white/55 ring-1 ring-white/60 sm:hidden">
         <Image
           src={primary}
           alt={`${vendorName} — cover photo`}
@@ -31,13 +33,18 @@ const ImageGallery = ({ images, vendorName }: ImageGalleryProps) => {
           unoptimized
         />
         {unique.length > 1 && (
-          <div className="absolute bottom-3 right-3 rounded-lg bg-card/95 px-3 py-1.5 text-xs font-semibold text-foreground shadow-sm backdrop-blur-sm">
+          <div
+            className={cn(
+              rf.glassSubtle,
+              "absolute bottom-3 right-3 rounded-lg px-3 py-1.5 text-xs font-semibold text-foreground shadow-sm backdrop-blur-sm"
+            )}
+          >
             1 / {unique.length} photos
           </div>
         )}
       </div>
 
-      <div className="hidden h-[min(55vh,480px)] grid-cols-4 grid-rows-2 gap-2 overflow-hidden rounded-2xl sm:grid">
+      <div className="hidden h-[min(55vh,480px)] grid-cols-4 grid-rows-2 gap-2 overflow-hidden rounded-2xl border border-white/55 ring-1 ring-white/60 sm:grid">
         <div className="relative col-span-2 row-span-2 cursor-pointer overflow-hidden">
           <Image
             src={primary}

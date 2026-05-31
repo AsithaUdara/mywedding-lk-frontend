@@ -42,6 +42,9 @@ export default function AdminVendorsPage() {
               <RefreshCw size={16} aria-hidden />
               Refresh
             </GlassButton>
+            <GlassButton href="/admin/vendors/directory" variant="ghost">
+              All vendors
+            </GlassButton>
           </div>
         }
       />

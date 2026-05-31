@@ -1,113 +1,136 @@
 "use client";
 
-import Link from "next/link";
 import { ArrowRight, CalendarDays, Inbox, LineChart, Store } from "lucide-react";
 import { AnalyticsDashboard } from "@/modules/vendor/dashboard/AnalyticsDashboard";
 import { InquiryManagementInbox } from "@/modules/vendor/dashboard/InquiryManagementInbox";
 import { AvailabilityCalendar } from "@/modules/vendor/dashboard/AvailabilityCalendar";
 import {
-  Button,
-  PageHeader,
-  QuickActionLink,
-  SectionCard,
-} from "@/shared/components/ui";
+  GlassButton,
+  GlassPageHeader,
+  GlassQuickActionLink,
+  GlassSectionCard,
+} from "@/modules/vendor/dashboard/glass-ui";
+import { useVendorVerification } from "@/modules/vendor/dashboard/VendorVerificationContext";
+import { VendorVerificationStatusChip } from "@/modules/vendor/dashboard/VendorVerificationBanner";
+import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
+import { cn } from "@/shared/lib/cn";
 
 const QUICK_LINKS = [
   {
     href: "/vendor/dashboard/analytics",
     label: "Analytics",
-    description: "Profile views, inquiries, win rate",
+    description: "Views, inquiries, win rate",
     icon: LineChart,
   },
   {
     href: "/vendor/dashboard/inquiries",
-    label: "Inquiry inbox",
-    description: "Planner & client messages · send quotes",
+    label: "Inquiries",
+    description: "Messages and quotes",
     icon: Inbox,
   },
   {
     href: "/vendor/dashboard/availability",
     label: "Availability",
-    description: "Block dates and show booked days",
+    description: "Calendar and blocked dates",
     icon: CalendarDays,
   },
 ];
 
+function StorefrontStatusPill() {
+  const { loading, isVerified } = useVendorVerification();
+
+  if (loading) {
+    return (
+      <div className={vg.storefrontPill}>
+        <div className={cn("flex h-8 w-8 items-center justify-center rounded-md", vg.iconAccent)}>
+          <Store size={16} aria-hidden />
+        </div>
+        <div>
+          <p className={vg.label}>Storefront</p>
+          <p className={cn("font-glass-body text-sm font-medium text-muted-foreground")}>…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isVerified) {
+    return <VendorVerificationStatusChip />;
+  }
+
+  return (
+    <div className={vg.storefrontPill}>
+      <div className={cn("flex h-8 w-8 items-center justify-center rounded-md", vg.iconPrimary)}>
+        <Store size={16} aria-hidden />
+      </div>
+      <div>
+        <p className={vg.label}>Storefront</p>
+        <p className={cn("font-glass-body text-sm font-medium text-foreground")}>Live</p>
+      </div>
+    </div>
+  );
+}
+
 export default function VendorDashboardOverview() {
   return (
-    <div className="space-y-8 pb-4 lg:space-y-10">
-      <PageHeader
+    <div className="space-y-6 md:space-y-8">
+      <GlassPageHeader
         title="Dashboard"
-        description="Your digital storefront and CRM — respond to planner inquiries, manage services, and keep availability up to date."
+        description="Respond to inquiries, manage services, and keep your storefront up to date."
         badge="Overview"
-        action={
-          <div className="flex items-center gap-2 rounded-2xl border border-border bg-card px-4 py-2.5 shadow-sm">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Store size={20} aria-hidden />
-            </div>
-            <div className="text-left">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Storefront
-              </p>
-              <p className="text-sm font-semibold text-foreground">Live on MyWedding.lk</p>
-            </div>
-          </div>
-        }
+        action={<StorefrontStatusPill />}
       />
 
-      <SectionCard title="Quick links" subtitle="Jump to your most-used tools">
-        <div className="grid gap-3 sm:grid-cols-3">
-          {QUICK_LINKS.map((item) => (
-            <QuickActionLink
-              key={item.href}
-              href={item.href}
-              label={item.label}
-              description={item.description}
-              icon={<item.icon size={18} />}
-            />
-          ))}
-        </div>
-      </SectionCard>
+      <div className="grid gap-3 sm:grid-cols-3">
+        {QUICK_LINKS.map((item) => (
+          <GlassQuickActionLink
+            key={item.href}
+            href={item.href}
+            label={item.label}
+            description={item.description}
+            icon={<item.icon size={16} />}
+          />
+        ))}
+      </div>
 
-      <SectionCard
+      <GlassSectionCard
         title="Performance"
-        subtitle="Profile views, inquiries, and win rate from your storefront"
+        subtitle="This week · profile views, inquiries, win rate"
         action={
-          <Button href="/vendor/dashboard/analytics" variant="secondary" size="sm">
-            Full analytics
+          <GlassButton href="/vendor/dashboard/analytics">
+            Analytics
             <ArrowRight size={14} aria-hidden />
-          </Button>
+          </GlassButton>
         }
       >
         <AnalyticsDashboard compact />
-      </SectionCard>
+      </GlassSectionCard>
 
-      <div className="grid gap-6 xl:grid-cols-2">
-        <SectionCard
-          title="Inquiry inbox"
-          subtitle="Planner and client messages — reply with official quotes"
+      <div className="grid gap-6 lg:grid-cols-2">
+        <GlassSectionCard
+          title="Inquiries"
+          subtitle="Recent planner and client messages"
           action={
-            <Button href="/vendor/dashboard/inquiries" variant="secondary" size="sm">
-              Open inbox
+            <GlassButton href="/vendor/dashboard/inquiries">
+              Inbox
               <ArrowRight size={14} aria-hidden />
-            </Button>
+            </GlassButton>
           }
         >
           <InquiryManagementInbox embedded />
-        </SectionCard>
+        </GlassSectionCard>
 
-        <SectionCard
+        <GlassSectionCard
           title="Availability"
-          subtitle="Booked and blocked dates at a glance"
+          subtitle="Booked and blocked dates"
           action={
-            <Button href="/vendor/dashboard/availability" variant="secondary" size="sm">
-              Open calendar
+            <GlassButton href="/vendor/dashboard/availability">
+              Calendar
               <ArrowRight size={14} aria-hidden />
-            </Button>
+            </GlassButton>
           }
         >
           <AvailabilityCalendar embedded />
-        </SectionCard>
+        </GlassSectionCard>
       </div>
     </div>
   );

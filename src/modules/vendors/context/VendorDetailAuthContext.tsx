@@ -3,6 +3,9 @@
 import React, { createContext, useCallback, useContext, useState } from "react";
 import { useAuth } from "@/shared/context/AuthContext";
 import AuthModal from "@/modules/identity/AuthModal";
+import { GlassButton } from "@/modules/vendor/dashboard/glass-ui";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
+import { cn } from "@/shared/lib/cn";
 
 export type VendorAuthIntent = "book" | "message" | "review";
 
@@ -90,26 +93,32 @@ export function VendorDetailAuthProvider({ children }: { children: React.ReactNo
 
       {reviewNoticeOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-foreground/30 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="review-notice-title"
           onClick={() => setReviewNoticeOpen(false)}
         >
           <div
-            className="w-full max-w-md rounded-3xl border border-border bg-card p-6 shadow-xl"
+            className={cn(rf.panel, "w-full max-w-md overflow-hidden p-6")}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-semibold text-foreground">Reviews after your event</h3>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            <h3 id="review-notice-title" className={rf.sectionTitle}>
+              Reviews after your event
+            </h3>
+            <p className={cn("mt-2 leading-relaxed", rf.subtitle)}>
               To keep reviews trustworthy, you can leave a rating after you have a completed booking
               with this vendor through MyWedding.lk. Book a service first, then return here once your
               event is done.
             </p>
-            <button
+            <GlassButton
               type="button"
+              variant="primary"
+              className="mt-5 w-full justify-center"
               onClick={() => setReviewNoticeOpen(false)}
-              className="mt-5 w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
             >
               Got it
-            </button>
+            </GlassButton>
           </div>
         </div>
       )}

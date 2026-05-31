@@ -6,8 +6,10 @@ import { getBudgetOverview } from "@/shared/lib/api/budget";
 import { getTasksForEvent } from "@/shared/lib/api/tasks";
 import { getOrganizers } from "@/shared/lib/api/events";
 import { Wallet, CheckSquare, Users } from "lucide-react";
-import { StatCard, StatGridSkeleton } from "@/shared/components/ui";
+import { StatGridSkeleton } from "@/shared/components/ui";
 import { useRealTime } from "@/shared/context/RealTimeContext";
+import { EventStatCard } from "./EventStatCard";
+import { eventWorkspace } from "./event-workspace";
 
 interface QuickInsightsRowProps {
   eventId: string;
@@ -62,37 +64,31 @@ const QuickInsightsRow = ({ eventId }: QuickInsightsRowProps) => {
 
   if (loading) {
     return (
-      <div className="mb-8">
+      <div>
         <StatGridSkeleton count={3} />
       </div>
     );
   }
 
   return (
-    <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
-      <StatCard
+    <div className={eventWorkspace.statGrid}>
+      <EventStatCard
         label="Budget usage"
         value={`${budgetUsage.toFixed(0)}%`}
-        sub="spent"
+        sub="of planned budget spent"
         icon={Wallet}
-        iconTheme="accent"
-        index={0}
       />
-      <StatCard
+      <EventStatCard
         label="Tasks done"
         value={taskProgress.completed}
-        sub={`of ${taskProgress.total}`}
+        sub={`${taskProgress.total} total tasks`}
         icon={CheckSquare}
-        iconTheme="primary"
-        index={1}
       />
-      <StatCard
+      <EventStatCard
         label="Team size"
         value={teamSize}
-        sub="members"
+        sub={teamSize === 1 ? "active member" : "active members"}
         icon={Users}
-        iconTheme="muted"
-        index={2}
       />
     </div>
   );

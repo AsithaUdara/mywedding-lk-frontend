@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/shared/context/AuthContext";
 import { auth } from "@/shared/lib/firebase";
 import { signOut } from "firebase/auth";
-import { LayoutDashboard, ScrollText, ShieldCheck, Users, Wallet } from "lucide-react";
+import { LayoutDashboard, ScrollText, ShieldCheck, Store, Users, Wallet } from "lucide-react";
 import { B2BWorkspaceShell } from "@/shared/components/layout/B2BWorkspaceShell";
 import { PageLoadingSkeleton } from "@/shared/components/ui";
 import { GlassButton } from "@/modules/vendor/dashboard/glass-ui";
@@ -15,7 +15,8 @@ import { getPendingVendors } from "@/shared/lib/api/admin";
 
 const NAV_ITEMS = [
   { label: "Overview", href: "/admin/dashboard", icon: <LayoutDashboard size={18} /> },
-  { label: "KYB queue", href: "/admin/vendors", icon: <Users size={18} /> },
+  { label: "KYB queue", href: "/admin/vendors", icon: <Users size={18} />, exact: true },
+  { label: "All vendors", href: "/admin/vendors/directory", icon: <Store size={18} /> },
   { label: "Payouts", href: "/admin/dashboard/commissions", icon: <Wallet size={18} /> },
   { label: "Audit log", href: "/admin/dashboard/audit-log", icon: <ScrollText size={18} /> },
 ];
@@ -121,6 +122,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <GlassButton href="/admin/vendors" variant="primary" className="mt-3 w-full justify-center">
             Open KYB queue
             {kybPending !== undefined && kybPending > 0 ? ` (${kybPending})` : ""}
+          </GlassButton>
+          <GlassButton href="/admin/vendors/directory" variant="ghost" className="mt-2 w-full justify-center">
+            View all vendors
           </GlassButton>
         </div>
       }

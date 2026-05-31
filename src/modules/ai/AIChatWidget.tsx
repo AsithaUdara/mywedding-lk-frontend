@@ -129,7 +129,7 @@ const AIChatWidget = () => {
               initial={{ opacity: 0, scale: 0.8, x: 20 }}
               animate={{ opacity: 1, scale: 1, x: 0 }}
               exit={{ opacity: 0, scale: 0.8, x: 20 }}
-              className="bg-card px-4 py-2 rounded-2xl shadow-xl border border-primary/10 text-xs font-bold text-foreground flex items-center gap-2 whitespace-nowrap mb-1"
+              className="rf-glass-subtle vgo-glass-subtle px-4 py-2 rounded-2xl shadow-xl border border-white/55 text-xs font-bold text-foreground flex items-center gap-2 whitespace-nowrap mb-1 backdrop-blur-sm"
             >
               <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
               Ask AI for Recommendations
@@ -185,12 +185,12 @@ const AIChatWidget = () => {
             }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
             transition={{ type: "spring", stiffness: 500, damping: 35 }}
-            className={`fixed z-[110] bg-card shadow-[0_20px_60px_-15px_rgb(0,0,0,0.15)] border border-border flex flex-col overflow-hidden`}
+            className={`fixed z-[110] rf-glass-panel vgo-glass-panel border border-white/55 bg-white/40 shadow-[0_20px_60px_-15px_rgb(0,0,0,0.12)] backdrop-blur-xl flex flex-col overflow-hidden`}
           >
             {/* Header */}
             <div className="flex flex-shrink-0 items-center justify-between bg-gradient-to-r from-primary to-primary/85 p-5 text-primary-foreground">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-card/20 flex items-center justify-center backdrop-blur-sm">
+                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
                   <Bot size={20} />
                 </div>
                 <div>
@@ -203,21 +203,21 @@ const AIChatWidget = () => {
               <div className="flex items-center gap-2">
                 <button 
                   onClick={closeChat}
-                  className="w-8 h-8 rounded-full bg-card/10 flex items-center justify-center hover:bg-card/20 transition-colors"
+                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
                   title="Minimize"
                 >
                   <Minus size={18} />
                 </button>
                 <button 
                   onClick={() => setIsMaximized(!isMaximized)}
-                  className="w-8 h-8 rounded-full bg-card/10 flex items-center justify-center hover:bg-card/20 transition-colors"
+                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
                   title={isMaximized ? "Restore" : "Maximize"}
                 >
                   {isMaximized ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
                 </button>
                 <button 
                   onClick={closeChat}
-                  className="w-8 h-8 rounded-full bg-card/10 flex items-center justify-center hover:bg-card/20 transition-colors"
+                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
                   title="Close"
                 >
                   <X size={18} />
@@ -226,14 +226,14 @@ const AIChatWidget = () => {
             </div>
 
             {/* Chat History */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-muted/30">
+            <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-white/20 backdrop-blur-sm">
               {messages.map((msg) => (
                 <div key={msg.id} className={`flex gap-3 ${msg.sender === 'user' ? 'flex-row-reverse' : ''}`}>
                   <div className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full ${msg.sender === "user" ? "bg-primary/30 text-primary-foreground" : "bg-primary/10 text-primary"}`}>
                     {msg.sender === 'user' ? <User size={14} /> : <Bot size={14} />}
                   </div>
                   <div
-                    className={`max-w-[75%] rounded-2xl p-3 text-sm leading-relaxed shadow-sm ${msg.sender === "user" ? "rounded-tr-none bg-primary text-primary-foreground" : "rounded-tl-none border border-border bg-card text-foreground"}`}
+                    className={`max-w-[75%] rounded-2xl p-3 text-sm leading-relaxed shadow-sm ${msg.sender === "user" ? "rounded-tr-none bg-primary text-primary-foreground" : "rounded-tl-none border border-white/55 bg-white/50 text-foreground backdrop-blur-sm"}`}
                   >
                     {msg.text.split("**").map((part, i) =>
                       i % 2 === 1 ? (
@@ -257,7 +257,7 @@ const AIChatWidget = () => {
                   <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
                     <Bot size={14} />
                   </div>
-                  <div className="bg-card border border-border p-4 rounded-2xl rounded-tl-none shadow-sm flex gap-1 items-center">
+                  <div className="bg-white/50 border border-white/55 p-4 rounded-2xl rounded-tl-none shadow-sm backdrop-blur-sm flex gap-1 items-center">
                     <motion.div className="w-1.5 h-1.5 bg-primary/40 rounded-full" animate={{ y: [0, -5, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0 }} />
                     <motion.div className="w-1.5 h-1.5 bg-primary/60 rounded-full" animate={{ y: [0, -5, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }} />
                     <motion.div className="w-1.5 h-1.5 bg-primary/80 rounded-full" animate={{ y: [0, -5, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }} />
@@ -268,14 +268,14 @@ const AIChatWidget = () => {
             </div>
 
             {/* Input Area */}
-            <div className="p-4 bg-card border-t border-border flex-shrink-0">
+            <div className="p-4 bg-white/30 border-t border-white/40 flex-shrink-0 backdrop-blur-sm">
               {/* Quick Chips */}
               <div className="flex gap-2 overflow-x-auto no-scrollbar mb-3 pb-1">
                 {suggestedChips.map(chip => (
                   <button 
                     key={chip}
                     onClick={() => handleChipClick(chip)}
-                    className="whitespace-nowrap px-3 py-1.5 bg-primary/5 text-primary hover:bg-primary/10 transition-colors border border-primary/10 rounded-full text-xs font-semibold tracking-wide"
+                    className="whitespace-nowrap px-3 py-1.5 bg-primary/5 text-primary hover:bg-primary/10 transition-colors border border-primary/15 rounded-full text-xs font-semibold tracking-wide backdrop-blur-sm"
                   >
                     {chip}
                   </button>
@@ -290,7 +290,7 @@ const AIChatWidget = () => {
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleKeyDown}
                   disabled={isTyping}
-                  className="w-full bg-muted/30 border border-border rounded-full py-3 pl-4 pr-12 text-sm focus:outline-none focus:border-primary/50 focus:bg-card transition-colors placeholder:text-muted-foreground"
+                  className="w-full bg-white/40 border border-white/55 rounded-full py-3 pl-4 pr-12 text-sm backdrop-blur-sm focus:outline-none focus:border-primary/50 focus:bg-white/55 transition-colors placeholder:text-muted-foreground"
                 />
                 <button 
                   onClick={handleSend}

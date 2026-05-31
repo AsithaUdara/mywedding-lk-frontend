@@ -1,4 +1,7 @@
 import { ClipboardList, Handshake, Wallet } from "lucide-react";
+import { MkSection, MkSectionHeader } from "@/modules/marketing/marketing-glass-ui";
+import { mk } from "@/modules/marketing/marketing-theme";
+import { cn } from "@/shared/lib/cn";
 
 const steps = [
   {
@@ -26,39 +29,30 @@ const steps = [
 
 export default function HowItWorks() {
   return (
-    <section className="marketing-section-alt py-20 md:py-28" id="how-it-works">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-            How it works
-          </p>
-          <h2 className="mt-3 font-playfair text-3xl font-bold text-foreground md:text-4xl">
-            Your agency operating system in three steps
-          </h2>
-          <p className="mt-4 text-base leading-relaxed text-muted-foreground md:text-lg">
-            From first client call to vendor payout — built for professional planners, not generic project tools.
-          </p>
-        </div>
+    <MkSection id="how-it-works">
+      <MkSectionHeader
+        eyebrow="How it works"
+        title="Your agency operating system in three steps"
+        subtitle="From first client call to vendor payout — built for professional planners, not generic project tools."
+      />
 
-        <ol className="mt-16 grid gap-8 md:grid-cols-3 md:gap-6">
-          {steps.map((step) => {
-            const Icon = step.icon;
-            return (
-              <li
-                key={step.number}
-                className="relative flex flex-col rounded-3xl border border-border bg-white p-8 shadow-sm transition-shadow duration-200 hover:shadow-md"
-              >
-                <span className="font-playfair text-4xl font-light tabular-nums text-primary">{step.number}</span>
-                <div className="mt-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                  <Icon size={28} strokeWidth={1.75} aria-hidden />
-                </div>
-                <h3 className="mt-6 text-xl font-bold text-foreground">{step.title}</h3>
-                <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">{step.description}</p>
-              </li>
-            );
-          })}
-        </ol>
-      </div>
-    </section>
+      <ol className="mt-14 grid gap-6 md:grid-cols-3">
+        {steps.map((step) => {
+          const Icon = step.icon;
+          return (
+            <li key={step.number} className={cn(mk.card, "relative flex flex-col")}>
+              <span className="font-luxury-section text-4xl font-light tabular-nums text-primary">
+                {step.number}
+              </span>
+              <div className={cn(mk.iconWrapLg, "mt-4")}>
+                <Icon size={28} strokeWidth={1.75} aria-hidden />
+              </div>
+              <h3 className="font-glass-body mt-6 text-xl font-semibold text-foreground">{step.title}</h3>
+              <p className={cn(mk.body, "mt-3 flex-1")}>{step.description}</p>
+            </li>
+          );
+        })}
+      </ol>
+    </MkSection>
   );
 }

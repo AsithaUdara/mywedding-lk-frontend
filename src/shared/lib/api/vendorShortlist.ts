@@ -1,4 +1,5 @@
 import { parseApiError } from "@/shared/lib/api/parseApiError";
+import { plannerFetch } from "@/shared/lib/api/plannerHttp";
 
 export type VendorShortlistItemStatus =
   | "Draft"
@@ -94,14 +95,11 @@ export async function createVendorShortlist(
     items: CreateShortlistItemPayload[];
   }
 ): Promise<string[]> {
-  const response = await fetch(
+  const response = await plannerFetch(
+    token,
     `${base()}/api/planner/events/${eventId}/vendor-shortlist`,
     {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify({
         sendToClient: payload.sendToClient,
         items: payload.items.map((i) => ({
@@ -126,14 +124,11 @@ export async function sendShortlistToClient(
   eventId: string,
   itemIds?: string[]
 ): Promise<void> {
-  const response = await fetch(
+  const response = await plannerFetch(
+    token,
     `${base()}/api/planner/events/${eventId}/vendor-shortlist/send`,
     {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify(itemIds?.length ? { itemIds } : {}),
     }
   );

@@ -5,12 +5,27 @@ import Link from "next/link";
 import { Lock, Mail, Store } from "lucide-react";
 import { auth } from "@/shared/lib/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { Button, ErrorBanner, inputClass } from "@/modules/vendor/dashboard/ui";
 import { cn } from "@/shared/lib/cn";
+import {
+  GlassAuthCard,
+  GlassAuthLayout,
+  glassAuthAsideClass,
+  glassAuthTitleClass,
+} from "@/modules/design-system/regal-frost/GlassAuthLayout";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
+import {
+  getSafeReturnUrl,
+  resolvePostLoginPathWithReturn,
+  syncUserWithBackend,
+} from "@/shared/lib/auth/postLoginRedirect";
 
-export default function VendorLoginPage() {
+function VendorLoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnUrl = getSafeReturnUrl(searchParams.get("returnUrl"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -27,7 +42,9 @@ export default function VendorLoginPage() {
       const idTokenResult = await user.getIdTokenResult(true);
 
       if (idTokenResult.claims.role === "vendor") {
-        router.push("/vendor/dashboard");
+        await syncUserWithBackend();
+        const path = await resolvePostLoginPathWithReturn(user, returnUrl);
+        router.push(path);
       } else {
         await auth.signOut();
         setError("Access denied. This account is not registered as a vendor.");
@@ -51,46 +68,45 @@ export default function VendorLoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-background font-roboto">
-      <aside className="relative hidden w-[min(100%,420px)] flex-col justify-between overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/90 p-10 text-primary-foreground lg:flex">
-        <div>
-          <div className="mb-8 flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/20 bg-white/10">
-              <Store size={22} aria-hidden />
+    <GlassAuthLayout
+      aside={
+        <aside className={glassAuthAsideClass}>
+          <div>
+            <div className="mb-8 flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/20 bg-white/10">
+                <Store size={22} aria-hidden />
+              </div>
+              <div>
+                <p className="text-sm font-bold tracking-wide">MyWedding.lk</p>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-white/70">
+                  Vendor hub
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-bold tracking-wide">MyWedding.lk</p>
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-white/70">
-                Vendor hub
-              </p>
-            </div>
+            <h2 className={glassAuthTitleClass}>Your storefront & CRM in one place</h2>
+            <p className="mt-4 text-sm leading-relaxed text-white/80">
+              Manage inquiries, availability, listings, and bookings — built for Sri Lankan wedding
+              vendors.
+            </p>
           </div>
-          <h2 className="font-playfair text-3xl font-bold leading-tight">
-            Your storefront & CRM in one place
-          </h2>
-          <p className="mt-4 text-sm leading-relaxed text-white/80">
-            Manage inquiries, availability, listings, and bookings — built for Sri Lankan wedding
-            vendors.
+          <p className="text-xs text-white/55">
+            Trusted by photographers, venues, planners, and décor partners across the island.
           </p>
+          <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-accent/20 blur-3xl" />
+        </aside>
+      }
+    >
+      <div className="w-full max-w-md">
+        <div className="mb-8 text-center lg:hidden">
+          <p className={rf.eyebrow}>MyWedding.lk</p>
+          <p className={cn("mt-1", glassAuthTitleClass)}>Vendor sign in</p>
         </div>
-        <p className="text-xs text-white/55">
-          Trusted by photographers, venues, planners, and décor partners across the island.
-        </p>
-        <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-accent/20 blur-3xl" />
-      </aside>
 
-      <main className="flex flex-1 flex-col items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md">
-          <div className="mb-8 text-center lg:hidden">
-            <p className="text-xs font-bold uppercase tracking-widest text-primary">MyWedding.lk</p>
-            <p className="mt-1 font-playfair text-2xl font-bold text-foreground">Vendor sign in</p>
+        <GlassAuthCard>
+          <div className="mb-6 hidden lg:block">
+            <h1 className={glassAuthTitleClass}>Vendor sign in</h1>
+            <p className={cn("mt-2", rf.subtitle)}>Access your business dashboard</p>
           </div>
-
-          <div className="rounded-3xl border border-border bg-card p-8 shadow-sm sm:p-10">
-            <div className="mb-6 hidden lg:block">
-              <h1 className="font-playfair text-3xl font-bold text-foreground">Vendor sign in</h1>
-              <p className="mt-2 text-sm text-muted-foreground">Access your business dashboard</p>
-            </div>
 
             {error && <ErrorBanner message={error} className="mb-6" />}
 
@@ -161,9 +177,22 @@ export default function VendorLoginPage() {
                 Back to main site
               </Link>
             </p>
-          </div>
-        </div>
-      </main>
-    </div>
+        </GlassAuthCard>
+      </div>
+    </GlassAuthLayout>
+  );
+}
+
+export default function VendorLoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <GlassAuthLayout>
+          <div className="flex items-center justify-center py-24" />
+        </GlassAuthLayout>
+      }
+    >
+      <VendorLoginContent />
+    </Suspense>
   );
 }
