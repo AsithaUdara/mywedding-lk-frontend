@@ -2,7 +2,6 @@
 
 import React, { useRef } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import { cn } from "@/shared/lib/cn";
 
 interface HorizontalScrollSectionProps {
   title: string;

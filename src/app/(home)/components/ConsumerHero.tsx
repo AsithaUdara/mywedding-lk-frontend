@@ -40,12 +40,12 @@ export default function ConsumerHero() {
       <div className="magical-particles pointer-events-none absolute inset-0 z-[1] opacity-40" aria-hidden />
 
       <div className="relative z-10 mx-auto w-full max-w-4xl px-4 py-16 text-center sm:px-6 sm:py-20">
-        <h1 className="font-luxury-display text-[2.25rem] font-normal leading-[1.12] sm:text-5xl lg:text-6xl">
+        <h1 className="consumer-hero-title">
           <span className="hero-line block">
             <span className="wedding-title-animation">Your Dream </span>
             <span className="left-to-right-gold-animation">Wedding,</span>
           </span>
-          <span className="simplified-enhanced mt-1 block text-[2.35rem] sm:text-[3.15rem] lg:text-[3.75rem]">
+          <span className="simplified-enhanced mt-1 block">
             Simplified.
           </span>
         </h1>

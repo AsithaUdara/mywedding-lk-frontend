@@ -28,10 +28,10 @@ const EventCard = ({ event }: EventCardProps) => {
       )}
     >
       <div>
-        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 font-luxury-display text-lg font-bold text-primary">
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 font-glass-body text-lg font-bold text-primary">
           {event.eventName.charAt(0).toUpperCase()}
         </div>
-        <h3 className="font-luxury-section text-xl font-medium tracking-tight text-foreground">
+        <h3 className="font-glass-body text-lg font-semibold tracking-tight text-foreground sm:text-xl">
           {event.eventName}
         </h3>
         <div className={cn("mt-3 flex items-center gap-2", vg.subtitle)}>

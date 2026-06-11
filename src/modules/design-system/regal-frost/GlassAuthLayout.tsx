@@ -13,7 +13,7 @@ type GlassAuthLayoutProps = {
 /** Split auth page with optional maroon aside + porcelain mesh canvas */
 export function GlassAuthLayout({ children, aside, className }: GlassAuthLayoutProps) {
   return (
-    <RegalFrostShell mesh className={cn("flex min-h-screen", className)}>
+    <RegalFrostShell mesh className={cn("flex min-h-screen flex-col lg:flex-row", className)}>
       {aside}
       <main className="flex flex-1 flex-col items-center justify-center px-4 py-12">{children}</main>
     </RegalFrostShell>

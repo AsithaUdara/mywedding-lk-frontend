@@ -3,19 +3,19 @@
 import React, { useState } from "react";
 import { useAuth } from "@/shared/context/AuthContext";
 import { type Task, updateTaskStatus } from "@/shared/lib/api/tasks";
-import { postComment } from "@/shared/lib/api/feed";
 import { Check } from "lucide-react";
 import { cn } from "@/shared/lib/cn";
-import { StatusBadge } from "@/shared/components/ui";
+import { Badge } from "@/shared/components/ui";
+import { formatTaskDueDate, taskStatusLabel } from "@/modules/tasks/taskDisplay";
 
 interface TaskItemProps {
   task: Task;
-  eventId: string;
   readOnly?: boolean;
+  compact?: boolean;
   onStatusChange: () => void;
 }
 
-const TaskItem = ({ task, eventId, readOnly = false, onStatusChange }: TaskItemProps) => {
+const TaskItem = ({ task, readOnly = false, compact = false, onStatusChange }: TaskItemProps) => {
   const { user } = useAuth();
   const [isUpdating, setIsUpdating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -29,13 +29,6 @@ const TaskItem = ({ task, eventId, readOnly = false, onStatusChange }: TaskItemP
       const token = await user.getIdToken();
       const newStatus = task.status === "Completed" ? "ToDo" : "Completed";
       await updateTaskStatus(token, task.id, newStatus);
-
-      try {
-        await postComment(token, eventId, `Marked task "${task.title}" as ${newStatus}`);
-      } catch (feedError) {
-        console.error("Failed to post to activity feed", feedError);
-      }
-
       onStatusChange();
     } catch (error) {
       const message =
@@ -47,11 +40,13 @@ const TaskItem = ({ task, eventId, readOnly = false, onStatusChange }: TaskItemP
   };
 
   const isCompleted = task.status === "Completed";
+  const dueMeta = formatTaskDueDate(task.dueDate);
 
   return (
     <div
       className={cn(
-        "group flex flex-col gap-2 rounded-xl border border-white/55 bg-white/40 p-4 backdrop-blur-sm transition-all",
+        "group flex flex-col gap-2 rounded-xl border border-white/55 bg-white/40 backdrop-blur-sm transition-all",
+        compact ? "p-3" : "p-4",
         isCompleted
           ? "opacity-75"
           : "hover:border-[hsl(42_48%_52%/0.28)] hover:bg-white/55 hover:shadow-[0_4px_16px_hsl(345_100%_25%/0.06)]"
@@ -89,15 +84,32 @@ const TaskItem = ({ task, eventId, readOnly = false, onStatusChange }: TaskItemP
         <div className="min-w-0 flex-grow">
           <p
             className={cn(
-              "text-[15px] font-medium transition-all",
+              "font-medium transition-all",
+              compact ? "text-sm leading-snug" : "text-[15px]",
               isCompleted ? "text-muted-foreground line-through" : "text-foreground"
             )}
           >
             {task.title}
           </p>
+          {dueMeta ? (
+            <p
+              className={cn(
+                "mt-0.5 text-xs font-medium",
+                dueMeta.tone === "overdue"
+                  ? "text-destructive"
+                  : dueMeta.tone === "soon"
+                  ? "text-amber-700"
+                  : "text-muted-foreground"
+              )}
+            >
+              {dueMeta.label}
+            </p>
+          ) : null}
         </div>
 
-        <StatusBadge status={task.status} />
+        <Badge variant="status" status={task.status} className="shrink-0">
+          {taskStatusLabel(task.status)}
+        </Badge>
       </div>
       {errorMessage && (
         <p className="mt-1 pl-10 text-xs font-medium text-destructive">{errorMessage}</p>

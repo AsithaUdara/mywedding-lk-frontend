@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import * as signalR from '@microsoft/signalr';
 import { useAuth } from './AuthContext';
-import { Message } from '@/shared/lib/api/collaboration';
+import { mapMessage, type Message } from '@/shared/lib/api/collaboration';
 
 interface RealTimeContextType {
     connection: signalR.HubConnection | null;
@@ -15,6 +15,7 @@ interface RealTimeContextType {
     activityVersion: number;
     invitationsVersion: number;
     lastMessage: Message | null;
+    messageVersion: number;
 }
 
 const RealTimeContext = createContext<RealTimeContextType>({
@@ -26,6 +27,7 @@ const RealTimeContext = createContext<RealTimeContextType>({
     activityVersion: 0,
     invitationsVersion: 0,
     lastMessage: null,
+    messageVersion: 0,
 });
 
 export const useRealTime = () => useContext(RealTimeContext);
@@ -41,6 +43,7 @@ export const RealTimeProvider: React.FC<{ children: React.ReactNode; eventId: st
     const [activityVersion, setActivityVersion] = useState(0);
     const [invitationsVersion, setInvitationsVersion] = useState(0);
     const [lastMessage, setLastMessage] = useState<Message | null>(null);
+    const [messageVersion, setMessageVersion] = useState(0);
 
     const incrementChecklist = useCallback(() => setChecklistVersion(v => v + 1), []);
     const incrementBudget = useCallback(() => setBudgetVersion(v => v + 1), []);
@@ -87,8 +90,15 @@ export const RealTimeProvider: React.FC<{ children: React.ReactNode; eventId: st
                         await newConnection.invoke('JoinEventGroup', eventId);
 
                         // Register listeners
-                        newConnection.on('ReceiveMessage', (message: Message) => {
-                            if (isMounted) setLastMessage(message);
+                        newConnection.on('ReceiveMessage', (payload: unknown) => {
+                            if (!isMounted) return;
+                            const mapped = mapMessage(
+                                payload && typeof payload === 'object'
+                                    ? (payload as Record<string, unknown>)
+                                    : {}
+                            );
+                            setLastMessage(mapped);
+                            setMessageVersion((version) => version + 1);
                         });
 
                         newConnection.on('ReceiveActivity', () => {
@@ -143,7 +153,8 @@ export const RealTimeProvider: React.FC<{ children: React.ReactNode; eventId: st
             pollsVersion,
             activityVersion,
             invitationsVersion,
-            lastMessage
+            lastMessage,
+            messageVersion,
         }}>
             {children}
         </RealTimeContext.Provider>

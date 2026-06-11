@@ -1,7 +1,7 @@
 import React from "react";
 import { type BudgetOverview } from "@/shared/lib/api/budget";
 import { motion } from "framer-motion";
-import { formatLKR } from "@/shared/components/ui";
+import { formatBudgetUsagePercent, budgetUsageBarWidth, formatLKR } from "@/shared/lib/format";
 import { GlassStatCard } from "@/modules/vendor/dashboard/glass-ui";
 import { rf } from "@/modules/design-system/regal-frost/tokens";
 import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
@@ -9,10 +9,7 @@ import { cn } from "@/shared/lib/cn";
 import { CircleDollarSign, TrendingDown, Wallet } from "lucide-react";
 
 const BudgetOverviewDisplay = ({ overview }: { overview: BudgetOverview }) => {
-  const spentPercentage =
-    overview.totalBudget > 0
-      ? Math.min((overview.totalSpent / overview.totalBudget) * 100, 100)
-      : 0;
+  const barWidth = budgetUsageBarWidth(overview.totalSpent, overview.totalBudget);
 
   return (
     <div className="space-y-6">
@@ -20,14 +17,14 @@ const BudgetOverviewDisplay = ({ overview }: { overview: BudgetOverview }) => {
         <div className="mb-3 flex items-end justify-between">
           <span className={vg.label}>Budget usage</span>
           <span className="text-2xl font-semibold tabular-nums text-foreground">
-            {spentPercentage.toFixed(0)}%
+            {formatBudgetUsagePercent(overview.totalSpent, overview.totalBudget)}
           </span>
         </div>
         <div className="h-4 w-full overflow-hidden rounded-full bg-white/50 ring-1 ring-white/60">
           <motion.div
             className="relative h-full rounded-full bg-primary"
             initial={{ width: 0 }}
-            animate={{ width: `${spentPercentage}%` }}
+            animate={{ width: `${barWidth}%` }}
             transition={{ duration: 1, ease: "easeOut" }}
           />
         </div>

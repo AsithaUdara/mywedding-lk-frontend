@@ -16,7 +16,10 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
   const hidePublicHeader = isDashboard || isLoginPage || isSignupPage || isPublicProfile;
 
   return (
-    <RegalFrostShell className={cn("flex min-h-screen flex-col", isDashboard && "bg-transparent")}>
+    <RegalFrostShell
+      marketing={!isDashboard}
+      className={cn("flex min-h-screen flex-col", isDashboard && "bg-transparent")}
+    >
       {!hidePublicHeader && <Header />}
 
       <main className={cn("flex-grow", isDashboard && "min-h-screen")}>{children}</main>

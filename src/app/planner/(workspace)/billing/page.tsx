@@ -223,7 +223,7 @@ export default function PlannerBillingPage() {
               </div>
               <div>
                 <p className={vg.label}>Starter</p>
-                <p className="font-luxury-section text-2xl font-medium text-foreground">Free</p>
+                <p className="text-2xl font-semibold text-foreground">Free</p>
               </div>
             </div>
             <p className="mt-4 text-3xl font-semibold tabular-nums text-foreground">
@@ -265,7 +265,7 @@ export default function PlannerBillingPage() {
               </div>
               <div>
                 <p className={cn(vg.label, "text-accent")}>Professional</p>
-                <p className="font-luxury-section text-2xl font-medium text-foreground">Planner Pro</p>
+                <p className="text-2xl font-semibold text-foreground">Planner Pro</p>
               </div>
             </div>
             <p className="relative mt-4 text-3xl font-semibold tabular-nums text-foreground">

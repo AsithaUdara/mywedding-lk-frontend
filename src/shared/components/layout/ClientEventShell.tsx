@@ -28,7 +28,7 @@ export function ClientEventShell({
       )}
     >
       {header ? (
-        <div className="mx-auto w-full max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-7xl px-4 pt-6 pb-6 sm:px-6 sm:pb-8 lg:px-8">
           <div className={eventWorkspace.headerStack}>{header}</div>
         </div>
       ) : null}

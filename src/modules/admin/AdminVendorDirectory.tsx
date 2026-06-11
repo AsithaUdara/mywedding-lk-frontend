@@ -17,7 +17,6 @@ import {
   AdminTh,
 } from "@/modules/admin/tables";
 import { GlassButton } from "@/modules/vendor/dashboard/glass-ui";
-import { rf } from "@/modules/design-system/regal-frost/tokens";
 import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
 import { cn } from "@/shared/lib/cn";
 

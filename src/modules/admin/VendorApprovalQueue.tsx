@@ -11,7 +11,6 @@ import {
 import { Loader2, Mail, MapPin, Store } from "lucide-react";
 import { ApproveButton, RejectButton } from "@/modules/admin/dashboard/components";
 import { Badge, EmptyState, ErrorBanner } from "@/shared/components/ui";
-import { rf } from "@/modules/design-system/regal-frost/tokens";
 import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
 import { cn } from "@/shared/lib/cn";
 

@@ -5,6 +5,10 @@
 /* === Semantic HSL tokens (canonical palette) === */
 @layer base {
   :root {
+    --font-glass-body: "DM Sans";
+    --font-luxury-display: "Cinzel";
+    --font-luxury-section: "Cormorant Garamond";
+
     --background: 220 14% 95%; /* porcelain frost */
     --foreground: 220 25% 18%;
 
@@ -134,7 +138,7 @@
   h4,
   h5,
   h6 {
-    font-family: var(--font-playfair), serif;
+    font-family: var(--font-glass-body), "DM Sans", system-ui, sans-serif;
   }
 
   :focus-visible {
@@ -250,6 +254,21 @@
   .consumer-hero {
     padding-bottom: 3rem;
   }
+}
+
+/* Playfair hero — match prior Cinzel optical size (wider tracking + scale) */
+.consumer-hero .consumer-hero-title {
+  font-family: var(--font-playfair), Georgia, serif;
+  font-weight: 500;
+  letter-spacing: 0.045em;
+  font-size: clamp(2.5rem, 6.2vw, 4.25rem);
+  line-height: 1.1;
+}
+
+.consumer-hero .consumer-hero-title .simplified-enhanced {
+  font-size: clamp(2.65rem, 6.8vw, 4.5rem);
+  letter-spacing: 0.04em;
+  font-weight: 500;
 }
 
 .marketing-page .marketing-section-alt {
@@ -764,6 +783,37 @@
     font-family: var(--font-luxury-section), "Cormorant Garamond", Georgia, serif;
     letter-spacing: -0.01em;
   }
+
+  .font-playfair {
+    font-family: var(--font-playfair), Georgia, "Times New Roman", serif;
+  }
+}
+
+/* Landing / marketing — Playfair for hero + section headings */
+.marketing-page .marketing-hero h1,
+.marketing-page .marketing-hero h2 {
+  font-family: var(--font-playfair), Georgia, serif;
+}
+
+/* Dashboard workspaces — DM Sans titles (not marketing serif) */
+.dashboard-workspace-ui :is(.font-luxury-display, .font-luxury-section, .font-playfair),
+.planner-workspace-ui :is(.font-luxury-display, .font-luxury-section, .font-playfair) {
+  font-family: var(--font-glass-body), "DM Sans", system-ui, sans-serif;
+  font-style: normal;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.dashboard-workspace-ui .font-luxury-display,
+.planner-workspace-ui .font-luxury-display {
+  font-weight: 600;
+}
+
+.dashboard-workspace-ui :is(h1, h2, h3).font-luxury-display,
+.dashboard-workspace-ui :is(h1, h2, h3).font-luxury-section,
+.planner-workspace-ui :is(h1, h2, h3).font-luxury-display,
+.planner-workspace-ui :is(h1, h2, h3).font-luxury-section {
+  font-family: var(--font-glass-body), "DM Sans", system-ui, sans-serif;
 }
 
 /* Palette: Porcelain Frost · Royal Maroon · Antique Gold */

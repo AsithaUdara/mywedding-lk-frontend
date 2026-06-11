@@ -47,7 +47,7 @@ export default function HowItWorks() {
               <div className={cn(mk.iconWrapLg, "mt-4")}>
                 <Icon size={28} strokeWidth={1.75} aria-hidden />
               </div>
-              <h3 className="font-glass-body mt-6 text-xl font-semibold text-foreground">{step.title}</h3>
+              <h3 className="font-playfair mt-6 text-xl font-normal text-foreground">{step.title}</h3>
               <p className={cn(mk.body, "mt-3 flex-1")}>{step.description}</p>
             </li>
           );

@@ -1,8 +1,11 @@
 import React from "react";
 import { type ActivityFeedItem } from "@/shared/lib/api/feed";
+import { resolveActivityActorDisplayName } from "@/shared/lib/userDisplay";
 import { MessageSquare, CheckCircle, UserPlus, Wallet } from "lucide-react";
 
 const ActivityItem = ({ item }: { item: ActivityFeedItem }) => {
+  const actorLabel = resolveActivityActorDisplayName(item);
+
   const getInitials = (firstName: string, lastName: string) => {
     return `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.toUpperCase() || "U";
   };
@@ -67,9 +70,7 @@ const ActivityItem = ({ item }: { item: ActivityFeedItem }) => {
       </div>
       <div className="flex-grow pb-4 pt-1">
         <p className="text-sm leading-snug text-foreground">
-          <span className="font-bold">
-            {item.userFirstName} {item.userLastName}
-          </span>
+          <span className="font-bold">{actorLabel}</span>
           {item.itemType === "SystemLog" ? (
             <span className="text-muted-foreground"> {item.content}</span>
           ) : (

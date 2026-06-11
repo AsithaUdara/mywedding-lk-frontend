@@ -13,6 +13,7 @@ export interface Message {
   senderId: string;
   senderFirstName: string;
   senderLastName: string;
+  senderEmail: string;
   attachment: unknown | null;
 }
 
@@ -32,6 +33,7 @@ export function mapMessage(raw: Record<string, unknown>, conversationId?: string
     senderId: String(raw.senderId ?? raw.SenderId ?? ""),
     senderFirstName: String(raw.senderFirstName ?? raw.SenderFirstName ?? ""),
     senderLastName: String(raw.senderLastName ?? raw.SenderLastName ?? ""),
+    senderEmail: String(raw.senderEmail ?? raw.SenderEmail ?? ""),
     attachment: raw.attachment ?? raw.Attachment ?? null,
   };
 }

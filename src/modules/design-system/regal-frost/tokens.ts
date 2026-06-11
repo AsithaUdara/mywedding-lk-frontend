@@ -51,9 +51,12 @@ export const rf = {
   label: "font-glass-body text-[11px] font-medium uppercase tracking-wide text-muted-foreground",
 
   heroTitle:
-    "font-luxury-display text-3xl font-normal tracking-[0.06em] text-foreground sm:text-4xl",
+    "font-glass-body text-2xl font-semibold tracking-tight text-foreground sm:text-3xl",
   sectionTitle:
-    "font-luxury-section text-xl font-medium leading-tight tracking-tight text-foreground sm:text-2xl",
+    "font-glass-body text-lg font-semibold leading-tight tracking-tight text-foreground sm:text-xl",
+  /** In-card / panel headings inside dashboards */
+  panelTitle:
+    "font-glass-body text-base font-semibold leading-tight tracking-tight text-foreground sm:text-lg",
 
   /** Marketing section layout */
   section: "py-16 md:py-24",
@@ -62,7 +65,7 @@ export const rf = {
   eyebrow: "font-glass-body text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground",
   sectionSubtitle: "font-glass-body mt-4 text-base leading-relaxed text-muted-foreground md:text-lg",
   marketingSectionTitle:
-    "font-luxury-section mt-3 text-3xl font-medium leading-tight text-foreground md:text-4xl",
+    "font-playfair mt-3 text-3xl font-normal leading-tight tracking-tight text-foreground md:text-4xl",
   card: "mk-glass-panel rf-glass-panel vgo-glass-panel rounded-2xl p-6 transition-all duration-200 hover:border-[hsl(42_48%_52%/0.25)] hover:shadow-[0_8px_32px_hsl(345_100%_25%/0.08)] md:p-8",
   marketingStatValue: "font-glass-body text-3xl font-semibold tabular-nums text-primary",
   iconWrap:

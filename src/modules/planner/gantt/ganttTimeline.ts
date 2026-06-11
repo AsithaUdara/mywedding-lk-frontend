@@ -279,7 +279,10 @@ export function getWeekLabels(timeline: GanttTimeline): WeekLabel[] {
     }
 
     const midWeek = new Date(origin.getTime() + (i + 0.5) * MS_PER_WEEK);
-    const showLabel = weekCount <= 12 || i % 2 === 0 || i === 0;
+    const weddingWeekIndex = weekCount - 1;
+    const tooCloseToWedding = weddingWeekIndex - i <= 1;
+    const showLabel =
+      !tooCloseToWedding && (weekCount <= 12 || i % 2 === 0 || i === 0);
     labels.push({
       index: i,
       label: showLabel

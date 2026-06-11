@@ -36,6 +36,7 @@ import {
   GlassSectionCard,
   GlassStatCard,
 } from "./glass-ui";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
 import { vd } from "./vendor-dashboard-theme";
 import { vg } from "./vendor-glass-theme";
 
@@ -308,7 +309,7 @@ export function InquiryManagementInbox({ embedded = false, fullPage = false }: I
                 })}
               </span>
             </div>
-            <h3 className="mt-2 font-luxury-section text-lg font-medium tracking-tight text-foreground">
+            <h3 className={cn("mt-2", rf.sectionTitle)}>
               {selected.subject ?? "Inquiry"}
             </h3>
             <p className={cn("mt-1", vg.subtitle)}>

@@ -40,6 +40,44 @@ export function getUserDisplayName(user: UserNameFields): string {
   return nameFromEmail(user.email);
 }
 
+/** Activity feed — prefer server-resolved label, else name / role / email. */
+export function resolveActivityActorDisplayName(item: {
+  actorDisplayName?: string;
+  userFirstName?: string;
+  userLastName?: string;
+  userEmail?: string;
+}): string {
+  const fromApi = (item.actorDisplayName ?? "").trim();
+  if (fromApi) return fromApi;
+
+  return getUserDisplayName({
+    firstName: item.userFirstName,
+    lastName: item.userLastName,
+    email: item.userEmail ?? "",
+  });
+}
+
+/** Booking cards — replace Firebase placeholder "User" with email-derived name. */
+export function resolveBookedByDisplayName(
+  coupleName: string,
+  email?: string | null
+): string {
+  const trimmed = coupleName.trim();
+  const parts = trimmed.split(/\s+/);
+  const first = parts[0] ?? "";
+  const last = parts.slice(1).join(" ");
+
+  if (email) {
+    return getUserDisplayName({ firstName: first, lastName: last, email });
+  }
+
+  if (trimmed && !isPlaceholderName(first, last)) {
+    return trimmed;
+  }
+
+  return "Client";
+}
+
 export function getUserInitials(user: UserNameFields): string {
   const first = (user.firstName ?? "").trim();
   const last = (user.lastName ?? "").trim();

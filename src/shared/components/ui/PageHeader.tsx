@@ -43,7 +43,7 @@ export function PageHeader({
       )}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
-          <h1 className={rf.heroTitle}>{title}</h1>
+          <h1 className={cn(rf.heroTitle, "font-glass-body")}>{title}</h1>
           {description && <p className={cn("mt-1.5 max-w-2xl", rf.subtitle)}>{description}</p>}
         </div>
         <div className="flex flex-shrink-0 flex-wrap items-center gap-3">

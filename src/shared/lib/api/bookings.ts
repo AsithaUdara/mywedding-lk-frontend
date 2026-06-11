@@ -7,6 +7,8 @@ export interface EventBooking {
   bookingId: string;
   serviceName: string;
   vendorName?: string;
+  vendorUserId?: string | null;
+  serviceId?: string;
   finalAmount: number;
   status: string;
   serviceDate: string;
@@ -28,6 +30,9 @@ export async function getEventBookings(
     bookingId: String(row.bookingId ?? row.BookingId ?? row.id ?? row.Id ?? ""),
     serviceName: String(row.serviceName ?? row.ServiceName ?? "Service"),
     vendorName: String(row.vendorName ?? row.VendorName ?? ""),
+    vendorUserId:
+      row.vendorUserId != null ? String(row.vendorUserId ?? row.VendorUserId) : null,
+    serviceId: String(row.serviceId ?? row.ServiceId ?? ""),
     finalAmount: Number(row.finalAmount ?? row.FinalAmount ?? 0),
     status: String(row.status ?? row.Status ?? ""),
     serviceDate: String(row.serviceDate ?? row.ServiceDate ?? ""),

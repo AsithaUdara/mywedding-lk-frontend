@@ -25,7 +25,9 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { VendorVerificationProvider } from "@/modules/vendor/dashboard/VendorVerificationContext";
 import { VendorVerificationBanner } from "@/modules/vendor/dashboard/VendorVerificationBanner";
+import { VendorBookingActionBanner } from "@/modules/vendor/dashboard/VendorBookingActionBanner";
 import { WorkspacePlanBadge } from "@/shared/components/layout/WorkspacePlanBadge";
+import { useVendorPendingBookings } from "@/shared/hooks/useVendorPendingBookings";
 
 const NAV_GROUPS: VendorNavGroup[] = [
   {
@@ -58,6 +60,7 @@ export default function VendorDashboardLayout({ children }: { children: React.Re
   const { user } = useAuth();
   const [unreadInquiries, setUnreadInquiries] = useState(0);
   const [planLabel, setPlanLabel] = useState<"FREE" | "PRO">("FREE");
+  const { requestedCount, loading: pendingBookingsLoading } = useVendorPendingBookings();
 
   const isListingEditor =
     pathname === "/vendor/dashboard/services/new" ||
@@ -82,6 +85,10 @@ export default function VendorDashboardLayout({ children }: { children: React.Re
     void load();
   }, [user, pathname]);
 
+  const notificationCount = unreadInquiries + requestedCount;
+  const notificationHref =
+    requestedCount > 0 ? "/vendor/dashboard/bookings" : "/vendor/dashboard/inquiries";
+
   if (isListingEditor) {
     return (
       <VendorVerificationProvider>
@@ -95,11 +102,15 @@ export default function VendorDashboardLayout({ children }: { children: React.Re
 
   const navGroups = NAV_GROUPS.map((group) => ({
     ...group,
-    items: group.items.map((item) =>
-      item.href === "/vendor/dashboard/inquiries"
-        ? { ...item, badge: unreadInquiries }
-        : item
-    ),
+    items: group.items.map((item) => {
+      if (item.href === "/vendor/dashboard/inquiries") {
+        return { ...item, badge: unreadInquiries };
+      }
+      if (item.href === "/vendor/dashboard/bookings") {
+        return { ...item, badge: requestedCount };
+      }
+      return item;
+    }),
   }));
 
   return (
@@ -136,14 +147,18 @@ export default function VendorDashboardLayout({ children }: { children: React.Re
             Upgrade
           </Button>
           <Link
-            href="/vendor/dashboard/inquiries"
+            href={notificationHref}
             className="vgo-topbar-btn relative rounded-xl border p-2 text-muted-foreground transition-all duration-200 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label="Inquiries"
+            aria-label={
+              requestedCount > 0
+                ? `${requestedCount} booking request${requestedCount === 1 ? "" : "s"}`
+                : "Inquiries"
+            }
           >
             <Bell size={20} />
-            {unreadInquiries > 0 && (
+            {notificationCount > 0 && (
               <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
-                {unreadInquiries > 9 ? "9+" : unreadInquiries}
+                {notificationCount > 9 ? "9+" : notificationCount}
               </span>
             )}
           </Link>
@@ -156,6 +171,10 @@ export default function VendorDashboardLayout({ children }: { children: React.Re
       }
     >
       <VendorVerificationBanner />
+      <VendorBookingActionBanner
+        requestedCount={requestedCount}
+        loading={pendingBookingsLoading}
+      />
       {children}
     </VendorWorkspaceShell>
     </VendorVerificationProvider>

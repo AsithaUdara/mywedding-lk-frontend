@@ -1,28 +1,30 @@
-import { Cinzel, Cormorant_Garamond, DM_Sans } from "next/font/google";
+/**
+ * Regal Frost typography — loaded via @fontsource in globals.css (no Google fetch at build).
+ * Keeps the same exports used by shells and legacy imports.
+ */
+type FontExport = {
+  variable: string;
+  className: string;
+};
 
-export const luxuryDisplay = Cinzel({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  display: "swap",
-  variable: "--font-luxury-display",
-});
+export const luxuryDisplay: FontExport = {
+  variable: "",
+  className: "font-luxury-display",
+};
 
-export const luxurySection = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  display: "swap",
-  variable: "--font-luxury-section",
-});
+export const luxurySection: FontExport = {
+  variable: "",
+  className: "font-luxury-section",
+};
 
-export const glassBody = DM_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-  variable: "--font-glass-body",
-});
+export const glassBody: FontExport = {
+  variable: "",
+  className: "font-glass-body",
+};
 
+/** Applied on regal-frost / workspace shells */
 export const glassFontVariables = [
-  glassBody.variable,
-  luxuryDisplay.variable,
-  luxurySection.variable,
+  glassBody.className,
+  luxuryDisplay.className,
+  luxurySection.className,
 ].join(" ");

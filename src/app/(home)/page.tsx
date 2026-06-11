@@ -19,7 +19,7 @@ export default function Home() {
 
   return (
     <RegalFrostShell className="marketing-page marketing-regal-frost">
-      <Header onLoginClick={() => setAuthModalOpen(true)} searchMode="expandable" />
+      <Header onLoginClick={() => setAuthModalOpen(true)} />
 
       <main>
         <ConsumerHero />

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import VendorCard from "@/modules/vendors/components/VendorCard";
 import HorizontalScrollSection from "@/shared/components/ui/HorizontalScrollSection";
 import { Button, EmptyState } from "@/shared/components/ui";

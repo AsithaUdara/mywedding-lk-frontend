@@ -25,6 +25,11 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { getStatusBadgeClass, formatLKR } from "@/shared/components/ui";
 import { cn } from "@/shared/lib/cn";
+import {
+  budgetUsageBarWidth,
+  budgetUsagePercent,
+  formatBudgetUsagePercent,
+} from "@/shared/lib/format";
 
 /** Planner KPI tile — supports legacy `color` gradient icon box API */
 export function StatCard({
@@ -84,9 +89,10 @@ export function BudgetBarChart({
   return (
     <div className="space-y-4">
       {data.map((d, i) => {
-        const utilization =
-          d.total > 0 ? Math.min(100, Math.round((d.spent / d.total) * 100)) : 0;
+        const utilization = budgetUsagePercent(d.spent, d.total);
+        const barWidth = budgetUsageBarWidth(d.spent, d.total);
         const overBudget = d.spent > d.total && d.total > 0;
+        const usageLabel = formatBudgetUsagePercent(d.spent, d.total);
 
         return (
           <div key={`${d.label}-${i}`} className="space-y-1.5">
@@ -102,18 +108,18 @@ export function BudgetBarChart({
               <div
                 className={cn(
                   "h-full rounded-full transition-all duration-300",
-                  overBudget ? "bg-destructive" : utilization >= 90 ? "bg-warning" : "bg-primary"
+                  overBudget ? "bg-destructive" : utilization >= 85 ? "bg-warning" : "bg-primary"
                 )}
-                style={{ width: `${utilization > 0 ? Math.max(utilization, 4) : 0}%` }}
+                style={{ width: `${barWidth}%` }}
                 role="progressbar"
                 aria-valuenow={utilization}
                 aria-valuemin={0}
                 aria-valuemax={100}
-                aria-label={`${d.label}: ${utilization}% spent`}
+                aria-label={`${d.label}: ${usageLabel} spent`}
               />
             </div>
             <p className="text-[10px] text-muted-foreground">
-              {utilization}% of budget spent
+              {usageLabel} of budget spent
               {d.spent === 0 && d.total > 0 ? " · none recorded yet" : ""}
             </p>
           </div>

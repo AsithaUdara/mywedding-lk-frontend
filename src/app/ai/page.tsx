@@ -100,7 +100,7 @@ export default function AiPlanningPage() {
   };
 
   return (
-    <RegalFrostShell mesh className="min-h-screen px-4 py-10">
+    <RegalFrostShell mesh marketing className="min-h-screen px-4 py-10">
       <section className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-3">
         <GlassSectionCard
           className="lg:col-span-2"

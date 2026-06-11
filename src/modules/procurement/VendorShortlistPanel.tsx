@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, CreditCard, Loader2, Send, Store, X } from "lucide-react";
+import { CalendarDays, Check, CreditCard, FileSignature, Loader2, Send, Store, X } from "lucide-react";
 import {
   approveShortlistItem,
   getVendorShortlist,
@@ -17,17 +17,23 @@ import {
 import {
   shortlistStatusBadgeKey,
   shortlistStatusLabel,
+  clientNeedsContractSignature,
+  clientCanPayDeposit,
+  clientAwaitingVendorContract,
 } from "@/modules/procurement/shortlist-utils";
 import { AddShortlistProposalModal } from "@/modules/procurement/AddShortlistProposalModal";
 import { useAuth } from "@/shared/context/AuthContext";
 import { useEventPermission } from "@/shared/hooks/useEventPermission";
 import { ViewerReadOnlyNotice } from "@/shared/components/ui/ViewerReadOnlyNotice";
 import { createDepositCheckout, getBookingPaymentStatus } from "@/shared/lib/api/vendors";
+import { getEventBookings, type EventBooking } from "@/shared/lib/api/bookings";
 import { submitPayHereCheckout } from "@/shared/lib/payhereCheckout";
 import { EmptyState, getStatusBadgeClass } from "@/shared/components/ui";
 import { GlassButton } from "@/modules/vendor/dashboard/glass-ui";
 import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
 import { cn } from "@/shared/lib/cn";
+import { dispatchVendorProposalsUpdated } from "@/shared/lib/vendorProposalEvents";
+import { VendorInsightLinks } from "@/modules/procurement/VendorInsightLinks";
 
 type Mode = "planner" | "client";
 
@@ -43,6 +49,7 @@ export function VendorShortlistPanel({ eventId, mode, pollBookingId }: Props) {
   const { isViewer } = useEventPermission(eventId);
   const canActAsClient = mode === "client" && !isViewer;
   const [items, setItems] = useState<VendorShortlistItem[]>([]);
+  const [eventBookings, setEventBookings] = useState<EventBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [paymentPolling, setPaymentPolling] = useState(false);
@@ -55,9 +62,14 @@ export function VendorShortlistPanel({ eventId, mode, pollBookingId }: Props) {
     try {
       setLoading(true);
       const token = await user.getIdToken();
-      const data = await getVendorShortlist(token, eventId);
-      setItems(data);
+      const [shortlistData, bookingData] = await Promise.all([
+        getVendorShortlist(token, eventId),
+        getEventBookings(token, eventId),
+      ]);
+      setItems(shortlistData);
+      setEventBookings(bookingData);
       setError(null);
+      dispatchVendorProposalsUpdated(eventId);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load proposals.");
     } finally {
@@ -79,6 +91,7 @@ export function VendorShortlistPanel({ eventId, mode, pollBookingId }: Props) {
 
     const isPaid = (bookingStatus: string, paymentStatus: string) =>
       paymentStatus === "Paid" || bookingStatus === "Confirmed";
+    const isFailed = (paymentStatus: string) => paymentStatus === "Failed";
 
     const poll = async () => {
       try {
@@ -97,6 +110,16 @@ export function VendorShortlistPanel({ eventId, mode, pollBookingId }: Props) {
           return;
         }
 
+        if (isFailed(status.paymentStatus)) {
+          setPaymentPolling(false);
+          setError(
+            "Payment was not completed. Please retry the deposit payment or contact your planner."
+          );
+          // Prevent repeated 60s polling loops on every browser refresh.
+          window.history.replaceState({}, "", `/events/${eventId}/vendors`);
+          return;
+        }
+
         attempts += 1;
         if (attempts < maxAttempts) {
           window.setTimeout(() => void poll(), pollIntervalMs);
@@ -105,6 +128,8 @@ export function VendorShortlistPanel({ eventId, mode, pollBookingId }: Props) {
           setError(
             "Payment is still processing. Please wait a moment and refresh, or contact your planner."
           );
+          // Remove return query params so subsequent refreshes are fast.
+          window.history.replaceState({}, "", `/events/${eventId}/vendors`);
         }
       } catch (err) {
         if (cancelled) return;
@@ -114,6 +139,8 @@ export function VendorShortlistPanel({ eventId, mode, pollBookingId }: Props) {
         } else {
           setPaymentPolling(false);
           setError(err instanceof Error ? err.message : "Could not verify payment status.");
+          // Remove return query params so subsequent refreshes are fast.
+          window.history.replaceState({}, "", `/events/${eventId}/vendors`);
         }
       }
     };
@@ -268,16 +295,21 @@ export function VendorShortlistPanel({ eventId, mode, pollBookingId }: Props) {
                     <span
                       className={cn(
                         "rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-                        getStatusBadgeClass(shortlistStatusBadgeKey(item.status))
+                        getStatusBadgeClass(shortlistStatusBadgeKey(item.status, item))
                       )}
                     >
-                      {shortlistStatusLabel(item.status)}
+                      {shortlistStatusLabel(item.status, item)}
                     </span>
                   </div>
                   <p className={cn("mt-1", vg.subtitle)}>
                     {item.serviceName ?? "Service"}
                     {item.categoryLabel ? ` · ${item.categoryLabel}` : ""}
                   </p>
+                  {item.status === "BookingAccepted" && clientAwaitingVendorContract(item) && mode === "client" && (
+                    <p className={cn("mt-2 text-sm text-amber-800", vg.caption)}>
+                      The vendor is preparing your contract. You will be notified when it is ready to review and sign.
+                    </p>
+                  )}
                   <p className="mt-2 text-lg font-semibold tabular-nums text-foreground">
                     {formatLKR(item.proposedAmount)}
                   </p>
@@ -294,6 +326,11 @@ export function VendorShortlistPanel({ eventId, mode, pollBookingId }: Props) {
                       {item.plannerNotes}
                     </p>
                   )}
+                  <VendorInsightLinks
+                    vendorUserId={item.vendorUserId}
+                    vendorServiceId={item.vendorServiceId}
+                    className="mt-3"
+                  />
                 </div>
 
                 <div className="flex flex-shrink-0 flex-wrap gap-2">
@@ -336,22 +373,30 @@ export function VendorShortlistPanel({ eventId, mode, pollBookingId }: Props) {
                       Deposit paid
                     </span>
                   )}
-                  {canActAsClient &&
-                    item.vendorBookingId &&
-                    item.status === "BookingAccepted" && (
-                      <GlassButton
-                        type="button"
-                        variant="primary"
-                        className="gap-1"
-                        disabled={actionId === `pay-${item.vendorBookingId}` || paymentPolling}
-                        onClick={() => void handlePayDeposit(item.vendorBookingId!)}
-                      >
-                        <CreditCard size={14} aria-hidden />
-                        {actionId === `pay-${item.vendorBookingId}`
-                          ? "Opening checkout…"
-                          : "Pay deposit"}
-                      </GlassButton>
-                    )}
+                  {canActAsClient && clientNeedsContractSignature(item) && item.vendorBookingId && (
+                    <GlassButton
+                      href={`/contracts/sign/${item.vendorBookingId}?eventId=${eventId}`}
+                      variant="primary"
+                      className="gap-1"
+                    >
+                      <FileSignature size={14} aria-hidden />
+                      Sign contract
+                    </GlassButton>
+                  )}
+                  {canActAsClient && clientCanPayDeposit(item) && item.vendorBookingId && (
+                    <GlassButton
+                      type="button"
+                      variant="primary"
+                      className="gap-1"
+                      disabled={actionId === `pay-${item.vendorBookingId}` || paymentPolling}
+                      onClick={() => void handlePayDeposit(item.vendorBookingId!)}
+                    >
+                      <CreditCard size={14} aria-hidden />
+                      {actionId === `pay-${item.vendorBookingId}`
+                        ? "Opening checkout…"
+                        : "Pay deposit"}
+                    </GlassButton>
+                  )}
                   {item.status === "Declined" && (
                     <span className={cn("rounded-full bg-white/50 px-3 py-1.5 text-xs font-semibold ring-1 ring-white/60", vg.caption)}>
                       Vendor unavailable
@@ -362,8 +407,11 @@ export function VendorShortlistPanel({ eventId, mode, pollBookingId }: Props) {
                       Awaiting vendor response
                     </span>
                   )}
-                  {item.vendorBookingId && item.status !== "BookingRequested" && (
-                    <GlassButton href={`/contracts/sign/${item.vendorBookingId}`} variant="ghost">
+                  {item.vendorBookingId &&
+                    (item.status === "ContractSigned" ||
+                      item.status === "DepositPaid" ||
+                      item.contractSignedAt) && (
+                    <GlassButton href={`/contracts/sign/${item.vendorBookingId}?eventId=${eventId}`} variant="ghost">
                       View contract
                     </GlassButton>
                   )}
@@ -373,6 +421,69 @@ export function VendorShortlistPanel({ eventId, mode, pollBookingId }: Props) {
             </li>
           ))}
         </ul>
+      )}
+
+      {mode === "client" && eventBookings.length > 0 && (
+        <section className="space-y-4">
+          <div>
+            <h3 className={cn("text-base font-semibold", vg.body)}>Your booked services</h3>
+            <p className={cn("text-sm", vg.caption)}>
+              Confirmed and in-progress vendor services linked to this event.
+            </p>
+          </div>
+          <ul className="space-y-3" role="list">
+            {eventBookings.map((booking) => (
+              <li key={booking.bookingId}>
+                <article
+                  className={cn(
+                    "rounded-xl border border-white/55 bg-white/40 p-4 backdrop-blur-sm",
+                    "transition-all duration-200 hover:border-[hsl(42_48%_52%/0.28)] hover:bg-white/55"
+                  )}
+                >
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                      <p className={cn("truncate font-medium", vg.body)}>
+                        {booking.serviceName}
+                      </p>
+                      <p className={cn("mt-0.5 truncate text-sm", vg.subtitle)}>
+                        {booking.vendorName || "Vendor"}
+                      </p>
+                      <p className={cn("mt-1 inline-flex items-center gap-1.5 text-xs", vg.caption)}>
+                        <CalendarDays size={12} aria-hidden />
+                        Service date{" "}
+                        {new Date(booking.serviceDate).toLocaleDateString(undefined, {
+                          dateStyle: "medium",
+                        })}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={cn(
+                          "rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                          getStatusBadgeClass(
+                            booking.status === "Confirmed" || booking.status === "Completed"
+                              ? "success"
+                              : "neutral"
+                          )
+                        )}
+                      >
+                        {booking.status}
+                      </span>
+                      <span className="text-sm font-semibold tabular-nums text-foreground">
+                        {formatLKR(booking.finalAmount)}
+                      </span>
+                    </div>
+                  </div>
+                  <VendorInsightLinks
+                    vendorUserId={booking.vendorUserId}
+                    vendorServiceId={booking.serviceId}
+                    className="mt-3"
+                  />
+                </article>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {mode === "planner" && (

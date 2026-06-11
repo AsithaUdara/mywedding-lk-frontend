@@ -87,7 +87,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (!isAdmin) {
     return (
       <div className="regal-frost-shell flex min-h-screen flex-col items-center justify-center gap-3 bg-background px-4 font-glass-body">
-        <p className="font-luxury-section text-lg font-medium tracking-tight text-foreground">Access denied</p>
+        <p className={cn(rf.sectionTitle)}>Access denied</p>
         <p className="text-sm text-muted-foreground">Admin role required.</p>
       </div>
     );

@@ -22,6 +22,11 @@ import {
   PlannerEventListItem,
 } from "@/shared/lib/api/planner";
 import { ErrorBanner, StatusBadge, formatLKR } from "@/modules/planner/components/ui";
+import {
+  budgetUsageBarWidth,
+  budgetUsagePercent,
+  formatPercentDisplay,
+} from "@/shared/lib/format";
 import { EmptyState, PageLoadingSkeleton } from "@/shared/components/ui";
 import {
   GlassButton,
@@ -29,7 +34,6 @@ import {
   GlassSectionCard,
   GlassStatCard,
 } from "@/modules/vendor/dashboard/glass-ui";
-import { rf } from "@/modules/design-system/regal-frost/tokens";
 import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
 import { cn } from "@/shared/lib/cn";
 
@@ -58,8 +62,7 @@ function daysUntilWedding(eventDate: string): number {
 }
 
 function budgetUtilization(spent: number, total: number): number {
-  if (total <= 0) return 0;
-  return Math.min(100, Math.round((spent / total) * 100));
+  return budgetUsagePercent(spent, total);
 }
 
 export default function PlannerEventsPage() {
@@ -151,7 +154,7 @@ export default function PlannerEventsPage() {
         />
         <GlassStatCard
           label="Budget utilization"
-          value={`${portfolioUtilization}%`}
+          value={formatPercentDisplay(portfolioUtilization)}
           sub="Spent vs planned"
           icon={TrendingUp}
           iconTheme="success"
@@ -219,7 +222,7 @@ export default function PlannerEventsPage() {
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div className="flex min-w-0 gap-4">
                         <div
-                          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 font-luxury-display text-lg font-bold text-primary"
+                          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 font-glass-body text-lg font-bold text-primary"
                           aria-hidden
                         >
                           {event.eventName.charAt(0).toUpperCase()}
@@ -267,7 +270,7 @@ export default function PlannerEventsPage() {
                           {formatLKR(event.spentBudget)}
                           <span className={cn("font-normal", vg.caption)}>
                             {" "}
-                            / {formatLKR(event.totalBudget)} ({utilization}%)
+                            / {formatLKR(event.totalBudget)} ({formatPercentDisplay(utilization)})
                           </span>
                         </span>
                       </div>
@@ -281,12 +284,12 @@ export default function PlannerEventsPage() {
                                 ? "bg-warning"
                                 : "bg-primary"
                           )}
-                          style={{ width: `${Math.max(utilization, 4)}%` }}
+                          style={{ width: `${budgetUsageBarWidth(event.spentBudget, event.totalBudget)}%` }}
                           role="progressbar"
                           aria-valuenow={utilization}
                           aria-valuemin={0}
                           aria-valuemax={100}
-                          aria-label={`${utilization}% of budget spent`}
+                          aria-label={`${formatPercentDisplay(utilization)} of budget spent`}
                         />
                       </div>
                     </div>

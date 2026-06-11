@@ -45,7 +45,7 @@ export function PlannerWorkspaceShell({
       maxWidthClass="max-w-7xl"
       workspaceBrand={workspaceBrand}
     >
-      {children}
+      <div className="dashboard-workspace-ui planner-workspace-ui">{children}</div>
     </GlassWorkspaceShell>
   );
 }

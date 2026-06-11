@@ -17,6 +17,8 @@ import { useAuth } from "@/shared/context/AuthContext";
 import { getVendorBookings, VendorBookingItem } from "@/shared/lib/api/vendors";
 import { updateBookingStatus } from "@/shared/lib/api/bookings";
 import { acceptVendorBooking, declineVendorBooking } from "@/shared/lib/api/vendorShortlist";
+import { dispatchVendorBookingsUpdated, VENDOR_BOOKINGS_UPDATED } from "@/shared/lib/vendorBookingEvents";
+import { VendorBookingContractUpload } from "@/modules/vendor/dashboard/VendorBookingContractUpload";
 import { SearchField } from "@/modules/vendor/dashboard/components";
 import {
   Badge,
@@ -62,12 +64,14 @@ function BookingQueueList({
   onAccept,
   onDecline,
   onMarkCompleted,
+  onContractUpdated,
 }: {
   bookings: VendorBookingItem[];
   actionLoading: string | null;
   onAccept: (bookingId: string) => void;
   onDecline: (bookingId: string) => void;
   onMarkCompleted: (bookingId: string) => void;
+  onContractUpdated: () => void;
 }) {
   return (
     <ul className="space-y-3" role="list">
@@ -163,9 +167,36 @@ function BookingQueueList({
                   )}
 
                   {booking.status === "AwaitingPayment" && (
-                    <p className={cn("mt-auto", vg.caption)}>
-                      Waiting for deposit checkout from the couple or planner.
-                    </p>
+                    <div className="mt-auto space-y-3">
+                      <VendorBookingContractUpload
+                        bookingId={booking.bookingId}
+                        contractUploaded={booking.contractUploaded}
+                        contractSentAt={booking.contractSentAt}
+                        contractSignedAt={booking.contractSignedAt}
+                        onUpdated={onContractUpdated}
+                      />
+                      {!booking.contractUploaded && (
+                        <p className={cn(vg.caption)}>
+                          Upload the contract before the client can sign and pay the deposit.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {booking.status === "ContractSigned" && (
+                    <div className="mt-auto space-y-2">
+                      <p className={cn(vg.caption)}>Contract signed — waiting for client deposit.</p>
+                      {booking.contractFileUrl ? (
+                        <a
+                          href={booking.contractFileUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs font-semibold underline"
+                        >
+                          View contract PDF
+                        </a>
+                      ) : null}
+                    </div>
                   )}
 
                   {booking.status === "Confirmed" && (
@@ -178,12 +209,6 @@ function BookingQueueList({
                       <CheckCircle size={16} aria-hidden />
                       {isLoading ? "Updating…" : "Mark completed"}
                     </GlassButton>
-                  )}
-
-                  {booking.status === "ContractSigned" && (
-                    <p className={cn("mt-auto", vg.caption)}>
-                      Contract signed — proceed when payment is confirmed.
-                    </p>
                   )}
 
                   {booking.status === "Completed" && (
@@ -213,7 +238,7 @@ export default function VendorBookingsPage() {
   const [filter, setFilter] = useState<BookingFilter>("all");
   const [search, setSearch] = useState("");
 
-  const fetchBookings = useCallback(async () => {
+  const fetchBookings = useCallback(async (notifyOthers = false) => {
     if (!user) return;
     try {
       setError(null);
@@ -227,6 +252,9 @@ export default function VendorBookingsPage() {
       });
 
       setBookings(data);
+      if (notifyOthers) {
+        dispatchVendorBookingsUpdated();
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to load bookings.");
     }
@@ -248,6 +276,15 @@ export default function VendorBookingsPage() {
     };
   }, [fetchBookings, user]);
 
+  useEffect(() => {
+    const handleUpdate = () => {
+      void fetchBookings();
+    };
+
+    window.addEventListener(VENDOR_BOOKINGS_UPDATED, handleUpdate);
+    return () => window.removeEventListener(VENDOR_BOOKINGS_UPDATED, handleUpdate);
+  }, [fetchBookings]);
+
   const handleRefresh = async () => {
     setRefreshing(true);
     await fetchBookings();
@@ -260,7 +297,7 @@ export default function VendorBookingsPage() {
       setActionLoading(bookingId);
       const token = await user.getIdToken();
       await acceptVendorBooking(token, bookingId);
-      await fetchBookings();
+      await fetchBookings(true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to accept booking.");
     } finally {
@@ -274,7 +311,7 @@ export default function VendorBookingsPage() {
       setActionLoading(bookingId);
       const token = await user.getIdToken();
       await declineVendorBooking(token, bookingId);
-      await fetchBookings();
+      await fetchBookings(true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to decline booking.");
     } finally {
@@ -288,7 +325,7 @@ export default function VendorBookingsPage() {
       setActionLoading(bookingId);
       const token = await user.getIdToken();
       await updateBookingStatus(token, bookingId, newStatus);
-      await fetchBookings();
+      await fetchBookings(true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to update status.");
     } finally {
@@ -466,6 +503,7 @@ export default function VendorBookingsPage() {
             onAccept={(id) => void handleAcceptBooking(id)}
             onDecline={(id) => void handleDeclineBooking(id)}
             onMarkCompleted={(id) => void handleUpdateStatus(id, "Completed")}
+            onContractUpdated={() => void fetchBookings()}
           />
         )}
       </GlassSectionCard>

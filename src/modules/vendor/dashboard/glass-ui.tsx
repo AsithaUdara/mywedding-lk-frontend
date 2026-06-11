@@ -45,7 +45,7 @@ export function GlassPageHeader({
           <div className="mb-2 flex flex-wrap items-center gap-2">
             {typeof badge === "string" ? <span className={rf.badge}>{badge}</span> : badge}
           </div>
-          <h1 className={rf.heroTitle}>{title}</h1>
+          <h1 className={cn(rf.heroTitle, "font-glass-body")}>{title}</h1>
           {description && <p className={cn("mt-1.5 max-w-xl", rf.subtitle)}>{description}</p>}
         </div>
         {action && <div className="shrink-0">{action}</div>}
@@ -71,7 +71,7 @@ export function GlassSectionCard({
     <section className={cn(rf.panel, "flex flex-col", className)}>
       <div className={cn("flex items-start justify-between gap-3", rf.panelHeader)}>
         <div className="min-w-0">
-          <h2 className={rf.sectionTitle}>{title}</h2>
+          <h2 className={cn(rf.sectionTitle, "font-glass-body")}>{title}</h2>
           {subtitle && <p className={cn("mt-0.5", rf.caption)}>{subtitle}</p>}
         </div>
         {action ? <div className="shrink-0">{action}</div> : null}
@@ -150,6 +150,8 @@ export function GlassButton({
   type = "button",
   disabled,
   title,
+  target,
+  rel,
 }: {
   href?: string;
   children: React.ReactNode;
@@ -159,12 +161,14 @@ export function GlassButton({
   type?: "button" | "submit" | "reset";
   disabled?: boolean;
   title?: string;
+  target?: string;
+  rel?: string;
 }) {
   const classes = cn(variant === "primary" ? rf.btnPrimary : rf.btnGhost, className);
 
   if (href) {
     return (
-      <Link href={href} className={classes} title={title}>
+      <Link href={href} className={classes} title={title} target={target} rel={rel}>
         {children}
       </Link>
     );

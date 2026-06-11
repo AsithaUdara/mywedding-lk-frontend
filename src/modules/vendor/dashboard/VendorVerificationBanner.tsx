@@ -144,7 +144,7 @@ export function VendorVerificationBanner({
               >
                 {copy.eyebrow}
               </span>
-              <h2 className="mt-2 font-luxury-section text-lg font-medium leading-snug text-foreground sm:text-xl">
+              <h2 className={cn("mt-2", rf.sectionTitle)}>
                 {copy.title}
               </h2>
               <p className={cn("mt-1.5 max-w-2xl", rf.subtitle)}>{copy.body}</p>

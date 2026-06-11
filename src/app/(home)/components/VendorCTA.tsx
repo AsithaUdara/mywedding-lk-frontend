@@ -15,7 +15,7 @@ export default function VendorCTA() {
               <Store size={14} className="text-[hsl(42_48%_52%)]" aria-hidden />
               For vendors & venues
             </div>
-            <h2 className="font-luxury-section mt-4 text-2xl font-medium text-foreground md:text-3xl">
+            <h2 className="font-playfair mt-4 text-2xl font-normal text-foreground md:text-3xl">
               List your business on Sri Lanka&apos;s curated wedding directory
             </h2>
             <p className={cn(mk.body, "mt-3 max-w-lg md:text-base")}>

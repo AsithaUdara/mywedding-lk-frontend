@@ -14,6 +14,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
+import { useNotifications } from "@/shared/context/NotificationContext";
 import {
   getPlannerEvents,
   getPlannerOverview,
@@ -21,12 +22,8 @@ import {
   PlannerOverviewResponse,
   type EventLifecycleStage,
 } from "@/shared/lib/api/planner";
-import {
-  BudgetBarChart,
-  ErrorBanner,
-  formatLKR,
-  StatusBadge,
-} from "@/modules/planner/components/ui";
+import { ErrorBanner, formatLKR, StatusBadge } from "@/modules/planner/components/ui";
+import { budgetUsagePercent, formatPercentDisplay } from "@/shared/lib/format";
 import {
   usePlannerCreateEventModal,
   usePlannerEventCreated,
@@ -66,6 +63,7 @@ const LIFECYCLE_BAR: Record<EventLifecycleStage, string> = {
 
 export default function PlannerDashboardPage() {
   const { user } = useAuth();
+  const { notify } = useNotifications();
   const { openCreateEventModal } = usePlannerCreateEventModal();
   const [overview, setOverview] = useState<PlannerOverviewResponse | null>(null);
   const [events, setEvents] = useState<PlannerEventListItem[]>([]);
@@ -95,7 +93,23 @@ export default function PlannerDashboardPage() {
     load();
   }, [load]);
 
-  usePlannerEventCreated(load);
+  usePlannerEventCreated((detail) => {
+    void load();
+    if (detail?.eventId) {
+      const taskCount = detail.tasksGenerated > 0 ? detail.tasksGenerated : 8;
+      notify(
+        "Wedding created",
+        `${detail.eventName ?? "Your event"} — ${taskCount} starter tasks are on the timeline.`,
+        {
+          variant: "success",
+          action: {
+            label: "Open timeline",
+            href: `/planner/tasks?eventId=${encodeURIComponent(detail.eventId)}&welcome=1`,
+          },
+        }
+      );
+    }
+  });
 
   const bookingTotals = useMemo(() => {
     const pending = overview?.pendingBookings ?? 0;
@@ -118,18 +132,8 @@ export default function PlannerDashboardPage() {
     [events]
   );
 
-  const chartData = useMemo(
-    () =>
-      events.slice(0, 6).map((e) => ({
-        label: e.eventName,
-        spent: e.spentBudget,
-        total: e.totalBudget,
-      })),
-    [events]
-  );
-
   const utilizationPct =
-    budgetSummary.total > 0 ? Math.round((budgetSummary.spent / budgetSummary.total) * 100) : 0;
+    budgetUsagePercent(budgetSummary.spent, budgetSummary.total);
 
   const lifecycleCounts = useMemo(() => {
     const counts: Record<EventLifecycleStage, number> = {
@@ -161,10 +165,18 @@ export default function PlannerDashboardPage() {
 
   const upcomingSorted = useMemo(() => {
     if (!overview?.upcomingEvents?.length) return [];
-    return [...overview.upcomingEvents].sort(
-      (a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime()
-    );
-  }, [overview]);
+    return [...overview.upcomingEvents]
+      .sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime())
+      .map((row) => {
+        const full = events.find((e) => e.eventId === row.eventId);
+        return {
+          ...row,
+          totalBudget: full?.totalBudget ?? 0,
+          taskPlanPhase: full?.taskPlanPhase ?? "None",
+          eventLifecycleStage: full?.eventLifecycleStage ?? "Lead",
+        };
+      });
+  }, [overview, events]);
 
   if (loading && !overview) {
     return <PageLoadingSkeleton />;
@@ -223,7 +235,7 @@ export default function PlannerDashboardPage() {
         <GlassStatCard
           label="Portfolio budget"
           value={formatLKR(budgetSummary.total)}
-          sub={`${utilizationPct}% utilized`}
+          sub={`${formatPercentDisplay(utilizationPct)} utilized`}
           icon={Wallet}
           iconTheme="accent"
         />
@@ -263,37 +275,24 @@ export default function PlannerDashboardPage() {
         </GlassSectionCard>
 
         <GlassSectionCard
-          title="Budget by event"
-          subtitle="Top allocations in your portfolio"
-          action={
-            <GlassButton href="/planner/budget" variant="ghost" className="gap-1">
-              Revenue
-              <ArrowRight size={14} aria-hidden />
-            </GlassButton>
-          }
+          title="Client health"
+          subtitle={`${clientsNeedingAttention} need attention`}
         >
-          {chartData.length === 0 ? (
-            <EmptyState
-              title="No budget data yet"
-              description="Create a client event to start tracking spend vs plan."
-              action={
-                <GlassButton type="button" variant="primary" onClick={openCreateEventModal}>
-                  Add event
-                </GlassButton>
-              }
-              className="border-0 bg-transparent shadow-none"
-            />
-          ) : (
-            <>
-              <BudgetBarChart data={chartData} />
-              <div className={cn("mt-6 flex justify-between border-t border-white/40 pt-4", vg.body)}>
-                <span className={vg.subtitle}>Total spent</span>
-                <span className="font-semibold tabular-nums text-foreground">
-                  {formatLKR(budgetSummary.spent)}
-                </span>
-              </div>
-            </>
-          )}
+          <div className="space-y-4">
+            {LIFECYCLE_ORDER.map((stage) => (
+              <ProgressBar
+                key={stage}
+                label={stage}
+                count={lifecycleCounts[stage]}
+                total={lifecycleTotal}
+                barClassName={LIFECYCLE_BAR[stage]}
+              />
+            ))}
+          </div>
+          <GlassButton href="/planner/clients" variant="ghost" className="mt-6 gap-1">
+            Open CRM
+            <ArrowRight size={14} aria-hidden />
+          </GlassButton>
         </GlassSectionCard>
 
         <GlassSectionCard title="Quick actions" subtitle="Common workflows">
@@ -326,31 +325,8 @@ export default function PlannerDashboardPage() {
         </GlassSectionCard>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6">
         <GlassSectionCard
-          className="lg:col-span-1"
-          title="Client health"
-          subtitle={`${clientsNeedingAttention} need attention`}
-        >
-          <div className="space-y-4">
-            {LIFECYCLE_ORDER.map((stage) => (
-              <ProgressBar
-                key={stage}
-                label={stage}
-                count={lifecycleCounts[stage]}
-                total={lifecycleTotal}
-                barClassName={LIFECYCLE_BAR[stage]}
-              />
-            ))}
-          </div>
-          <GlassButton href="/planner/clients" variant="ghost" className="mt-6 gap-1">
-            Open CRM
-            <ArrowRight size={14} aria-hidden />
-          </GlassButton>
-        </GlassSectionCard>
-
-        <GlassSectionCard
-          className="lg:col-span-2"
           title="Upcoming weddings"
           subtitle="Next celebrations on your calendar"
           action={
@@ -402,13 +378,26 @@ export default function PlannerDashboardPage() {
                           </p>
                           <p className={cn("mt-1", vg.caption)}>
                             Budget {formatLKR(event.totalBudget)}
+                            {event.taskPlanPhase === "Discovery" && (
+                              <span className="ml-2 font-medium text-amber-800">
+                                · Setup in progress
+                              </span>
+                            )}
                           </p>
                         </div>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
                         <StatusBadge status={event.status} />
+                        <GlassButton
+                          href={`/planner/tasks?eventId=${encodeURIComponent(event.eventId)}&welcome=1`}
+                          variant="primary"
+                          className="gap-1"
+                        >
+                          Timeline
+                          <ArrowRight size={14} aria-hidden />
+                        </GlassButton>
                         <GlassButton href={`/events/${event.eventId}`} variant="ghost" className="gap-1">
-                          Open
+                          Hub
                           <ArrowRight size={14} aria-hidden />
                         </GlassButton>
                       </div>
@@ -430,7 +419,7 @@ export default function PlannerDashboardPage() {
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="max-w-xl">
             <p className={vg.label}>Planner Pro</p>
-            <h3 className="mt-2 font-luxury-section text-2xl font-medium text-foreground">
+            <h3 className="mt-2 text-xl font-semibold text-foreground">
               Scale your studio
             </h3>
             <p className={cn("mt-2 leading-relaxed", vg.subtitle)}>

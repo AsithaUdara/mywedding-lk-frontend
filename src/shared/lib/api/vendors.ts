@@ -2,6 +2,7 @@
 
 import { parseApiError } from '@/shared/lib/api/parseApiError';
 import { submitPayHereCheckout } from '@/shared/lib/payhereCheckout';
+import { resolveBookedByDisplayName } from '@/shared/lib/userDisplay';
 
 // --- Define the data structures (Types) for our API responses ---
 
@@ -418,9 +419,14 @@ export interface VendorBookingItem {
   serviceName: string;
   eventName: string;
   coupleName: string;
+  bookedByEmail?: string | null;
   finalAmount: number;
   status: string;
   serviceDate: string;
+  contractFileUrl?: string | null;
+  contractSentAt?: string | null;
+  contractSignedAt?: string | null;
+  contractUploaded?: boolean;
 }
 
 const BOOKING_STATUS_BY_NUMBER: Record<number, string> = {
@@ -452,15 +458,37 @@ export const getVendorBookings = async (token: string): Promise<VendorBookingIte
     throw new Error(errorData.message || 'Failed to fetch bookings.');
   }
   const data = await response.json();
-  return (Array.isArray(data) ? data : []).map((item: Record<string, unknown>) => ({
-    bookingId: String(item.bookingId ?? item.BookingId ?? ""),
-    serviceName: String(item.serviceName ?? item.ServiceName ?? "Unknown"),
-    eventName: String(item.eventName ?? item.EventName ?? "Unknown"),
-    coupleName: String(item.coupleName ?? item.CoupleName ?? "Unknown"),
-    finalAmount: Number(item.finalAmount ?? item.FinalAmount ?? 0),
-    status: normalizeBookingStatus(item.status ?? item.Status),
-    serviceDate: String(item.serviceDate ?? item.ServiceDate ?? ""),
-  }));
+  return (Array.isArray(data) ? data : []).map((item: Record<string, unknown>) => {
+    const coupleName = String(item.coupleName ?? item.CoupleName ?? "Unknown");
+    const bookedByEmail =
+      item.bookedByEmail != null || item.BookedByEmail != null
+        ? String(item.bookedByEmail ?? item.BookedByEmail)
+        : null;
+
+    return {
+      bookingId: String(item.bookingId ?? item.BookingId ?? ""),
+      serviceName: String(item.serviceName ?? item.ServiceName ?? "Unknown"),
+      eventName: String(item.eventName ?? item.EventName ?? "Unknown"),
+      coupleName: resolveBookedByDisplayName(coupleName, bookedByEmail),
+      bookedByEmail,
+      finalAmount: Number(item.finalAmount ?? item.FinalAmount ?? 0),
+      status: normalizeBookingStatus(item.status ?? item.Status),
+      serviceDate: String(item.serviceDate ?? item.ServiceDate ?? ""),
+      contractFileUrl:
+        item.contractFileUrl != null
+          ? String(item.contractFileUrl ?? item.ContractFileUrl)
+          : null,
+      contractSentAt:
+        item.contractSentAt != null
+          ? String(item.contractSentAt ?? item.ContractSentAt)
+          : null,
+      contractSignedAt:
+        item.contractSignedAt != null
+          ? String(item.contractSignedAt ?? item.ContractSignedAt)
+          : null,
+      contractUploaded: Boolean(item.contractUploaded ?? item.ContractUploaded ?? false),
+    };
+  });
 };
 
 export const updateBookingStatus = async (token: string, bookingId: string, status: string) => {

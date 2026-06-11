@@ -51,7 +51,7 @@ export function PlannerUpgradeModal({ open, onClose, message }: Props) {
           <X size={18} />
         </button>
 
-        <div className="relative p-8 pt-10">
+        <div className="font-glass-body relative p-8 pt-10">
           <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-accent/15 px-3 py-1 text-xs font-bold uppercase tracking-wider text-accent-foreground">
             <Sparkles size={14} aria-hidden />
             Planner Pro
@@ -59,7 +59,7 @@ export function PlannerUpgradeModal({ open, onClose, message }: Props) {
 
           <h2
             id="upgrade-modal-title"
-            className="font-playfair text-2xl font-bold text-foreground md:text-3xl"
+            className="font-glass-body text-2xl font-semibold text-foreground md:text-3xl"
           >
             Scale your planning studio
           </h2>

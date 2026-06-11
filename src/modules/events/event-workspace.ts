@@ -11,6 +11,9 @@ export const eventWorkspace = {
   homeOverviewVendors: "lg:col-span-4 lg:col-start-9 lg:row-start-1",
   homeOverviewBudget: "lg:col-span-8 lg:col-start-1 lg:row-start-2",
   homeOverviewActivity: "lg:col-span-4 lg:col-start-9 lg:row-start-2",
+  /** Row 1: stretch to the taller column; task list height syncs to proposals via EventHomeOverviewRow */
+  homeOverviewCardPair: "flex h-full min-h-[220px] flex-col",
+  /** Row 2 (budget + activity): stretch so the second row stays aligned */
   homeOverviewCard: "flex h-full min-h-[220px] flex-col",
   mainColumn: "space-y-6 lg:col-span-8",
   sideColumn: "space-y-6 lg:col-span-4",

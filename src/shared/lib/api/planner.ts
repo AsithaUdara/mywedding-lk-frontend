@@ -74,6 +74,7 @@ export interface PlannerClientItem {
 }
 
 export type EventLifecycleStage = "Lead" | "Onboarding" | "Planning" | "Execution" | "Archived";
+export type TaskPlanPhase = "None" | "Discovery" | "Full";
 
 export interface PlannerEventListItem {
   plannerClientEventId: string;
@@ -89,6 +90,7 @@ export interface PlannerEventListItem {
   confirmedBookings: number;
   completedBookings: number;
   eventLifecycleStage: EventLifecycleStage;
+  taskPlanPhase: TaskPlanPhase;
 }
 
 export interface CreatePlannerEventPayload {
@@ -97,6 +99,13 @@ export interface CreatePlannerEventPayload {
   totalBudget: number;
   clientUserId?: string;
   clientEmail?: string;
+}
+
+export interface CreatePlannerEventResult {
+  eventId: string;
+  plannerClientEventId?: string;
+  tasksGenerated: number;
+  eventName?: string;
 }
 
 export interface PlannerBookingListItem {
@@ -179,6 +188,9 @@ function mapPlannerEventListItem(raw: Record<string, unknown>): PlannerEventList
   const stage = String(
     raw.eventLifecycleStage ?? raw.EventLifecycleStage ?? "Planning"
   ) as EventLifecycleStage;
+  const taskPlanPhase = String(
+    raw.taskPlanPhase ?? raw.TaskPlanPhase ?? "None"
+  ) as TaskPlanPhase;
   return {
     plannerClientEventId: String(raw.plannerClientEventId ?? raw.PlannerClientEventId ?? ""),
     eventId: String(raw.eventId ?? raw.EventId ?? ""),
@@ -193,6 +205,7 @@ function mapPlannerEventListItem(raw: Record<string, unknown>): PlannerEventList
     confirmedBookings: Number(raw.confirmedBookings ?? raw.ConfirmedBookings ?? 0),
     completedBookings: Number(raw.completedBookings ?? raw.CompletedBookings ?? 0),
     eventLifecycleStage: stage,
+    taskPlanPhase,
   };
 }
 
@@ -276,7 +289,10 @@ export async function updatePlannerAgencyLogo(
   return res.json();
 }
 
-export async function createPlannerEvent(token: string, payload: CreatePlannerEventPayload): Promise<{ eventId: string }> {
+export async function createPlannerEvent(
+  token: string,
+  payload: CreatePlannerEventPayload
+): Promise<CreatePlannerEventResult> {
   const res = await plannerFetch(token, `${BASE}/api/planner/events`, {
     method: "POST",
     body: JSON.stringify(payload),
@@ -287,7 +303,12 @@ export async function createPlannerEvent(token: string, payload: CreatePlannerEv
     if (limitError) throw limitError;
     throw new Error(String(err.message ?? err.detail ?? "Failed to create planner event."));
   }
-  return res.json();
+  const data = (await res.json()) as Record<string, unknown>;
+  return {
+    eventId: String(data.eventId ?? data.EventId ?? ""),
+    plannerClientEventId: String(data.plannerClientEventId ?? data.PlannerClientEventId ?? ""),
+    tasksGenerated: Number(data.tasksGenerated ?? data.TasksGenerated ?? 0),
+  };
 }
 
 export { PlannerSubscriptionLimitError };

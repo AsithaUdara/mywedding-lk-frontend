@@ -248,7 +248,7 @@ export default function PlannerInvitationsPage() {
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div className="flex min-w-0 gap-4">
                         <div
-                          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 font-luxury-display text-lg font-bold text-primary"
+                          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 font-glass-body text-lg font-bold text-primary"
                           aria-hidden
                         >
                           {event.eventName.charAt(0).toUpperCase()}

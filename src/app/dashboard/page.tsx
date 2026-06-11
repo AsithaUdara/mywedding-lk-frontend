@@ -74,7 +74,7 @@ const DashboardPage = () => {
 
   if (authLoading || !user) {
     return (
-      <RegalFrostShell mesh className="min-h-screen">
+      <RegalFrostShell mesh marketing className="min-h-screen">
         <PageLoadingSkeleton />
       </RegalFrostShell>
     );
@@ -84,7 +84,7 @@ const DashboardPage = () => {
     <RegalFrostShell mesh className="flex min-h-screen flex-col">
       <Header onLoginClick={() => {}} />
 
-      <main className="relative mx-auto w-full max-w-7xl flex-grow px-4 py-10 sm:px-6 sm:py-12 lg:px-8 lg:py-14">
+      <main className="dashboard-workspace-ui relative mx-auto w-full max-w-7xl flex-grow px-4 py-10 sm:px-6 sm:py-12 lg:px-8 lg:py-14">
         <GlassPageHeader
           className="mb-8 lg:mb-10"
           badge={

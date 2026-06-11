@@ -9,11 +9,13 @@ export type VendorShortlistItemStatus =
   | "BookingRequested"
   | "BookingAccepted"
   | "Declined"
-  | "DepositPaid";
+  | "DepositPaid"
+  | "ContractSigned";
 
 export interface VendorShortlistItem {
   id: string;
   vendorServiceId: string;
+  vendorUserId: string | null;
   serviceName: string | null;
   vendorBusinessName: string | null;
   categoryLabel: string | null;
@@ -24,6 +26,10 @@ export interface VendorShortlistItem {
   vendorBookingId: string | null;
   sentToClientAt: string | null;
   clientApprovedAt: string | null;
+  contractFileUrl: string | null;
+  contractSentAt: string | null;
+  contractSignedAt: string | null;
+  bookingStatus: string | null;
 }
 
 export interface CreateShortlistItemPayload {
@@ -38,6 +44,10 @@ function mapItem(raw: Record<string, unknown>): VendorShortlistItem {
   return {
     id: String(raw.id ?? raw.Id ?? ""),
     vendorServiceId: String(raw.vendorServiceId ?? raw.VendorServiceId ?? ""),
+    vendorUserId:
+      raw.vendorUserId != null
+        ? String(raw.vendorUserId ?? raw.VendorUserId)
+        : null,
     serviceName:
       raw.serviceName != null
         ? String(raw.serviceName ?? raw.ServiceName)
@@ -66,6 +76,20 @@ function mapItem(raw: Record<string, unknown>): VendorShortlistItem {
       raw.clientApprovedAt != null
         ? String(raw.clientApprovedAt ?? raw.ClientApprovedAt)
         : null,
+    contractFileUrl:
+      raw.contractFileUrl != null
+        ? String(raw.contractFileUrl ?? raw.ContractFileUrl)
+        : null,
+    contractSentAt:
+      raw.contractSentAt != null
+        ? String(raw.contractSentAt ?? raw.ContractSentAt)
+        : null,
+    contractSignedAt:
+      raw.contractSignedAt != null
+        ? String(raw.contractSignedAt ?? raw.ContractSignedAt)
+        : null,
+    bookingStatus:
+      raw.bookingStatus != null ? String(raw.bookingStatus ?? raw.BookingStatus) : null,
   };
 }
 

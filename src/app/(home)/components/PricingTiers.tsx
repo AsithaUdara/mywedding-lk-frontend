@@ -17,7 +17,7 @@ const tiers = [
   },
   {
     name: "Pro",
-    price: "LKR 9,900",
+    price: "LKR 6,000",
     period: "/ month",
     description: "Growing agencies managing multiple concurrent celebrations.",
     features: [
@@ -76,13 +76,13 @@ export default function PricingTiers() {
             )}
             <p
               className={cn(
-                "font-glass-body text-sm font-semibold uppercase tracking-wider",
-                tier.highlighted ? "text-white/80" : "text-muted-foreground"
+                "font-playfair text-lg font-medium tracking-wide",
+                tier.highlighted ? "text-white/90" : "text-foreground"
               )}
             >
               {tier.name}
             </p>
-            <p className="font-luxury-section mt-4 text-4xl font-medium tabular-nums">
+            <p className="font-playfair mt-4 text-4xl font-normal tabular-nums">
               {tier.price}
               <span className="text-lg font-normal opacity-80">{tier.period}</span>
             </p>

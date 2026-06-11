@@ -2,10 +2,15 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import { useAuth } from "@/shared/context/AuthContext";
 import { ChevronDown, LayoutDashboard, LogOut } from "lucide-react";
 import { cn } from "@/shared/lib/cn";
+import {
+  getDashboardPathForRole,
+  getRoleFromClaims,
+} from "@/shared/lib/auth/postLoginRedirect";
 import {
   dropdownIconWrapClass,
   dropdownItemClass,
@@ -24,6 +29,22 @@ function getInitials(displayName: string | null, email: string | null) {
 
 export default function UserDropdown() {
   const { user, logOut } = useAuth();
+  const [dashboardHref, setDashboardHref] = useState("/dashboard");
+
+  useEffect(() => {
+    if (!user) return;
+
+    let cancelled = false;
+    void user.getIdTokenResult().then((result) => {
+      if (cancelled) return;
+      const role = getRoleFromClaims(result.claims as Record<string, unknown>);
+      setDashboardHref(getDashboardPathForRole(role));
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   if (!user) return null;
 
@@ -70,7 +91,7 @@ export default function UserDropdown() {
 
         <div className="py-1">
           <MenuItem>
-            <Link href="/dashboard" className={dropdownItemClass}>
+            <Link href={dashboardHref} className={dropdownItemClass}>
               <span className={dropdownIconWrapClass}>
                 <LayoutDashboard size={18} strokeWidth={2} aria-hidden />
               </span>

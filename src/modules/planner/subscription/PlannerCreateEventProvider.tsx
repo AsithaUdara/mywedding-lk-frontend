@@ -9,9 +9,12 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import type { CreatePlannerEventResult } from "@/shared/lib/api/planner";
 import { PlannerCreateEventModal } from "@/modules/planner/subscription/PlannerCreateEventModal";
 
 export const PLANNER_EVENT_CREATED = "planner:event-created";
+
+export type PlannerEventCreatedDetail = CreatePlannerEventResult;
 
 type PlannerCreateEventContextValue = {
   openCreateEventModal: () => void;
@@ -25,8 +28,10 @@ export function PlannerCreateEventProvider({ children }: { children: ReactNode }
   const openCreateEventModal = useCallback(() => setOpen(true), []);
   const closeCreateEventModal = useCallback(() => setOpen(false), []);
 
-  const handleCreated = useCallback(() => {
-    window.dispatchEvent(new CustomEvent(PLANNER_EVENT_CREATED));
+  const handleCreated = useCallback((result: CreatePlannerEventResult) => {
+    window.dispatchEvent(
+      new CustomEvent<PlannerEventCreatedDetail>(PLANNER_EVENT_CREATED, { detail: result })
+    );
   }, []);
 
   const value = useMemo(() => ({ openCreateEventModal }), [openCreateEventModal]);
@@ -52,9 +57,12 @@ export function usePlannerCreateEventModal() {
 }
 
 /** Refresh lists when a planner creates an event from the shared modal. */
-export function usePlannerEventCreated(onCreated: () => void) {
+export function usePlannerEventCreated(onCreated: (detail?: PlannerEventCreatedDetail) => void) {
   useEffect(() => {
-    const handler = () => onCreated();
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<PlannerEventCreatedDetail>).detail;
+      onCreated(detail);
+    };
     window.addEventListener(PLANNER_EVENT_CREATED, handler);
     return () => window.removeEventListener(PLANNER_EVENT_CREATED, handler);
   }, [onCreated]);

@@ -2,6 +2,7 @@
  * @deprecated Use `vd` from `vendor-dashboard-theme.ts` instead.
  * Kept as a thin alias for any legacy imports.
  */
+import { rf } from "@/modules/design-system/regal-frost/tokens";
 import { vd } from "./vendor-dashboard-theme";
 
 export const bento = {
@@ -10,8 +11,8 @@ export const bento = {
   cardCompact: vd.cardCompact,
   glassPanel: vd.card,
   label: vd.label,
-  title: `font-playfair ${vd.title}`,
-  sectionTitle: `font-playfair text-xl font-bold tracking-tight text-foreground`,
+  title: vd.title,
+  sectionTitle: rf.sectionTitle,
   subtitle: vd.subtitle,
   pillBtn:
     "inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-all duration-300 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",

@@ -5,6 +5,7 @@ import { useAuth } from "@/shared/context/AuthContext";
 import { getBudgetOverview } from "@/shared/lib/api/budget";
 import { getTasksForEvent } from "@/shared/lib/api/tasks";
 import { getOrganizers } from "@/shared/lib/api/events";
+import { budgetUsagePercent, formatPercentDisplay } from "@/shared/lib/format";
 import { Wallet, CheckSquare, Users } from "lucide-react";
 import { StatGridSkeleton } from "@/shared/components/ui";
 import { useRealTime } from "@/shared/context/RealTimeContext";
@@ -41,7 +42,7 @@ const QuickInsightsRow = ({ eventId }: QuickInsightsRowProps) => {
         ]);
 
         if (budget && budget.totalBudget > 0) {
-          setBudgetUsage(Math.min((budget.totalSpent / budget.totalBudget) * 100, 100));
+          setBudgetUsage(budgetUsagePercent(budget.totalSpent, budget.totalBudget));
         }
 
         if (tasks) {
@@ -74,7 +75,7 @@ const QuickInsightsRow = ({ eventId }: QuickInsightsRowProps) => {
     <div className={eventWorkspace.statGrid}>
       <EventStatCard
         label="Budget usage"
-        value={`${budgetUsage.toFixed(0)}%`}
+        value={formatPercentDisplay(budgetUsage)}
         sub="of planned budget spent"
         icon={Wallet}
       />

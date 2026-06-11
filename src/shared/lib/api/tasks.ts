@@ -1,3 +1,5 @@
+import { parseApiError } from "@/shared/lib/api/parseApiError";
+
 export interface Task {
     id: string;
     title: string;
@@ -7,6 +9,7 @@ export interface Task {
     dueDate: string | null;
     dependsOnTaskId: string | null;
     assignedToUserId: string | null;
+    createdAt: string | null;
 }
 
 export interface CreateTaskData {
@@ -45,6 +48,10 @@ function mapTask(raw: Record<string, unknown>): Task {
             raw.assignedToUserId != null || raw.AssignedToUserId != null
                 ? String(raw.assignedToUserId ?? raw.AssignedToUserId)
                 : null,
+        createdAt:
+            raw.createdAt != null || raw.CreatedAt != null
+                ? String(raw.createdAt ?? raw.CreatedAt)
+                : null,
     };
 }
 
@@ -70,10 +77,19 @@ export const createTask = async (token: string, eventId: string, taskData: Creat
         body: JSON.stringify(taskData),
     });
     if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create task.');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || errorData.detail || 'Failed to create task.');
     }
-    return response.json();
+    const contentType = response.headers.get("content-type") ?? "";
+    if (!contentType.includes("application/json")) {
+        return null;
+    }
+
+    try {
+        return await response.json();
+    } catch {
+        return null;
+    }
 };
 
 export const patchTaskSchedule = async (
@@ -118,6 +134,36 @@ export const realignEventTaskSchedule = async (
     };
 };
 
+export const generateDiscoveryTasks = async (
+  token: string,
+  eventId: string
+): Promise<{ message: string; tasksCreated: number; taskPlanPhase: string }> => {
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/events/${eventId}/tasks/generate-discovery`;
+  const response = await fetch(apiUrl, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    throw new Error(await parseApiError(response, "Failed to generate discovery tasks."));
+  }
+  return response.json();
+};
+
+export const generateFullChecklist = async (
+    token: string,
+    eventId: string
+): Promise<{ message: string; tasksCreated: number; taskPlanPhase: string }> => {
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/events/${eventId}/tasks/generate-checklist`;
+    const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) {
+        throw new Error(await parseApiError(response, 'Failed to generate master checklist.'));
+    }
+    return response.json();
+};
+
 export const updateTaskStatus = async (token: string, taskId: string, newStatus: 'ToDo' | 'InProgress' | 'Completed') => {
     const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/tasks/${taskId}/status`;
     const response = await fetch(apiUrl, {
@@ -129,9 +175,7 @@ export const updateTaskStatus = async (token: string, taskId: string, newStatus:
         body: JSON.stringify({ newStatus }),
     });
     if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update task status.');
+        throw new Error(await parseApiError(response, "Failed to update task status."));
     }
-    return response;
 };
 

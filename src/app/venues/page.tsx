@@ -57,7 +57,7 @@ const VenuesHubPage = () => {
   ];
 
   return (
-    <RegalFrostShell>
+    <RegalFrostShell marketing>
       <main>
         <Header onLoginClick={() => setAuthModalOpen(true)} />
         <HeroWithSearch

@@ -171,7 +171,7 @@ export function GlassWorkspaceShell({
           </div>
           {showLabels && (
             <div className="min-w-0">
-              <p className="truncate font-luxury-section text-base font-medium leading-tight text-foreground">
+              <p className="truncate font-glass-body text-base font-semibold leading-tight text-foreground">
                 {brandTitle}
               </p>
               <p className="truncate text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
@@ -343,7 +343,7 @@ export function GlassWorkspaceShell({
 
         <main
           className={cn(
-            "relative z-10 w-full flex-1 px-5 py-6 md:px-8 md:py-8",
+            "dashboard-workspace-ui relative z-10 w-full flex-1 px-5 py-6 md:px-8 md:py-8",
             maxWidthClass && `mx-auto w-full ${maxWidthClass}`
           )}
         >

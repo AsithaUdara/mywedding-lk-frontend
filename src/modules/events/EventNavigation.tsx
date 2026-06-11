@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutGrid, CheckSquare, Wallet, Users, Palette, Store } from "lucide-react";
 import { cn } from "@/shared/lib/cn";
+import { useEventVendorPendingActions } from "@/shared/hooks/useEventVendorPendingActions";
 
 interface EventNavigationProps {
   eventId: string;
@@ -12,6 +13,7 @@ interface EventNavigationProps {
 
 const EventNavigation = ({ eventId }: EventNavigationProps) => {
   const pathname = usePathname();
+  const { totalPending } = useEventVendorPendingActions(eventId);
 
   const navItems = [
     { name: "Home", href: `/events/${eventId}`, icon: LayoutGrid, exact: true },
@@ -51,6 +53,11 @@ const EventNavigation = ({ eventId }: EventNavigationProps) => {
               >
                 <Icon size={16} strokeWidth={active ? 2.25 : 2} aria-hidden />
                 <span>{item.name}</span>
+                {item.name === "Vendors" && totalPending > 0 ? (
+                  <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold tabular-nums leading-none text-primary-foreground">
+                    {totalPending}
+                  </span>
+                ) : null}
                 {active ? (
                   <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-primary" aria-hidden />
                 ) : null}
@@ -87,7 +94,14 @@ const EventNavigation = ({ eventId }: EventNavigationProps) => {
                 >
                   <Icon size={18} strokeWidth={active ? 2.25 : 2} aria-hidden />
                 </span>
-                <span className="max-w-[56px] truncate text-[10px] font-semibold">{item.name}</span>
+                <span className="relative max-w-[56px] truncate text-[10px] font-semibold">
+                  {item.name}
+                  {item.name === "Vendors" && totalPending > 0 ? (
+                    <span className="absolute -right-1 -top-1 inline-flex size-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold tabular-nums leading-none text-primary-foreground">
+                      {totalPending}
+                    </span>
+                  ) : null}
+                </span>
               </Link>
             );
           })}

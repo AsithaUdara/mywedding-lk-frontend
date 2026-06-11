@@ -32,14 +32,13 @@ const CreateTaskForm = ({ eventId, onTaskCreated, onCancel }: CreateTaskFormProp
 
     try {
       const token = await user.getIdToken();
-      await createTask(token, eventId, { title });
+      const trimmedTitle = title.trim();
+      await createTask(token, eventId, { title: trimmedTitle });
 
-      try {
-        await postComment(token, eventId, `Added a new task: "${title}"`);
-      } catch (feedError) {
-        console.error("Failed to post to activity feed", feedError);
-      }
+      // Optional activity comment: never block or surface errors to the task flow.
+      void postComment(token, eventId, `Added a new task: "${trimmedTitle}"`).catch(() => {});
 
+      setTitle("");
       onTaskCreated();
     } catch (err: unknown) {
       const apiError = err as { message?: string };

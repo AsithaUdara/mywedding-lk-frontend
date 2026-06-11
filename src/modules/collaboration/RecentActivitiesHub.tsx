@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/shared/context/AuthContext";
 import { getActivityFeed, type ActivityFeedItem } from "@/shared/lib/api/feed";
-import { getTasksForEvent } from "@/shared/lib/api/tasks";
 import { useRealTime } from "@/shared/context/RealTimeContext";
 import ActivityItem from "./ActivityItem";
 import Skeleton from "@/shared/components/ui/Skeleton";
@@ -15,24 +14,15 @@ const RecentActivitiesHub = ({ eventId, className }: { eventId: string; classNam
   const { activityVersion, checklistVersion } = useRealTime();
   const [items, setItems] = useState<ActivityFeedItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [pendingTasksCount, setPendingTasksCount] = useState(0);
 
-  const fetchActivityAndTasks = useCallback(async () => {
+  const RECENT_ACTIVITY_LIMIT = 3;
+
+  const fetchActivity = useCallback(async () => {
     if (!user) return;
     try {
       const token = await user.getIdToken();
-
-      const [activityData, tasksData] = await Promise.all([
-        getActivityFeed(token, eventId).catch(() => []),
-        getTasksForEvent(token, eventId).catch(() => []),
-      ]);
-
+      const activityData = await getActivityFeed(token, eventId).catch(() => []);
       setItems(activityData.filter((item: ActivityFeedItem) => item.itemType === "SystemLog"));
-
-      const pendingCount = (tasksData as { status: string }[]).filter(
-        (t) => t.status !== "Completed"
-      ).length;
-      setPendingTasksCount(pendingCount);
     } catch (error) {
       console.error("Failed to fetch data:", error);
     } finally {
@@ -41,11 +31,8 @@ const RecentActivitiesHub = ({ eventId, className }: { eventId: string; classNam
   }, [user, eventId]);
 
   useEffect(() => {
-    void fetchActivityAndTasks();
-  }, [fetchActivityAndTasks, activityVersion, checklistVersion]);
-
-  const tasksShown = Math.min(pendingTasksCount, 7);
-  const displayCount = Math.max(4, 3 + tasksShown);
+    void fetchActivity();
+  }, [fetchActivity, activityVersion, checklistVersion]);
 
   return (
     <GlassSectionCard
@@ -66,7 +53,7 @@ const RecentActivitiesHub = ({ eventId, className }: { eventId: string; classNam
           </div>
         ) : (
           <div className="flex flex-col gap-5">
-            {items.slice(0, displayCount).map((item) => (
+            {items.slice(0, RECENT_ACTIVITY_LIMIT).map((item) => (
               <ActivityItem key={item.id} item={item} />
             ))}
           </div>

@@ -9,11 +9,14 @@ import EventNavigation from "@/modules/events/EventNavigation";
 import CollaborationHubSidebar from "@/modules/collaboration/CollaborationHubSidebar";
 import { EventBrandingProvider } from "@/modules/events/EventBrandingProvider";
 import { RealTimeProvider } from "@/shared/context/RealTimeContext";
+import { TeamHubNotificationsProvider } from "@/shared/context/TeamHubNotificationsContext";
 import { useAuth } from "@/shared/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { ClientEventShell } from "@/shared/components/layout/ClientEventShell";
 import { PageLoadingSkeleton } from "@/shared/components/ui";
 import { RegalFrostShell } from "@/modules/design-system/regal-frost/RegalFrostShell";
+import { EventVendorActionBanner } from "@/modules/procurement/EventVendorActionBanner";
+import { EventTeamHubMessageBanner } from "@/modules/collaboration/EventTeamHubMessageBanner";
 
 export default function EventLayout({
   children,
@@ -46,6 +49,7 @@ export default function EventLayout({
 
   return (
     <RealTimeProvider eventId={eventId}>
+      <TeamHubNotificationsProvider eventId={eventId}>
       <EventBrandingProvider eventId={eventId}>
         <RegalFrostShell mesh className="flex min-h-screen flex-col">
           <Header onLoginClick={() => {}} />
@@ -57,7 +61,13 @@ export default function EventLayout({
                 <QuickInsightsRow eventId={eventId} />
               </div>
             }
-            subNav={<EventNavigation eventId={eventId} />}
+            subNav={
+              <div className="space-y-4">
+                <EventVendorActionBanner eventId={eventId} />
+                <EventTeamHubMessageBanner />
+                <EventNavigation eventId={eventId} />
+              </div>
+            }
           >
             {children}
           </ClientEventShell>
@@ -66,6 +76,7 @@ export default function EventLayout({
           <CollaborationHubSidebar eventId={eventId} />
         </RegalFrostShell>
       </EventBrandingProvider>
+      </TeamHubNotificationsProvider>
     </RealTimeProvider>
   );
 }

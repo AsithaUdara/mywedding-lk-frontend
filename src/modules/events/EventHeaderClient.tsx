@@ -5,6 +5,7 @@ import { useAuth } from "@/shared/context/AuthContext";
 import { getOrganizers, type Organizer } from "@/shared/lib/api/events";
 import Skeleton from "@/shared/components/ui/Skeleton";
 import { useUI } from "@/shared/context/UIContext";
+import { useTeamHubNotifications } from "@/shared/context/TeamHubNotificationsContext";
 import { Calendar, MessageSquare } from "lucide-react";
 import { GlassButton } from "@/modules/vendor/dashboard/glass-ui";
 import { rf } from "@/modules/design-system/regal-frost/tokens";
@@ -20,6 +21,7 @@ interface EventHeaderClientProps {
 const EventHeaderClient = ({ eventId }: EventHeaderClientProps) => {
   const { user } = useAuth();
   const { openHub } = useUI();
+  const { unreadCount } = useTeamHubNotifications();
   const { event, branding, loading: eventLoading } = useEventBranding();
   const [team, setTeam] = useState<Organizer[]>([]);
   const [teamLoading, setTeamLoading] = useState(true);
@@ -122,10 +124,18 @@ const EventHeaderClient = ({ eventId }: EventHeaderClientProps) => {
               type="button"
               variant="primary"
               onClick={openHub}
-              className="w-full justify-center gap-1.5"
+              className="relative w-full justify-center gap-1.5"
             >
               <MessageSquare size={14} aria-hidden />
               Open team hub
+              {unreadCount > 0 ? (
+                <span
+                  className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground"
+                  aria-label={`${unreadCount} unread team message${unreadCount === 1 ? "" : "s"}`}
+                >
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              ) : null}
             </GlassButton>
           </div>
 

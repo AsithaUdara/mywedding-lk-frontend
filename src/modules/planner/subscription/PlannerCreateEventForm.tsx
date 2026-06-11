@@ -6,6 +6,7 @@ import { useAuth } from "@/shared/context/AuthContext";
 import {
   createPlannerEvent,
   type CreatePlannerEventPayload,
+  type CreatePlannerEventResult,
 } from "@/shared/lib/api/planner";
 import { inputClass } from "@/modules/planner/components/ui";
 import { GlassButton } from "@/modules/vendor/dashboard/glass-ui";
@@ -25,7 +26,7 @@ const modalInput = cn(inputClass, "border-border bg-white");
 const minWeddingDate = todayForDateInput();
 
 type Props = {
-  onCreated?: () => void;
+  onCreated?: (result: CreatePlannerEventResult) => void;
   className?: string;
 };
 
@@ -48,9 +49,10 @@ export function PlannerCreateEventForm({ onCreated, className }: Props) {
       setCreating(true);
       setError(null);
       const token = await user.getIdToken();
-      await createPlannerEvent(token, form);
+      const created = await createPlannerEvent(token, form);
+      const eventName = form.eventName.trim();
       setForm(DEFAULT);
-      onCreated?.();
+      onCreated?.({ ...created, eventName });
     } catch (err) {
       if (isPlannerSubscriptionLimitError(err)) {
         setUpgradeMessage(err.message);

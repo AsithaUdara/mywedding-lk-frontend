@@ -7,10 +7,11 @@ import { postMessage, type Message } from "@/shared/lib/api/collaboration";
 import { useRealTime } from "@/shared/context/RealTimeContext";
 import { X, Send, Hash, MessageSquare, Loader2, Users } from "lucide-react";
 import { useTeamHub } from "@/shared/hooks/useTeamHub";
+import { useTeamHubNotifications } from "@/shared/context/TeamHubNotificationsContext";
 import { Skeleton } from "@/shared/components/ui";
 import { UserAvatar } from "@/shared/components/ui/UserAvatar";
 import { AvatarStack } from "@/shared/components/ui/AvatarStack";
-import { getUserDisplayName } from "@/shared/lib/userDisplay";
+import { resolveMessageSender } from "@/shared/lib/messageDisplay";
 import { cn } from "@/shared/lib/cn";
 
 function formatMessageTime(dateString: string) {
@@ -87,6 +88,7 @@ const CollaborationHubSidebar = ({ eventId }: { eventId: string }) => {
     selectConversation,
     setMessagesForConversation,
   } = useTeamHub(eventId);
+  const { setActiveConversationId, getConversationUnread } = useTeamHubNotifications();
 
   const [newMessage, setNewMessage] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
@@ -101,6 +103,10 @@ const CollaborationHubSidebar = ({ eventId }: { eventId: string }) => {
   }, [organizers, user]);
 
   const [sendError, setSendError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setActiveConversationId(isHubOpen ? (selectedConversation?.id ?? null) : null);
+  }, [isHubOpen, selectedConversation?.id, setActiveConversationId]);
 
   useEffect(() => {
     if (!isHubOpen) return;
@@ -130,7 +136,7 @@ const CollaborationHubSidebar = ({ eventId }: { eventId: string }) => {
         messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
       });
     }
-  }, [isHubOpen, selectedConversation?.id]);
+  }, [isHubOpen, selectedConversation?.id, messages.length]);
 
   useEffect(() => {
     if (!lastMessage || !selectedConversation) return;
@@ -165,6 +171,7 @@ const CollaborationHubSidebar = ({ eventId }: { eventId: string }) => {
       senderId: user.uid,
       senderFirstName: user.displayName?.split(" ")[0] ?? "You",
       senderLastName: user.displayName?.split(" ").slice(1).join(" ") ?? "",
+      senderEmail: user.email ?? "",
       attachment: null,
     };
 
@@ -261,6 +268,7 @@ const CollaborationHubSidebar = ({ eventId }: { eventId: string }) => {
                 <div className="space-y-1">
                   {conversations.map((conversation) => {
                     const active = selectedConversation?.id === conversation.id;
+                    const channelUnread = getConversationUnread(conversation.id);
                     return (
                       <button
                         key={conversation.id}
@@ -275,6 +283,11 @@ const CollaborationHubSidebar = ({ eventId }: { eventId: string }) => {
                       >
                         <Hash size={14} className={active ? "text-primary" : "text-muted-foreground"} />
                         <span className="truncate">{conversation.name}</span>
+                        {channelUnread > 0 ? (
+                          <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-bold text-destructive-foreground">
+                            {channelUnread > 9 ? "9+" : channelUnread}
+                          </span>
+                        ) : null}
                       </button>
                     );
                   })}
@@ -361,21 +374,14 @@ const CollaborationHubSidebar = ({ eventId }: { eventId: string }) => {
 
                       <div className="space-y-4">
                         {group.messages.map((message) => {
-                          const isSelf = message.senderId === user?.uid;
-                          const senderLabel = isSelf
-                            ? "You"
-                            : getUserDisplayName({
-                                firstName: message.senderFirstName,
-                                lastName: message.senderLastName,
-                                email: "",
-                              });
+                          const sender = resolveMessageSender(message, organizers, user?.uid);
 
                           return (
                             <article key={message.id} className="flex items-start gap-3">
                               <UserAvatar
-                                firstName={message.senderFirstName}
-                                lastName={message.senderLastName}
-                                email={message.senderId}
+                                firstName={sender.firstName}
+                                lastName={sender.lastName}
+                                email={sender.email}
                                 seed={message.senderId}
                                 size="sm"
                                 className="mt-0.5"
@@ -383,7 +389,7 @@ const CollaborationHubSidebar = ({ eventId }: { eventId: string }) => {
                               <div className="min-w-0 flex-1">
                                 <div className="mb-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                                   <span className="text-sm font-semibold text-foreground">
-                                    {senderLabel}
+                                    {sender.label}
                                   </span>
                                   <time
                                     className="text-[11px] text-muted-foreground"
