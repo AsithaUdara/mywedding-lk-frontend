@@ -3,6 +3,20 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      {
+        source: "/planner/invitations",
+        destination: "/planner/vendor-follow-ups",
+        permanent: true,
+      },
+      {
+        source: "/planner/events/:eventId",
+        destination: "/events/:eventId",
+        permanent: false,
+      },
+    ];
+  },
   // Add the 'images' configuration block here
   images: {
     // Cloudinary URLs are already optimized by CDN; disable Next optimizer to avoid

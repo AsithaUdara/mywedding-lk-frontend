@@ -9,7 +9,7 @@ import {
   ClipboardCheck,
   ClipboardList,
   FolderKanban,
-  Inbox,
+  MessageSquareReply,
   LayoutDashboard,
   Plus,
   Settings,
@@ -44,14 +44,14 @@ const NAV_GROUPS: PlannerNavGroup[] = [
     items: [
       { href: "/planner/bookings", label: "Bookings", icon: <ClipboardCheck size={18} /> },
       { href: "/planner/procurement", label: "Procurement", icon: <ClipboardList size={18} /> },
-      { href: "/planner/invitations", label: "Inbox", icon: <Inbox size={18} /> },
+      { href: "/planner/vendor-follow-ups", label: "Vendor follow-ups", icon: <MessageSquareReply size={18} /> },
       { href: "/planner/budget", label: "Revenue", icon: <CircleDollarSign size={18} /> },
     ],
   },
   {
     label: "Account",
     items: [
-      { href: "/planner/ai", label: "Copilot", icon: <Sparkles size={18} /> },
+      { href: "/planner/ai", label: "AI assists", icon: <Sparkles size={18} /> },
       { href: "/planner/billing", label: "Plan & billing", icon: <BadgeCheck size={18} /> },
       { href: "/planner/settings", label: "Settings", icon: <Settings size={18} /> },
     ],
@@ -87,15 +87,15 @@ function PlannerWorkspaceLayoutInner({ children }: { children: React.ReactNode }
       sidebarFooter={
         <div className="vgo-pro-card mx-3 mb-3 overflow-hidden rounded-2xl border p-4">
           <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">Automation</p>
-          <p className="mt-1 text-sm font-semibold text-foreground">AI Copilot</p>
+          <p className="mt-1 text-sm font-semibold text-foreground">AI assists</p>
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-            Draft inquiry emails and turn meeting notes into tasks.
+            Suggest timeline tasks and match vendors for your clients.
           </p>
           <Link
             href="/planner/ai"
             className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground transition-opacity duration-200 hover:opacity-90"
           >
-            Open copilot
+            Open AI assists
             <ArrowUpRight size={12} aria-hidden />
           </Link>
         </div>

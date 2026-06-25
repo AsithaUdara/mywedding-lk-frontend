@@ -32,6 +32,8 @@ export type GanttTaskView = {
   clippedBeforeWindow: boolean;
   isMilestone: boolean;
   status: Task["status"];
+  /** Full prerequisite task title for tooltips */
+  dependencyTitle?: string;
 };
 
 export type GanttPartition = {
@@ -55,7 +57,120 @@ export function partitionGanttTasks(tasks: GanttTaskView[]): GanttPartition {
     }
   }
 
-  return { catchUp, active, completed };
+  return {
+    catchUp: sortGanttTasksChronologically(catchUp),
+    active: sortGanttTasksForDisplay(active),
+    completed: sortGanttTasksChronologically(completed),
+  };
+}
+
+function parseDateMs(iso: string | null): number | null {
+  if (!iso) return null;
+  const ms = new Date(iso).getTime();
+  return Number.isNaN(ms) ? null : ms;
+}
+
+/** Earliest schedule first; undated tasks sink to the bottom. */
+export function compareGanttTasksChronologically(a: GanttTaskView, b: GanttTaskView): number {
+  const aStart = parseDateMs(a.startDate);
+  const bStart = parseDateMs(b.startDate);
+  if (aStart != null && bStart != null && aStart !== bStart) return aStart - bStart;
+  if (aStart != null && bStart == null) return -1;
+  if (aStart == null && bStart != null) return 1;
+
+  const aDue = parseDateMs(a.dueDate);
+  const bDue = parseDateMs(b.dueDate);
+  if (aDue != null && bDue != null && aDue !== bDue) return aDue - bDue;
+  if (aDue != null && bDue == null) return -1;
+  if (aDue == null && bDue != null) return 1;
+
+  if (a.startWeek !== b.startWeek) return a.startWeek - b.startWeek;
+  return a.title.localeCompare(b.title);
+}
+
+export function sortGanttTasksChronologically(tasks: GanttTaskView[]): GanttTaskView[] {
+  return [...tasks].sort(compareGanttTasksChronologically);
+}
+
+/**
+ * Dependency-aware display order: prerequisites before dependents, then by start/due date.
+ * Falls back to chronological order when the graph has cycles or external dependencies.
+ */
+export function sortGanttTasksForDisplay(tasks: GanttTaskView[]): GanttTaskView[] {
+  if (tasks.length <= 1) return [...tasks];
+
+  const byId = new Map(tasks.map((t) => [t.id, t]));
+  const ids = new Set(tasks.map((t) => t.id));
+  const inDegree = new Map<string, number>();
+  const dependents = new Map<string, string[]>();
+
+  for (const task of tasks) {
+    inDegree.set(task.id, 0);
+  }
+
+  for (const task of tasks) {
+    const depId = task.dependsOnTaskId;
+    if (!depId || !ids.has(depId)) continue;
+    inDegree.set(task.id, (inDegree.get(task.id) ?? 0) + 1);
+    const list = dependents.get(depId) ?? [];
+    list.push(task.id);
+    dependents.set(depId, list);
+  }
+
+  const ready = tasks
+    .filter((t) => (inDegree.get(t.id) ?? 0) === 0)
+    .sort(compareGanttTasksChronologically);
+  const ordered: GanttTaskView[] = [];
+  const queue = [...ready];
+
+  while (queue.length > 0) {
+    queue.sort(compareGanttTasksChronologically);
+    const current = queue.shift()!;
+    ordered.push(current);
+
+    for (const childId of dependents.get(current.id) ?? []) {
+      const nextDegree = (inDegree.get(childId) ?? 1) - 1;
+      inDegree.set(childId, nextDegree);
+      if (nextDegree === 0) {
+        queue.push(byId.get(childId)!);
+      }
+    }
+  }
+
+  if (ordered.length < tasks.length) {
+    const seen = new Set(ordered.map((t) => t.id));
+    const remainder = tasks.filter((t) => !seen.has(t.id));
+    ordered.push(...sortGanttTasksChronologically(remainder));
+  }
+
+  return ordered;
+}
+
+/** Stable T1..Tn labels from schedule order (used internally). */
+export function buildGanttTaskShortIdMap(tasks: GanttTaskView[]): Map<string, string> {
+  const sorted = sortGanttTasksForDisplay(tasks);
+  return new Map(sorted.map((task, index) => [task.id, `T${index + 1}`]));
+}
+
+export function truncateDependencyTitle(title: string, max = 42): string {
+  const trimmed = title.trim();
+  if (trimmed.length <= max) return trimmed;
+  return `${trimmed.slice(0, max - 1)}…`;
+}
+
+export function applyGanttDependencyLabels(
+  tasks: GanttTaskView[],
+  titleByTaskId: Map<string, string>
+): GanttTaskView[] {
+  return tasks.map((task) => {
+    if (!task.dependsOnTaskId) return task;
+    const prerequisiteTitle = titleByTaskId.get(task.dependsOnTaskId) ?? "Previous task";
+    return {
+      ...task,
+      dependency: truncateDependencyTitle(prerequisiteTitle),
+      dependencyTitle: prerequisiteTitle,
+    };
+  });
 }
 
 export function startOfDay(date: Date): Date {
@@ -192,7 +307,7 @@ export function mapApiTaskToGanttView(
   task: Task,
   index: number,
   timeline: GanttTimeline,
-  idToShort: Map<string, string>
+  _idToShort: Map<string, string>
 ): GanttTaskView {
   const start = task.startDate ? new Date(task.startDate) : null;
   const due = task.dueDate ? new Date(task.dueDate) : null;
@@ -203,7 +318,7 @@ export function mapApiTaskToGanttView(
     timeline.weekCount,
     index
   );
-  const dependency = task.dependsOnTaskId ? idToShort.get(task.dependsOnTaskId) : undefined;
+  const dependency = task.dependsOnTaskId ? _idToShort.get(task.dependsOnTaskId) : undefined;
   const isMilestone =
     task.title.toLowerCase().includes("wedding day") ||
     (due !== null &&
@@ -214,7 +329,7 @@ export function mapApiTaskToGanttView(
   return {
     id: task.id,
     title: task.title,
-    owner: task.assignedToUserId ? "Assigned" : "Unassigned",
+    owner: task.assignedToName?.trim() || "Unassigned",
     stage: inferStageFromDueDate(due, timeline.weddingDate),
     startWeek,
     duration: isMilestone ? 1 : duration,

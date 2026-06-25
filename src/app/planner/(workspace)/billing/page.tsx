@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Check, Crown, Sparkles, Users, Zap } from "lucide-react";
+import { Crown, Settings, Users, Zap } from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
 import {
   createPlannerSubscriptionCheckout,
@@ -10,11 +10,16 @@ import {
   PlannerOverviewResponse,
 } from "@/shared/lib/api/planner";
 import { submitPayHereCheckout } from "@/shared/lib/payhereCheckout";
+import { BillingCapacityPanel } from "@/modules/planner/billing/BillingCapacityPanel";
+import { BillingPlanCard } from "@/modules/planner/billing/BillingPlanCard";
+import {
+  computeBillingStats,
+  PRO_MONTHLY_LKR,
+} from "@/modules/planner/billing/plannerBillingHelpers";
+import { PlannerPaymentMethodSection } from "@/modules/planner/billing/PlannerPaymentMethodSection";
 import {
   ErrorBanner,
-  ProgressBar,
   SuccessBanner,
-  formatLKR,
 } from "@/modules/planner/components/ui";
 import { PageLoadingSkeleton } from "@/shared/components/ui";
 import {
@@ -23,30 +28,6 @@ import {
   GlassSectionCard,
   GlassStatCard,
 } from "@/modules/vendor/dashboard/glass-ui";
-import { rf } from "@/modules/design-system/regal-frost/tokens";
-import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
-import { cn } from "@/shared/lib/cn";
-import {
-  formatPlannerPlanTier,
-  isPlannerProTier,
-} from "@/modules/planner/subscription/planTier";
-import { PlannerPaymentMethodSection } from "@/modules/planner/billing/PlannerPaymentMethodSection";
-
-const PRO_MONTHLY_LKR = 6_000;
-
-const FREE_FEATURES = [
-  "1 concurrent wedding",
-  "Core CRM & event hub",
-  "Booking pipeline view",
-  "Team invites per event",
-];
-
-const PRO_FEATURES = [
-  "Unlimited concurrent weddings",
-  "Priority AI itinerary & vendor match",
-  "Full copilot & timeline tools",
-  "Advanced booking & revenue dashboards",
-];
 
 export default function PlannerBillingPage() {
   const { user } = useAuth();
@@ -94,6 +75,8 @@ export default function PlannerBillingPage() {
     }
   }, [searchParams, load]);
 
+  const stats = useMemo(() => computeBillingStats(overview), [overview]);
+
   const upgrade = async () => {
     if (!user) return;
     try {
@@ -117,14 +100,6 @@ export default function PlannerBillingPage() {
     }
   };
 
-  const activePlan = overview?.activePlanTier ?? "Free";
-  const maxConcurrentEvents = overview?.maxConcurrentEvents ?? 1;
-  const activeWeddings = overview?.activeWeddings ?? 0;
-  const isPro = isPlannerProTier(activePlan);
-  const activePlanLabel = formatPlannerPlanTier(activePlan);
-
-  const atCapacity = !isPro && activeWeddings >= maxConcurrentEvents;
-
   if (loading && !overview) {
     return <PageLoadingSkeleton />;
   }
@@ -133,8 +108,14 @@ export default function PlannerBillingPage() {
     <div className="space-y-6 pb-4 md:space-y-8">
       <GlassPageHeader
         title="Plan & billing"
-        description="Manage your planner subscription, concurrent wedding limits, and upgrade when you scale."
-        badge={activePlanLabel}
+        description="Manage your planner subscription, concurrent wedding limits, and PayHere payment method."
+        badge="Account"
+        action={
+          <GlassButton href="/planner/settings" variant="ghost" className="gap-1.5">
+            <Settings size={16} aria-hidden />
+            Settings
+          </GlassButton>
+        }
       />
 
       {error && <ErrorBanner message={error} />}
@@ -143,174 +124,68 @@ export default function PlannerBillingPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <GlassStatCard
           label="Current plan"
-          value={activePlanLabel}
-          sub={isPro ? "Planner Pro active" : "Free tier"}
+          value={stats.activePlanLabel}
+          sub={stats.isPro ? "Planner Pro active" : "Free tier"}
           icon={Crown}
-          iconTheme={isPro ? "accent" : "muted"}
+          iconTheme={stats.isPro ? "accent" : "muted"}
         />
         <GlassStatCard
           label="Concurrent limit"
-          value={isPro ? "Unlimited" : maxConcurrentEvents}
-          sub={`${activeWeddings} in use`}
+          value={stats.isPro ? "Unlimited" : stats.maxConcurrentEvents}
+          sub={`${stats.activeWeddings} in use`}
           icon={Users}
           iconTheme="primary"
         />
         <GlassStatCard
           label="Active weddings"
-          value={activeWeddings}
+          value={stats.activeWeddings}
           sub="In your portfolio now"
           icon={Zap}
           iconTheme="success"
         />
         <GlassStatCard
           label="Next billing"
-          value={
-            isPro && overview?.subscriptionEndsAt
-              ? new Date(overview.subscriptionEndsAt).toLocaleDateString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                })
-              : "—"
-          }
-          sub={isPro ? "Planner Pro renewal" : "Free plan"}
+          value={stats.nextBillingLabel}
+          sub={stats.nextBillingSub}
           icon={Crown}
-          iconTheme={isPro ? "accent" : "muted"}
+          iconTheme={stats.isPro ? "accent" : "muted"}
         />
       </div>
 
-      {!isPro && (
+      {!stats.isPro && (
         <GlassSectionCard
           title="Capacity usage"
-          subtitle={`Free plan allows ${maxConcurrentEvents} active wedding at a time`}
+          subtitle={`Free plan allows ${stats.maxConcurrentEvents} active wedding at a time`}
         >
-          <ProgressBar
-            label="Concurrent weddings"
-            count={activeWeddings}
-            total={maxConcurrentEvents}
-            barClassName={atCapacity ? "bg-destructive" : "bg-primary"}
-          />
-          {atCapacity && (
-            <p className="mt-3 rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning backdrop-blur-sm">
-              You have reached your plan limit. Upgrade to Planner Pro to take on more clients at once.
-            </p>
-          )}
+          <BillingCapacityPanel stats={stats} />
         </GlassSectionCard>
       )}
 
-      <PlannerPaymentMethodSection
-        isPro={isPro}
-        subscriptionEndsAt={overview?.subscriptionEndsAt}
-        onUpdated={() => void load()}
-      />
+      {stats.isPro && (
+        <GlassSectionCard
+          title="Payment method"
+          subtitle="Renewals are processed securely through PayHere — we never store full card numbers"
+        >
+          <PlannerPaymentMethodSection
+            isPro={stats.isPro}
+            subscriptionEndsAt={overview?.subscriptionEndsAt}
+            onUpdated={() => void load()}
+          />
+        </GlassSectionCard>
+      )}
 
-      <GlassSectionCard title="Choose your plan" subtitle="Compare features and upgrade via PayHere">
-        <div className="grid gap-6 lg:grid-cols-2">
-          <article
-            className={cn(
-              rf.panel,
-              "relative flex flex-col p-5 sm:p-6",
-              !isPro && "border-primary/35 ring-1 ring-primary/25"
-            )}
-          >
-            {!isPro && (
-              <span className="absolute right-4 top-4 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary ring-1 ring-primary/15">
-                Current plan
-              </span>
-            )}
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/50 text-muted-foreground ring-1 ring-white/60">
-                <Zap size={22} aria-hidden />
-              </div>
-              <div>
-                <p className={vg.label}>Starter</p>
-                <p className="text-2xl font-semibold text-foreground">Free</p>
-              </div>
-            </div>
-            <p className="mt-4 text-3xl font-semibold tabular-nums text-foreground">
-              LKR 0
-              <span className={cn("text-base font-normal", vg.subtitle)}> / month</span>
-            </p>
-            <ul className="mt-6 flex-1 space-y-3">
-              {FREE_FEATURES.map((feature) => (
-                <li key={feature} className={cn("flex items-start gap-2", vg.subtitle)}>
-                  <Check size={16} className="mt-0.5 shrink-0 text-primary" aria-hidden />
-                  {feature}
-                </li>
-              ))}
-            </ul>
-            <GlassButton variant="ghost" className="mt-8 w-full" disabled>
-              {isPro ? "Included with Planner Pro" : "Current plan"}
-            </GlassButton>
-          </article>
-
-          <article
-            className={cn(
-              rf.panel,
-              "relative flex flex-col overflow-hidden border-primary/25 bg-gradient-to-br from-primary/10 via-white/50 to-white/40 p-5 sm:p-6",
-              isPro && "ring-1 ring-accent/40"
-            )}
-          >
-            <div
-              className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full bg-accent/15 blur-2xl"
-              aria-hidden
-            />
-            {isPro && (
-              <span className="absolute right-4 top-4 rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent ring-1 ring-accent/15">
-                Current plan
-              </span>
-            )}
-            <div className="relative flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <Crown size={22} aria-hidden />
-              </div>
-              <div>
-                <p className={cn(vg.label, "text-accent")}>Professional</p>
-                <p className="text-2xl font-semibold text-foreground">Planner Pro</p>
-              </div>
-            </div>
-            <p className="relative mt-4 text-3xl font-semibold tabular-nums text-foreground">
-              {formatLKR(PRO_MONTHLY_LKR)}
-              <span className={cn("text-base font-normal", vg.subtitle)}> / month</span>
-            </p>
-            <ul className="relative mt-6 flex-1 space-y-3">
-              {PRO_FEATURES.map((feature) => (
-                <li key={feature} className={cn("flex items-start gap-2", vg.body)}>
-                  <Sparkles size={16} className="mt-0.5 shrink-0 text-accent" aria-hidden />
-                  {feature}
-                </li>
-              ))}
-            </ul>
-            {isPro ? (
-              <div
-                className={cn(
-                  "relative mt-8 flex w-full items-center justify-center gap-2 rounded-xl border border-[hsl(var(--vgo-gold)/0.35)] bg-[hsl(var(--vgo-gold)/0.12)] px-4 py-3 text-sm font-semibold text-[hsl(42_42%_38%)]"
-                )}
-              >
-                <Check size={18} aria-hidden />
-                Active subscription
-              </div>
-            ) : (
-              <GlassButton
-                type="button"
-                variant="primary"
-                className="relative mt-8 w-full gap-1.5"
-                disabled={upgrading}
-                onClick={() => void upgrade()}
-              >
-                {upgrading ? (
-                  "Redirecting to PayHere…"
-                ) : (
-                  <>
-                    <Crown size={18} aria-hidden />
-                    Upgrade to Planner Pro
-                  </>
-                )}
-              </GlassButton>
-            )}
-            {!isPro && (
-              <p className={cn("relative mt-3 text-center", vg.caption)}>Billed monthly via PayHere</p>
-            )}
-          </article>
+      <GlassSectionCard
+        title="Choose your plan"
+        subtitle="Compare features and upgrade via PayHere when you scale your portfolio"
+      >
+        <div className="grid gap-4 lg:grid-cols-2">
+          <BillingPlanCard tier="free" isCurrent={!stats.isPro} />
+          <BillingPlanCard
+            tier="pro"
+            isCurrent={stats.isPro}
+            upgrading={upgrading}
+            onUpgrade={() => void upgrade()}
+          />
         </div>
       </GlassSectionCard>
     </div>

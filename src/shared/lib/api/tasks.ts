@@ -9,6 +9,7 @@ export interface Task {
     dueDate: string | null;
     dependsOnTaskId: string | null;
     assignedToUserId: string | null;
+    assignedToName: string | null;
     createdAt: string | null;
 }
 
@@ -16,6 +17,18 @@ export interface CreateTaskData {
     title: string;
     description?: string;
     dueDate?: string;
+    startDate?: string;
+    dependsOnTaskId?: string;
+}
+
+export interface UpdateTaskData {
+    title: string;
+    description?: string | null;
+    status?: Task["status"];
+    startDate?: string | null;
+    dueDate?: string | null;
+    dependsOnTaskId?: string | null;
+    updateDependency?: boolean;
 }
 
 function mapTask(raw: Record<string, unknown>): Task {
@@ -47,6 +60,10 @@ function mapTask(raw: Record<string, unknown>): Task {
         assignedToUserId:
             raw.assignedToUserId != null || raw.AssignedToUserId != null
                 ? String(raw.assignedToUserId ?? raw.AssignedToUserId)
+                : null,
+        assignedToName:
+            raw.assignedToName != null || raw.AssignedToName != null
+                ? String(raw.assignedToName ?? raw.AssignedToName)
                 : null,
         createdAt:
             raw.createdAt != null || raw.CreatedAt != null
@@ -164,6 +181,37 @@ export const generateFullChecklist = async (
     return response.json();
 };
 
+export const updateTask = async (
+    token: string,
+    eventId: string,
+    taskId: string,
+    payload: UpdateTaskData
+) => {
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/events/${eventId}/tasks/${taskId}`;
+    const response = await fetch(apiUrl, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+        throw new Error(await parseApiError(response, 'Failed to update task.'));
+    }
+};
+
+export const deleteTask = async (token: string, eventId: string, taskId: string) => {
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/events/${eventId}/tasks/${taskId}`;
+    const response = await fetch(apiUrl, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) {
+        throw new Error(await parseApiError(response, 'Failed to delete task.'));
+    }
+};
+
 export const updateTaskStatus = async (token: string, taskId: string, newStatus: 'ToDo' | 'InProgress' | 'Completed') => {
     const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/tasks/${taskId}/status`;
     const response = await fetch(apiUrl, {
@@ -176,6 +224,25 @@ export const updateTaskStatus = async (token: string, taskId: string, newStatus:
     });
     if (!response.ok) {
         throw new Error(await parseApiError(response, "Failed to update task status."));
+    }
+};
+
+export const assignTask = async (
+    token: string,
+    taskId: string,
+    assignedToUserId: string | null
+) => {
+    const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/tasks/${taskId}/assign`;
+    const response = await fetch(apiUrl, {
+        method: 'PUT',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ assignedToUserId }),
+    });
+    if (!response.ok) {
+        throw new Error(await parseApiError(response, "Failed to assign task."));
     }
 };
 

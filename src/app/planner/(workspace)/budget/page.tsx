@@ -1,35 +1,43 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, ArrowRight, CalendarDays, PiggyBank, TrendingDown, Wallet } from "lucide-react";
+import { AlertTriangle, ClipboardCheck, PiggyBank, TrendingDown, Wallet } from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
-import { getPlannerEvents, PlannerEventListItem } from "@/shared/lib/api/planner";
+import { getPlannerEvents } from "@/shared/lib/api/planner";
+import { BudgetToolbar } from "@/modules/planner/budget/BudgetToolbar";
+import { PlannerBudgetEventCard } from "@/modules/planner/budget/PlannerBudgetEventCard";
+import {
+  budgetFilterCounts,
+  computeBudgetPortfolioStats,
+  filterBudgetSummaries,
+  mapEventToBudgetSummary,
+  type BudgetFilter,
+} from "@/modules/planner/budget/plannerBudgetHelpers";
+import { usePlannerCreateEventModal } from "@/modules/planner/subscription/PlannerCreateEventProvider";
 import { ErrorBanner } from "@/modules/planner/components/ui";
 import { EmptyState, PageLoadingSkeleton } from "@/shared/components/ui";
-import { GlassButton, GlassPageHeader, GlassSectionCard, GlassStatCard } from "@/modules/vendor/dashboard/glass-ui";
+import {
+  GlassButton,
+  GlassPageHeader,
+  GlassSectionCard,
+  GlassStatCard,
+} from "@/modules/vendor/dashboard/glass-ui";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
 import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
 import { cn } from "@/shared/lib/cn";
-import {
-  budgetUsageBarWidth,
-  budgetUsagePercent,
-  formatBudgetUsagePercent,
-  formatLKR,
-} from "@/shared/lib/format";
+import { formatLKR } from "@/shared/lib/format";
 
-type EventFilter = "all" | "at-risk" | "active";
-
-function eventBudgetTotal(event: PlannerEventListItem): number {
-  return event.totalBudget ?? 0;
-}
-
-function eventBudgetSpent(event: PlannerEventListItem): number {
-  return event.spentBudget ?? 0;
-}
+const FILTER_LABELS: Record<BudgetFilter, string> = {
+  all: "All weddings",
+  active: "Has spend",
+  "at-risk": "At risk",
+};
 
 export default function PlannerBudgetPage() {
   const { user } = useAuth();
-  const [events, setEvents] = useState<PlannerEventListItem[]>([]);
-  const [eventFilter, setEventFilter] = useState<EventFilter>("all");
+  const { openCreateEventModal } = usePlannerCreateEventModal();
+  const [budgetFilter, setBudgetFilter] = useState<BudgetFilter>("all");
+  const [summaries, setSummaries] = useState<ReturnType<typeof mapEventToBudgetSummary>[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,8 +46,8 @@ export default function PlannerBudgetPage() {
     try {
       setLoading(true);
       const token = await user.getIdToken();
-      const data = await getPlannerEvents(token);
-      setEvents(data);
+      const events = await getPlannerEvents(token);
+      setSummaries(events.map(mapEventToBudgetSummary));
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load budget data.");
@@ -52,217 +60,159 @@ export default function PlannerBudgetPage() {
     void load();
   }, [load]);
 
-  const totals = useMemo(
-    () =>
-      events.reduce(
-        (acc, e) => {
-          const total = eventBudgetTotal(e);
-          const spent = eventBudgetSpent(e);
-          acc.budget += total;
-          acc.spent += spent;
-          if (total > 0 && budgetUsagePercent(spent, total) >= 85) acc.atRisk += 1;
-          return acc;
-        },
-        { budget: 0, spent: 0, atRisk: 0 }
-      ),
-    [events]
+  const stats = useMemo(
+    () => computeBudgetPortfolioStats(summaries.map((summary) => summary.event)),
+    [summaries]
   );
 
-  const remaining = Math.max(totals.budget - totals.spent, 0);
-  const portfolioBarWidth = budgetUsageBarWidth(totals.spent, totals.budget);
-  const portfolioUsage = budgetUsagePercent(totals.spent, totals.budget);
+  const filterCounts = useMemo(() => budgetFilterCounts(summaries), [summaries]);
 
-  const filteredEvents = useMemo(() => {
-    let list = [...events].filter((e) => eventBudgetTotal(e) > 0);
-    if (eventFilter === "at-risk") {
-      list = list.filter((e) => budgetUsagePercent(eventBudgetSpent(e), eventBudgetTotal(e)) >= 85);
-    } else if (eventFilter === "active") {
-      list = list.filter((e) => eventBudgetSpent(e) > 0);
-    }
-    return list.sort(
-      (a, b) =>
-        budgetUsagePercent(eventBudgetSpent(b), eventBudgetTotal(b)) -
-        budgetUsagePercent(eventBudgetSpent(a), eventBudgetTotal(a))
-    );
-  }, [events, eventFilter]);
+  const filteredSummaries = useMemo(
+    () => filterBudgetSummaries(summaries, budgetFilter),
+    [summaries, budgetFilter]
+  );
+
+  const filterLabel = FILTER_LABELS[budgetFilter];
 
   const spentSub =
-    formatBudgetUsagePercent(totals.spent, totals.budget) +
+    stats.portfolioUsageLabel +
     " utilized" +
-    (totals.atRisk > 0 ? ` · ${totals.atRisk} at risk` : "");
+    (stats.atRiskWeddings > 0 ? ` · ${stats.atRiskWeddings} at risk` : "");
 
-  if (loading && events.length === 0) {
+  if (loading && summaries.length === 0) {
     return <PageLoadingSkeleton />;
   }
 
   return (
-    <div className="space-y-4 pb-4">
-      <GlassPageHeader title="Revenue & budgets" description="Spend vs client budgets." />
+    <div className="space-y-6 pb-4 md:space-y-8">
+      <GlassPageHeader
+        title="Revenue & budgets"
+        description="Track client spend against wedding budgets. Open a wedding budget to log expenses, or review vendor payments in Bookings."
+        badge="Operations"
+        action={
+          <GlassButton href="/planner/bookings" variant="primary" className="gap-1.5">
+            <ClipboardCheck size={16} aria-hidden />
+            Bookings
+          </GlassButton>
+        }
+      />
 
       {error && <ErrorBanner message={error} />}
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        <GlassStatCard label="Allocated" value={formatLKR(totals.budget)} icon={Wallet} iconTheme="primary" />
+      <div className="grid gap-4 sm:grid-cols-3">
         <GlassStatCard
-          label="Spent"
-          value={formatLKR(totals.spent)}
-          sub={spentSub}
-          icon={PiggyBank}
+          label="Allocated"
+          value={formatLKR(stats.allocated)}
+          sub={
+            stats.weddingsWithBudget > 0
+              ? `${stats.weddingsWithBudget} wedding${stats.weddingsWithBudget === 1 ? "" : "s"} with caps`
+              : "No budget caps set"
+          }
+          icon={Wallet}
           iconTheme="primary"
         />
         <GlassStatCard
-          label="Remaining"
-          value={formatLKR(remaining)}
-          sub={formatBudgetUsagePercent(totals.spent, totals.budget) + " of cap used"}
-          icon={TrendingDown}
-          iconTheme="success"
+          label="Spent"
+          value={formatLKR(stats.spent)}
+          sub={spentSub}
+          icon={PiggyBank}
+          iconTheme={stats.atRiskWeddings > 0 ? "warning" : "primary"}
+        />
+        <GlassStatCard
+          label={stats.atRiskWeddings > 0 ? "At risk" : "Remaining"}
+          value={
+            stats.atRiskWeddings > 0
+              ? stats.atRiskWeddings
+              : formatLKR(stats.remaining)
+          }
+          sub={
+            stats.atRiskWeddings > 0
+              ? `Wedding${stats.atRiskWeddings === 1 ? "" : "s"} at 85%+ of cap`
+              : `${stats.portfolioUsageLabel} of cap used`
+          }
+          icon={stats.atRiskWeddings > 0 ? AlertTriangle : TrendingDown}
+          iconTheme={stats.atRiskWeddings > 0 ? "warning" : "success"}
         />
       </div>
 
       <GlassSectionCard
         title="By wedding"
-        action={
-          <div className="flex flex-wrap items-center gap-2">
-            {(
-              [
-                { value: "all" as const, label: "All" },
-                { value: "active" as const, label: "Has spend" },
-                { value: "at-risk" as const, label: "At risk" },
-              ] as const
-            ).map((tab) => (
-              <button
-                key={tab.value}
-                type="button"
-                onClick={() => setEventFilter(tab.value)}
-                className={cn(
-                  "rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
-                  eventFilter === tab.value
-                    ? "bg-primary text-primary-foreground"
-                    : "border border-white/60 bg-white/40 text-foreground hover:bg-white/60"
-                )}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+        subtitle={
+          budgetFilter === "all"
+            ? "Budget utilization for each client event"
+            : `Showing ${filteredSummaries.length} of ${summaries.length} · ${filterLabel.toLowerCase()}`
         }
       >
-        {totals.budget > 0 && (
-          <div className="mb-4 flex items-center gap-4 border-b border-white/50 pb-4">
-            <span className="w-20 shrink-0 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <BudgetToolbar
+          filter={budgetFilter}
+          onFilterChange={setBudgetFilter}
+          counts={filterCounts}
+          portfolioTotal={summaries.length}
+        />
+
+        {stats.allocated > 0 && (
+          <div className="mb-5 flex flex-wrap items-center gap-3 rounded-lg border border-[#EBECF0] bg-[#FAFBFC] px-4 py-3">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-[#97A0AF]">
               Portfolio
             </span>
-            <div
-              className="h-3.5 min-w-0 flex-1 overflow-hidden rounded-full bg-muted/70 ring-1 ring-black/5"
-              role="progressbar"
-              aria-valuenow={portfolioUsage}
-              aria-valuemin={0}
-              aria-valuemax={100}
-            >
+            <div className="h-2 min-w-[8rem] flex-1 overflow-hidden rounded-full bg-[#EBECF0]">
               <div
-                className={cn("h-full rounded-full", portfolioUsage >= 85 ? "bg-warning" : "bg-primary")}
-                style={{ width: `${portfolioBarWidth}%` }}
+                className={cn(
+                  "h-full rounded-full",
+                  stats.portfolioUsagePercent >= 85 ? "bg-[#FF991F]" : "bg-primary"
+                )}
+                style={{
+                  width: `${Math.max(stats.portfolioUsagePercent, stats.spent > 0 ? 2 : 0)}%`,
+                }}
+                role="progressbar"
+                aria-valuenow={stats.portfolioUsagePercent}
+                aria-valuemin={0}
+                aria-valuemax={100}
               />
             </div>
-            <span className="shrink-0 text-sm font-medium tabular-nums text-foreground">
-              {formatLKR(totals.spent)} / {formatLKR(totals.budget)}
+            <span className="text-sm font-medium tabular-nums text-[#172B4D]">
+              {formatLKR(stats.spent)} / {formatLKR(stats.allocated)}
             </span>
           </div>
         )}
 
         {loading ? (
-          <p className={cn("py-4 text-center text-sm", vg.subtitle)}>Loading…</p>
-        ) : events.length === 0 ? (
+          <p className={cn("py-8 text-center", vg.subtitle)}>Refreshing budgets…</p>
+        ) : summaries.length === 0 ? (
           <EmptyState
             title="No weddings yet"
-            description="Budget tracking appears when you manage client events."
+            description="Create a client event and set a budget cap to start tracking spend."
             action={
-              <GlassButton href="/planner/events" variant="primary" className="gap-1.5">
-                <CalendarDays size={16} aria-hidden />
-                Events
+              <GlassButton type="button" variant="primary" onClick={openCreateEventModal}>
+                Create event
               </GlassButton>
             }
-            className="border-0 bg-transparent py-6 shadow-none"
+            className={cn(rf.panel, "border-0 shadow-none")}
           />
-        ) : filteredEvents.length === 0 ? (
+        ) : filteredSummaries.length === 0 ? (
           <EmptyState
-            title="No matches"
+            title="No weddings in this filter"
             description={
-              eventFilter === "at-risk"
-                ? "No weddings are at 85% or more of their budget."
-                : "No weddings have recorded spend yet."
+              budgetFilter === "at-risk"
+                ? `No weddings are at 85% or more of their budget. You have ${summaries.length} wedding${summaries.length === 1 ? "" : "s"} in your portfolio.`
+                : budgetFilter === "active"
+                  ? "No weddings have recorded spend yet."
+                  : `No ${filterLabel.toLowerCase()} weddings — try another filter.`
             }
             action={
-              <GlassButton type="button" variant="ghost" onClick={() => setEventFilter("all")}>
-                Show all
+              <GlassButton type="button" variant="ghost" onClick={() => setBudgetFilter("all")}>
+                Show all weddings
               </GlassButton>
             }
-            className="border-0 bg-transparent py-6 shadow-none"
+            className="border-0 bg-transparent shadow-none"
           />
         ) : (
-          <ul className="divide-y divide-white/60" role="list">
-            {filteredEvents.map((event) => {
-              const total = eventBudgetTotal(event);
-              const spent = eventBudgetSpent(event);
-              const atRisk = budgetUsagePercent(spent, total) >= 85;
-
-              return (
-                <li key={event.eventId} className="py-4 first:pt-1 last:pb-1">
-                  <div className="flex items-start gap-4">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                        <p
-                          className={cn("text-base font-semibold leading-snug text-foreground", vg.body)}
-                          title={event.eventName}
-                        >
-                          {event.eventName}
-                          {atRisk && (
-                            <AlertTriangle
-                              size={14}
-                              className="ml-1.5 inline align-text-bottom text-warning"
-                              aria-label="At risk"
-                            />
-                          )}
-                        </p>
-                        <span
-                          className={cn(
-                            "text-sm tabular-nums",
-                            atRisk ? "font-semibold text-warning" : "text-muted-foreground"
-                          )}
-                        >
-                          {formatLKR(spent)} / {formatLKR(total)}
-                          <span className="mx-1.5 text-muted-foreground/60">·</span>
-                          <span className={atRisk ? "text-warning" : "font-medium text-foreground"}>
-                            {formatBudgetUsagePercent(spent, total)}
-                          </span>
-                        </span>
-                      </div>
-                      <div
-                        className="mt-3 h-3.5 overflow-hidden rounded-full bg-muted/70 ring-1 ring-black/5"
-                        role="progressbar"
-                        aria-valuenow={budgetUsagePercent(spent, total)}
-                        aria-valuemin={0}
-                        aria-valuemax={100}
-                        aria-label={`${event.eventName} budget usage`}
-                      >
-                        <div
-                          className={cn("h-full rounded-full", atRisk ? "bg-warning" : "bg-primary")}
-                          style={{ width: `${budgetUsageBarWidth(spent, total)}%` }}
-                        />
-                      </div>
-                    </div>
-                    <GlassButton
-                      href={`/events/${event.eventId}/budget`}
-                      variant="ghost"
-                      className="mt-0.5 h-9 shrink-0 gap-1 px-3 text-sm"
-                    >
-                      Open
-                      <ArrowRight size={14} aria-hidden />
-                    </GlassButton>
-                  </div>
-                </li>
-              );
-            })}
+          <ul className="space-y-2" role="list">
+            {filteredSummaries.map((summary) => (
+              <li key={summary.event.eventId}>
+                <PlannerBudgetEventCard summary={summary} />
+              </li>
+            ))}
           </ul>
         )}
       </GlassSectionCard>

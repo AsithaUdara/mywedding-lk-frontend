@@ -15,18 +15,24 @@ import {
   type PlannerBillingProfile,
 } from "@/shared/lib/api/planner";
 import { submitPayHereCheckout } from "@/shared/lib/payhereCheckout";
+import {
+  BILLING_JIRA_INPUT,
+  formatBillingDateLong,
+  formatCardExpiry,
+  PRO_MONTHLY_LKR,
+} from "@/modules/planner/billing/plannerBillingHelpers";
 import { ErrorBanner, SuccessBanner } from "@/modules/planner/components/ui";
-import { inputClass, StatIcon } from "@/modules/vendor/dashboard/ui";
-import { GlassButton, GlassSectionCard } from "@/modules/vendor/dashboard/glass-ui";
-import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
+import { plannerSurface } from "@/modules/planner/theme/plannerWorkspaceTheme";
+import { formatLKR } from "@/shared/lib/format";
+import { GlassButton } from "@/modules/vendor/dashboard/glass-ui";
 import { cn } from "@/shared/lib/cn";
 
-const PRO_MONTHLY_LKR = 6_000;
-
-const glassInput = cn(inputClass, "border-white/55 bg-white/40 backdrop-blur-sm");
-
 function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <label className={cn("mb-1.5 block", vg.label)}>{children}</label>;
+  return (
+    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-[#97A0AF]">
+      {children}
+    </label>
+  );
 }
 
 function detectBrand(cardNumber: string): string {
@@ -46,18 +52,6 @@ function formatExpiryInput(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 4);
   if (digits.length <= 2) return digits;
   return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-}
-
-function formatBillingDate(iso?: string | null) {
-  if (!iso) return "—";
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleDateString(undefined, { dateStyle: "long" });
-}
-
-function formatLKR(amount: number) {
-  if (amount >= 1000) return `LKR ${Math.round(amount / 1000)}K`;
-  return `LKR ${amount.toLocaleString()}`;
 }
 
 type Props = {
@@ -114,7 +108,7 @@ export function PlannerPaymentMethodSection({ isPro, subscriptionEndsAt, onUpdat
       setError("Enter a valid card number.");
       return;
     }
-    const [mm, yy] = expiry.split("/").map((p) => p.trim());
+    const [mm, yy] = expiry.split("/").map((part) => part.trim());
     if (!cardholderName.trim() || !mm || !yy || mm.length !== 2 || yy.length !== 2) {
       setError("Cardholder name and expiry (MM/YY) are required.");
       return;
@@ -171,73 +165,78 @@ export function PlannerPaymentMethodSection({ isPro, subscriptionEndsAt, onUpdat
 
   const hasCard = Boolean(profile?.hasPaymentMethod && profile.last4);
   const showForm = !hasCard || showManualForm;
+  const expiryLabel = formatCardExpiry(profile?.expiryMonth, profile?.expiryYear);
 
   return (
-    <GlassSectionCard
-      title="Payment method"
-      subtitle="Renewals are processed securely through PayHere — we never store full card numbers"
-    >
-      {error && <ErrorBanner message={error} className="mb-4" />}
-      {message && <SuccessBanner message={message} className="mb-4" />}
+    <div className="space-y-4">
+      {error && <ErrorBanner message={error} />}
+      {message && <SuccessBanner message={message} />}
 
-      <div className={cn("mb-5 flex items-start gap-3 rounded-xl border border-white/55 bg-white/40 p-4 backdrop-blur-sm")}>
-        <StatIcon icon={Shield} theme="primary" size={16} className="!h-9 !w-9 shrink-0" />
-        <p className={cn("leading-relaxed", vg.caption)}>
+      <div className={cn("flex items-start gap-3 rounded-lg border px-4 py-3", plannerSurface.infoPanel)}>
+        <Shield size={18} className={cn("mt-0.5 shrink-0", plannerSurface.infoIcon)} aria-hidden />
+        <p className="text-sm leading-relaxed text-[#42526E]">
           Card details are entered on PayHere&apos;s secure checkout. MyWedding.lk only keeps masked
           metadata (brand and last 4 digits) for display on this page.
         </p>
       </div>
 
       {loading ? (
-        <p className={cn("py-6 text-center", vg.subtitle)}>Loading payment method…</p>
+        <p className="py-6 text-center text-sm text-[#5E6C84]">Loading payment method…</p>
       ) : (
         <>
-          {hasCard && (
-            <div className="mb-5 grid gap-4 sm:grid-cols-2">
-              <div className="flex items-start gap-3 rounded-xl border border-white/55 bg-white/40 p-4 backdrop-blur-sm">
-                <StatIcon icon={CreditCard} theme="success" size={18} className="!h-10 !w-10" />
-                <div>
-                  <p className={vg.label}>Card on file</p>
-                  <p className="mt-1 font-medium text-foreground">
-                    {profile?.cardBrand ?? "Card"} •••• {profile?.last4}
-                  </p>
-                  {profile?.expiryMonth && profile?.expiryYear && (
-                    <p className={cn("mt-1", vg.caption)}>
-                      Expires {String(profile.expiryMonth).padStart(2, "0")}/
-                      {String(profile.expiryYear).slice(-2)}
+          {hasCard ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <article className="rounded-lg border border-[#DFE1E6] bg-white p-4 shadow-[0_1px_1px_rgba(9,30,66,0.08)]">
+                <div className="flex items-start gap-3">
+                  <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-lg", plannerSurface.iconWellPrimary)}>
+                    <CreditCard size={18} aria-hidden />
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-[#97A0AF]">
+                      Card on file
                     </p>
-                  )}
-                  {profile?.cardholderName && (
-                    <p className={cn("mt-1", vg.caption)}>{profile.cardholderName}</p>
-                  )}
+                    <p className="mt-1 font-medium text-[#172B4D]">
+                      {profile?.cardBrand ?? "Card"} •••• {profile?.last4}
+                    </p>
+                    {expiryLabel && (
+                      <p className="mt-1 text-xs text-[#5E6C84]">Expires {expiryLabel}</p>
+                    )}
+                    {profile?.cardholderName && (
+                      <p className="mt-1 text-xs text-[#5E6C84]">{profile.cardholderName}</p>
+                    )}
+                  </div>
                 </div>
-              </div>
+              </article>
 
-              <div className="flex items-start gap-3 rounded-xl border border-white/55 bg-white/40 p-4 backdrop-blur-sm">
-                <StatIcon icon={CalendarClock} theme="accent" size={18} className="!h-10 !w-10" />
-                <div>
-                  <p className={vg.label}>Next charge</p>
-                  <p className="mt-1 text-lg font-semibold tabular-nums text-foreground">
-                    {formatBillingDate(subscriptionEndsAt)}
-                  </p>
-                  <p className={cn("mt-1", vg.caption)}>
-                    {formatLKR(PRO_MONTHLY_LKR)} · Planner Pro renewal via PayHere
-                  </p>
+              <article className="rounded-lg border border-[#DFE1E6] bg-white p-4 shadow-[0_1px_1px_rgba(9,30,66,0.08)]">
+                <div className="flex items-start gap-3">
+                  <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-lg", plannerSurface.iconWellAccent)}>
+                    <CalendarClock size={18} aria-hidden />
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-[#97A0AF]">
+                      Next charge
+                    </p>
+                    <p className="mt-1 text-lg font-semibold tabular-nums text-[#172B4D]">
+                      {formatBillingDateLong(subscriptionEndsAt)}
+                    </p>
+                    <p className="mt-1 text-xs text-[#5E6C84]">
+                      {formatLKR(PRO_MONTHLY_LKR)} · Planner Pro renewal via PayHere
+                    </p>
+                  </div>
                 </div>
-              </div>
+              </article>
             </div>
-          )}
-
-          {!hasCard && (
-            <div className="mb-5 rounded-xl border border-[hsl(42_48%_52%/0.25)] bg-[hsl(42_48%_52%/0.08)] px-4 py-3 text-sm leading-relaxed text-foreground">
-              <p className="font-medium">No payment method on file</p>
-              <p className={cn("mt-1", vg.subtitle)}>
+          ) : (
+            <div className={cn("rounded-lg border px-4 py-3", plannerSurface.noticePanel)}>
+              <p className="font-medium text-[#172B4D]">No payment method on file</p>
+              <p className="mt-1 text-sm text-[#5E6C84]">
                 Add a card through PayHere to keep Planner Pro active after your current period.
               </p>
             </div>
           )}
 
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-2">
             <GlassButton
               type="button"
               variant="primary"
@@ -269,10 +268,10 @@ export function PlannerPaymentMethodSection({ isPro, subscriptionEndsAt, onUpdat
           </div>
 
           {showForm && (
-            <div className="mt-6 border-t border-white/40 pt-6">
+            <div className="rounded-lg border border-[#EBECF0] bg-[#FAFBFC] p-4">
               {hasCard ? (
                 <div className="mb-4 flex items-center justify-between gap-2">
-                  <p className={cn("font-medium", vg.body)}>Manual card entry</p>
+                  <p className="text-sm font-semibold text-[#172B4D]">Manual card entry</p>
                   <GlassButton
                     type="button"
                     variant="ghost"
@@ -287,10 +286,10 @@ export function PlannerPaymentMethodSection({ isPro, subscriptionEndsAt, onUpdat
                   </GlassButton>
                 </div>
               ) : (
-                <p className={cn("mb-4 font-medium", vg.body)}>Or enter test card details</p>
+                <p className="mb-4 text-sm font-semibold text-[#172B4D]">Or enter test card details</p>
               )}
 
-              <p className={cn("mb-4", vg.caption)}>
+              <p className="mb-4 text-xs text-[#5E6C84]">
                 For sandbox testing only. Only the last 4 digits are sent to our servers; CVV is never
                 stored.
               </p>
@@ -300,8 +299,8 @@ export function PlannerPaymentMethodSection({ isPro, subscriptionEndsAt, onUpdat
                   <FieldLabel>Cardholder name</FieldLabel>
                   <input
                     value={cardholderName}
-                    onChange={(e) => setCardholderName(e.target.value)}
-                    className={glassInput}
+                    onChange={(event) => setCardholderName(event.target.value)}
+                    className={BILLING_JIRA_INPUT}
                     placeholder="Name on card"
                     autoComplete="cc-name"
                   />
@@ -310,8 +309,8 @@ export function PlannerPaymentMethodSection({ isPro, subscriptionEndsAt, onUpdat
                   <FieldLabel>Card number</FieldLabel>
                   <input
                     value={cardNumber}
-                    onChange={(e) => setCardNumber(formatCardNumberInput(e.target.value))}
-                    className={glassInput}
+                    onChange={(event) => setCardNumber(formatCardNumberInput(event.target.value))}
+                    className={BILLING_JIRA_INPUT}
                     placeholder="•••• •••• •••• ••••"
                     inputMode="numeric"
                     autoComplete="cc-number"
@@ -321,8 +320,8 @@ export function PlannerPaymentMethodSection({ isPro, subscriptionEndsAt, onUpdat
                   <FieldLabel>Expiry</FieldLabel>
                   <input
                     value={expiry}
-                    onChange={(e) => setExpiry(formatExpiryInput(e.target.value))}
-                    className={glassInput}
+                    onChange={(event) => setExpiry(formatExpiryInput(event.target.value))}
+                    className={BILLING_JIRA_INPUT}
                     placeholder="MM/YY"
                     inputMode="numeric"
                     autoComplete="cc-exp"
@@ -332,17 +331,17 @@ export function PlannerPaymentMethodSection({ isPro, subscriptionEndsAt, onUpdat
                   <FieldLabel>CVV</FieldLabel>
                   <input
                     value={cvv}
-                    onChange={(e) => setCvv(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                    className={glassInput}
+                    onChange={(event) => setCvv(event.target.value.replace(/\D/g, "").slice(0, 4))}
+                    className={BILLING_JIRA_INPUT}
                     placeholder="•••"
                     type="password"
                     autoComplete="cc-csc"
                   />
-                  <p className={cn("mt-1", vg.caption)}>Never stored.</p>
+                  <p className="mt-1 text-xs text-[#97A0AF]">Never stored.</p>
                 </div>
               </div>
 
-              <div className="mt-5 flex flex-wrap gap-3">
+              <div className="mt-5 flex flex-wrap gap-2">
                 <GlassButton
                   type="button"
                   variant={hasCard ? "ghost" : "primary"}
@@ -369,6 +368,6 @@ export function PlannerPaymentMethodSection({ isPro, subscriptionEndsAt, onUpdat
           )}
         </>
       )}
-    </GlassSectionCard>
+    </div>
   );
 }

@@ -1,17 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
+  AlertTriangle,
   ArrowRight,
   CalendarClock,
   CalendarDays,
   CheckCircle2,
-  Clock4,
+  ClipboardList,
   Plus,
-  Sparkles,
-  TrendingUp,
-  Users,
-  Wallet,
 } from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
 import { useNotifications } from "@/shared/context/NotificationContext";
@@ -20,24 +18,31 @@ import {
   getPlannerOverview,
   PlannerEventListItem,
   PlannerOverviewResponse,
-  type EventLifecycleStage,
 } from "@/shared/lib/api/planner";
-import { ErrorBanner, formatLKR, StatusBadge } from "@/modules/planner/components/ui";
-import { budgetUsagePercent, formatPercentDisplay } from "@/shared/lib/format";
+import { getTasksForEvent } from "@/shared/lib/api/tasks";
+import { getVendorShortlist } from "@/shared/lib/api/vendorShortlist";
+import { ErrorBanner } from "@/modules/planner/components/ui";
+import {
+  buildAttentionItems,
+  countDraftShortlist,
+  countNeedsAttention,
+  countOverdueTasks,
+  daysUntilWedding,
+  findNextWedding,
+  formatWeddingDate,
+  lifecycleLabel,
+  taskPlanLabel,
+  type AttentionItem,
+} from "@/modules/planner/dashboard/plannerDashboardHelpers";
 import {
   usePlannerCreateEventModal,
   usePlannerEventCreated,
 } from "@/modules/planner/subscription/PlannerCreateEventProvider";
-import { formatPlannerPlanTier } from "@/modules/planner/subscription/planTier";
-import {
-  EmptyState,
-  PageLoadingSkeleton,
-  ProgressBar,
-} from "@/shared/components/ui";
+import { formatPlannerPlanTier, isPlannerProTier } from "@/modules/planner/subscription/planTier";
+import { EmptyState, PageLoadingSkeleton } from "@/shared/components/ui";
 import {
   GlassButton,
   GlassPageHeader,
-  GlassQuickActionLink,
   GlassSectionCard,
   GlassStatCard,
 } from "@/modules/vendor/dashboard/glass-ui";
@@ -45,21 +50,25 @@ import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
 import { rf } from "@/modules/design-system/regal-frost/tokens";
 import { cn } from "@/shared/lib/cn";
 
-const LIFECYCLE_ORDER: EventLifecycleStage[] = [
-  "Lead",
-  "Onboarding",
-  "Planning",
-  "Execution",
-  "Archived",
-];
-
-const LIFECYCLE_BAR: Record<EventLifecycleStage, string> = {
-  Lead: "bg-muted-foreground/40",
-  Onboarding: "bg-warning",
-  Planning: "bg-accent",
-  Execution: "bg-primary",
-  Archived: "bg-muted",
-};
+function AttentionRow({ item }: { item: AttentionItem }) {
+  return (
+    <li>
+      <Link
+        href={item.href}
+        className={cn(
+          "flex items-start justify-between gap-3 rounded-xl border px-4 py-3 transition-colors",
+          "border-white/55 bg-white/40 hover:border-primary/25 hover:bg-white/55"
+        )}
+      >
+        <div className="min-w-0">
+          <p className={cn("font-medium", vg.body)}>{item.title}</p>
+          <p className={cn("mt-0.5", vg.caption)}>{item.description}</p>
+        </div>
+        <ArrowRight size={16} className="mt-1 shrink-0 text-muted-foreground" aria-hidden />
+      </Link>
+    </li>
+  );
+}
 
 export default function PlannerDashboardPage() {
   const { user } = useAuth();
@@ -67,6 +76,10 @@ export default function PlannerDashboardPage() {
   const { openCreateEventModal } = usePlannerCreateEventModal();
   const [overview, setOverview] = useState<PlannerOverviewResponse | null>(null);
   const [events, setEvents] = useState<PlannerEventListItem[]>([]);
+  const [overdueByEvent, setOverdueByEvent] = useState<Map<string, number>>(new Map());
+  const [draftShortlistByEvent, setDraftShortlistByEvent] = useState<Map<string, number>>(
+    new Map()
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,6 +94,29 @@ export default function PlannerDashboardPage() {
       ]);
       setOverview(overviewData);
       setEvents(eventsData);
+
+      const overdueMap = new Map<string, number>();
+      const draftMap = new Map<string, number>();
+
+      await Promise.all(
+        eventsData.map(async (event) => {
+          try {
+            const [tasks, shortlist] = await Promise.all([
+              getTasksForEvent(token, event.eventId),
+              getVendorShortlist(token, event.eventId),
+            ]);
+            const overdue = countOverdueTasks(tasks);
+            if (overdue > 0) overdueMap.set(event.eventId, overdue);
+            const drafts = countDraftShortlist(shortlist);
+            if (drafts > 0) draftMap.set(event.eventId, drafts);
+          } catch {
+            /* skip per-event insight errors */
+          }
+        })
+      );
+
+      setOverdueByEvent(overdueMap);
+      setDraftShortlistByEvent(draftMap);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load planner overview.");
@@ -90,93 +126,56 @@ export default function PlannerDashboardPage() {
   }, [user]);
 
   useEffect(() => {
-    load();
+    void load();
   }, [load]);
 
   usePlannerEventCreated((detail) => {
     void load();
     if (detail?.eventId) {
-      const taskCount = detail.tasksGenerated > 0 ? detail.tasksGenerated : 8;
-      notify(
-        "Wedding created",
-        `${detail.eventName ?? "Your event"} — ${taskCount} starter tasks are on the timeline.`,
-        {
-          variant: "success",
-          action: {
-            label: "Open timeline",
-            href: `/planner/tasks?eventId=${encodeURIComponent(detail.eventId)}&welcome=1`,
-          },
-        }
-      );
+      const count = detail.tasksGenerated;
+      const taskNote =
+        count > 0
+          ? `${count} task${count === 1 ? "" : "s"} on the timeline.`
+          : "Timeline is ready — add tasks or apply a template.";
+      notify("Wedding created", `${detail.eventName ?? "Your event"} — ${taskNote}`, {
+        variant: "success",
+        action: {
+          label: "Open timeline",
+          href: `/planner/tasks?eventId=${encodeURIComponent(detail.eventId)}&welcome=1`,
+        },
+      });
     }
   });
 
-  const bookingTotals = useMemo(() => {
-    const pending = overview?.pendingBookings ?? 0;
-    const confirmed = overview?.confirmedBookings ?? 0;
-    const completed = events.reduce((s, e) => s + e.completedBookings, 0);
-    const total = pending + confirmed + completed || 1;
-    return { pending, confirmed, completed, total };
-  }, [overview, events]);
-
-  const budgetSummary = useMemo(
-    () =>
-      events.reduce(
-        (acc, e) => {
-          acc.total += e.totalBudget;
-          acc.spent += e.spentBudget;
-          return acc;
-        },
-        { total: 0, spent: 0 }
-      ),
-    [events]
+  const attentionItems = useMemo(
+    () => buildAttentionItems(events, overview, overdueByEvent, draftShortlistByEvent),
+    [events, overview, overdueByEvent, draftShortlistByEvent]
   );
 
-  const utilizationPct =
-    budgetUsagePercent(budgetSummary.spent, budgetSummary.total);
-
-  const lifecycleCounts = useMemo(() => {
-    const counts: Record<EventLifecycleStage, number> = {
-      Lead: 0,
-      Onboarding: 0,
-      Planning: 0,
-      Execution: 0,
-      Archived: 0,
-    };
-    for (const e of events) {
-      const stage = e.eventLifecycleStage ?? "Planning";
-      if (stage in counts) counts[stage as EventLifecycleStage] += 1;
-    }
-    return counts;
-  }, [events]);
-
-  const lifecycleTotal = events.length || 1;
-
-  const clientsNeedingAttention = useMemo(
-    () =>
-      events.filter(
-        (e) =>
-          e.eventLifecycleStage === "Lead" ||
-          e.eventLifecycleStage === "Onboarding" ||
-          e.requestedBookings > e.confirmedBookings
-      ).length,
-    [events]
-  );
+  const nextWedding = useMemo(() => findNextWedding(events), [events]);
 
   const upcomingSorted = useMemo(() => {
-    if (!overview?.upcomingEvents?.length) return [];
-    return [...overview.upcomingEvents]
-      .sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime())
-      .map((row) => {
-        const full = events.find((e) => e.eventId === row.eventId);
-        return {
-          ...row,
-          totalBudget: full?.totalBudget ?? 0,
-          taskPlanPhase: full?.taskPlanPhase ?? "None",
-          eventLifecycleStage: full?.eventLifecycleStage ?? "Lead",
-        };
-      });
-  }, [overview, events]);
+    return [...events]
+      .filter((e) => new Date(e.eventDate).getTime() >= Date.now() - 24 * 60 * 60 * 1000)
+      .sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime());
+  }, [events]);
+
+  const lifecycleSummary = useMemo(() => {
+    const counts = { Onboarding: 0, Planning: 0, Execution: 0, Lead: 0 };
+    for (const e of events) {
+      const stage = e.eventLifecycleStage ?? "Planning";
+      if (stage in counts) counts[stage as keyof typeof counts] += 1;
+    }
+    const parts: string[] = [];
+    if (counts.Onboarding > 0) parts.push(`${counts.Onboarding} onboarding`);
+    if (counts.Planning > 0) parts.push(`${counts.Planning} planning`);
+    if (counts.Execution > 0) parts.push(`${counts.Execution} execution`);
+    if (counts.Lead > 0) parts.push(`${counts.Lead} lead`);
+    return parts.length > 0 ? parts.join(" · ") : "No active weddings";
+  }, [events]);
+
+  const needsAttentionCount = countNeedsAttention(attentionItems, overview);
+  const isPro = isPlannerProTier(overview?.activePlanTier);
 
   if (loading && !overview) {
     return <PageLoadingSkeleton />;
@@ -190,249 +189,176 @@ export default function PlannerDashboardPage() {
         title={overview?.businessName || "Command center"}
         description={
           overview
-            ? `${overview.plannerName ? `${overview.plannerName} · ` : ""}${planLabel} plan · up to ${overview.maxConcurrentEvents} concurrent weddings`
-            : "Your agency overview — clients, bookings, and revenue at a glance"
+            ? `${overview.plannerName ? `${overview.plannerName} · ` : ""}${planLabel} · ${overview.activeWeddings} of ${overview.maxConcurrentEvents} active weddings`
+            : "What needs your attention today"
         }
         badge={planLabel}
         action={
-          <div className="flex flex-wrap gap-2">
-            <GlassButton href="/planner/clients" variant="ghost" className="gap-1.5">
-              <Users size={16} aria-hidden />
-              Clients
-            </GlassButton>
-            <GlassButton variant="primary" className="gap-1.5" onClick={openCreateEventModal}>
-              <Plus size={16} aria-hidden />
-              New event
-            </GlassButton>
-          </div>
+          <GlassButton variant="primary" className="gap-1.5" onClick={openCreateEventModal}>
+            <Plus size={16} aria-hidden />
+            New event
+          </GlassButton>
         }
       />
 
       {error && <ErrorBanner message={error} />}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-3">
         <GlassStatCard
           label="Active weddings"
           value={overview?.activeWeddings ?? 0}
-          sub={`of ${overview?.maxConcurrentEvents ?? 0} limit`}
-          icon={Users}
+          sub={`of ${overview?.maxConcurrentEvents ?? 0} capacity`}
+          icon={CalendarDays}
           iconTheme="primary"
         />
         <GlassStatCard
-          label="Pending bookings"
-          value={overview?.pendingBookings ?? 0}
-          sub={bookingTotals.pending > 0 ? "Action needed · awaiting vendor" : "Awaiting vendor"}
-          icon={Clock4}
-          iconTheme="warning"
+          label="Needs attention"
+          value={needsAttentionCount}
+          sub={needsAttentionCount > 0 ? "Open items below" : "You're caught up"}
+          icon={AlertTriangle}
+          iconTheme={needsAttentionCount > 0 ? "warning" : "success"}
         />
         <GlassStatCard
-          label="Confirmed"
-          value={overview?.confirmedBookings ?? 0}
-          sub="Ready to execute"
-          icon={CheckCircle2}
-          iconTheme="success"
-        />
-        <GlassStatCard
-          label="Portfolio budget"
-          value={formatLKR(budgetSummary.total)}
-          sub={`${formatPercentDisplay(utilizationPct)} utilized`}
-          icon={Wallet}
+          label="Next wedding"
+          value={nextWedding ? daysUntilWedding(nextWedding.eventDate) : "—"}
+          sub={
+            nextWedding
+              ? `${nextWedding.eventName} · ${formatWeddingDate(nextWedding.eventDate)}`
+              : "No upcoming dates"
+          }
+          icon={CalendarClock}
           iconTheme="accent"
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <GlassSectionCard
-          title="Booking pipeline"
-          subtitle="Procurement across all weddings"
-          action={
-            <GlassButton href="/planner/bookings" variant="ghost" className="gap-1">
-              View all
-              <ArrowRight size={14} aria-hidden />
-            </GlassButton>
-          }
-        >
-          <div className="space-y-5">
-            <ProgressBar
-              label="Pending"
-              count={bookingTotals.pending}
-              total={bookingTotals.total}
-              barClassName="bg-warning"
-            />
-            <ProgressBar
-              label="Confirmed"
-              count={bookingTotals.confirmed}
-              total={bookingTotals.total}
-              barClassName="bg-primary"
-            />
-            <ProgressBar
-              label="Completed"
-              count={bookingTotals.completed}
-              total={bookingTotals.total}
-              barClassName="bg-success"
-            />
+      <GlassSectionCard
+        title="Needs attention"
+        subtitle={
+          attentionItems.length > 0
+            ? "Action items across your portfolio"
+            : "No urgent items — check your weddings below"
+        }
+      >
+        {attentionItems.length === 0 ? (
+          <div className="flex items-center gap-3 rounded-xl border border-emerald-200/60 bg-emerald-50/80 px-4 py-3 text-sm text-emerald-950">
+            <CheckCircle2 size={18} className="shrink-0" aria-hidden />
+            <span>All caught up. Open a wedding timeline to keep planning on track.</span>
           </div>
-        </GlassSectionCard>
-
-        <GlassSectionCard
-          title="Client health"
-          subtitle={`${clientsNeedingAttention} need attention`}
-        >
-          <div className="space-y-4">
-            {LIFECYCLE_ORDER.map((stage) => (
-              <ProgressBar
-                key={stage}
-                label={stage}
-                count={lifecycleCounts[stage]}
-                total={lifecycleTotal}
-                barClassName={LIFECYCLE_BAR[stage]}
-              />
+        ) : (
+          <ul className="space-y-2" role="list">
+            {attentionItems.map((item) => (
+              <AttentionRow key={item.id} item={item} />
             ))}
-          </div>
-          <GlassButton href="/planner/clients" variant="ghost" className="mt-6 gap-1">
-            Open CRM
+          </ul>
+        )}
+        {events.length > 0 && (
+          <p className={cn("mt-4", vg.caption)}>Portfolio: {lifecycleSummary}</p>
+        )}
+      </GlassSectionCard>
+
+      <GlassSectionCard
+        title="Your weddings"
+        subtitle="Open timeline to manage tasks, or procurement for vendor shortlists"
+        action={
+          <GlassButton href="/planner/events" variant="ghost" className="gap-1">
+            All events
             <ArrowRight size={14} aria-hidden />
           </GlassButton>
-        </GlassSectionCard>
-
-        <GlassSectionCard title="Quick actions" subtitle="Common workflows">
-          <div className="space-y-2">
-            <GlassQuickActionLink
-              href="/planner/events"
-              label="Manage weddings"
-              description="Create & assign client events"
-              icon={<CalendarDays size={18} />}
-            />
-            <GlassQuickActionLink
-              href="/planner/tasks"
-              label="Timeline & tasks"
-              description="Gantt and Kanban views"
-              icon={<CalendarClock size={18} />}
-            />
-            <GlassQuickActionLink
-              href="/planner/ai"
-              label="AI copilot"
-              description="Draft emails & summaries"
-              icon={<Sparkles size={18} />}
-            />
-            <GlassQuickActionLink
-              href="/planner/billing"
-              label="Upgrade plan"
-              description="More concurrent events"
-              icon={<TrendingUp size={18} />}
-            />
-          </div>
-        </GlassSectionCard>
-      </div>
-
-      <div className="grid gap-6">
-        <GlassSectionCard
-          title="Upcoming weddings"
-          subtitle="Next celebrations on your calendar"
-          action={
-            <GlassButton href="/planner/events" variant="ghost" className="gap-1">
-              All events
-              <ArrowRight size={14} aria-hidden />
-            </GlassButton>
-          }
-        >
-          {upcomingSorted.length === 0 ? (
-            <EmptyState
-              title="No upcoming weddings"
-              description="When you onboard clients, their next dates appear here."
-              action={
-                <GlassButton type="button" variant="primary" onClick={openCreateEventModal}>
-                  Create event
-                </GlassButton>
-              }
-              className="border-0 bg-transparent shadow-none"
-            />
-          ) : (
-            <ul className="space-y-3" role="list">
-              {upcomingSorted.map((event) => (
-                <li key={event.eventId}>
-                  <article
-                    className={cn(
-                      "rounded-xl border border-white/55 bg-white/40 p-4 backdrop-blur-sm sm:p-5",
-                      "transition-all duration-200 hover:border-[hsl(42_48%_52%/0.28)] hover:bg-white/55"
-                    )}
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-4">
-                      <div className="flex min-w-0 items-center gap-4">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-lg font-bold text-primary">
-                          {event.eventName.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="min-w-0">
-                          <p className={cn("font-medium", vg.body)}>{event.eventName}</p>
-                          <p className={cn("mt-1 flex flex-wrap items-center gap-x-2", vg.subtitle)}>
-                            <CalendarClock size={14} className="shrink-0" aria-hidden />
-                            {new Date(event.eventDate).toLocaleDateString(undefined, {
-                              weekday: "short",
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
-                            {event.clientEmail && (
-                              <span className="truncate">· {event.clientEmail}</span>
-                            )}
-                          </p>
-                          <p className={cn("mt-1", vg.caption)}>
-                            Budget {formatLKR(event.totalBudget)}
-                            {event.taskPlanPhase === "Discovery" && (
-                              <span className="ml-2 font-medium text-amber-800">
-                                · Setup in progress
-                              </span>
-                            )}
-                          </p>
-                        </div>
+        }
+      >
+        {upcomingSorted.length === 0 ? (
+          <EmptyState
+            title="No weddings yet"
+            description="Create your first client event to start planning on the timeline."
+            action={
+              <GlassButton type="button" variant="primary" onClick={openCreateEventModal}>
+                Create event
+              </GlassButton>
+            }
+            className="border-0 bg-transparent shadow-none"
+          />
+        ) : (
+          <ul className="space-y-3" role="list">
+            {upcomingSorted.map((event) => (
+              <li key={event.eventId}>
+                <article
+                  className={cn(
+                    "rounded-xl border border-white/55 bg-white/40 p-4 backdrop-blur-sm sm:p-5",
+                    "transition-all duration-200 hover:border-[hsl(42_48%_52%/0.28)] hover:bg-white/55"
+                  )}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex min-w-0 items-center gap-4">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-lg font-bold text-primary">
+                        {event.eventName.charAt(0).toUpperCase()}
                       </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <StatusBadge status={event.status} />
-                        <GlassButton
-                          href={`/planner/tasks?eventId=${encodeURIComponent(event.eventId)}&welcome=1`}
-                          variant="primary"
-                          className="gap-1"
-                        >
-                          Timeline
-                          <ArrowRight size={14} aria-hidden />
-                        </GlassButton>
-                        <GlassButton href={`/events/${event.eventId}`} variant="ghost" className="gap-1">
-                          Hub
-                          <ArrowRight size={14} aria-hidden />
-                        </GlassButton>
+                      <div className="min-w-0">
+                        <p className={cn("font-medium", vg.body)}>{event.eventName}</p>
+                        <p className={cn("mt-1 flex flex-wrap items-center gap-x-2", vg.subtitle)}>
+                          <CalendarClock size={14} className="shrink-0" aria-hidden />
+                          {formatWeddingDate(event.eventDate)}
+                          <span>· {daysUntilWedding(event.eventDate)} days away</span>
+                        </p>
+                        <p className={cn("mt-1.5 flex flex-wrap gap-2", vg.caption)}>
+                          <span className="rounded-full bg-muted/60 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+                            {lifecycleLabel(event.eventLifecycleStage)}
+                          </span>
+                          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                            {taskPlanLabel(event.taskPlanPhase)}
+                          </span>
+                        </p>
                       </div>
                     </div>
-                  </article>
-                </li>
-              ))}
-            </ul>
-          )}
-        </GlassSectionCard>
-      </div>
-
-      <section
-        className={cn(
-          rf.panel,
-          "border-primary/25 bg-gradient-to-br from-primary/10 via-white/50 to-white/40 px-5 py-5 sm:px-6 sm:py-6"
+                    <div className="flex flex-wrap items-center gap-2">
+                      <GlassButton
+                        href={`/planner/tasks?eventId=${encodeURIComponent(event.eventId)}`}
+                        variant="primary"
+                        className="gap-1"
+                      >
+                        Timeline
+                        <ArrowRight size={14} aria-hidden />
+                      </GlassButton>
+                      <GlassButton
+                        href={`/planner/procurement?eventId=${encodeURIComponent(event.eventId)}`}
+                        variant="ghost"
+                        className="gap-1"
+                      >
+                        <ClipboardList size={14} aria-hidden />
+                        Procurement
+                      </GlassButton>
+                    </div>
+                  </div>
+                </article>
+              </li>
+            ))}
+          </ul>
         )}
-      >
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="max-w-xl">
-            <p className={vg.label}>Planner Pro</p>
-            <h3 className="mt-2 text-xl font-semibold text-foreground">
-              Scale your studio
-            </h3>
-            <p className={cn("mt-2 leading-relaxed", vg.subtitle)}>
-              Run more concurrent weddings, unlock AI workflows, and keep every client on track with
-              one workspace.
-            </p>
+      </GlassSectionCard>
+
+      {!isPro && (
+        <section
+          className={cn(
+            rf.panel,
+            "border-primary/25 bg-gradient-to-br from-primary/10 via-white/50 to-white/40 px-5 py-5 sm:px-6 sm:py-6"
+          )}
+        >
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="max-w-xl">
+              <p className={vg.label}>Planner Pro</p>
+              <h3 className="mt-2 text-xl font-semibold text-foreground">
+                Run more weddings in one workspace
+              </h3>
+              <p className={cn("mt-2 leading-relaxed", vg.subtitle)}>
+                Increase concurrent event capacity, unlock AI assists, and white-label your studio.
+              </p>
+            </div>
+            <GlassButton href="/planner/billing" variant="primary" className="shrink-0 gap-1.5">
+              View plans
+              <ArrowRight size={16} aria-hidden />
+            </GlassButton>
           </div>
-          <GlassButton href="/planner/billing" variant="primary" className="shrink-0 gap-1.5">
-            View plans
-            <ArrowRight size={16} aria-hidden />
-          </GlassButton>
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   );
 }

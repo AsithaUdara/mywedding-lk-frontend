@@ -93,12 +93,16 @@ export interface PlannerEventListItem {
   taskPlanPhase: TaskPlanPhase;
 }
 
+export type EventTaskSeedMode = "Manual" | "DiscoveryStarter" | "MasterChecklist" | "CustomTemplate";
+
 export interface CreatePlannerEventPayload {
   eventName: string;
   eventDate: string;
   totalBudget: number;
   clientUserId?: string;
   clientEmail?: string;
+  taskSeedMode?: EventTaskSeedMode;
+  customTemplateId?: string;
 }
 
 export interface CreatePlannerEventResult {
@@ -106,6 +110,7 @@ export interface CreatePlannerEventResult {
   plannerClientEventId?: string;
   tasksGenerated: number;
   eventName?: string;
+  taskSeedMode?: EventTaskSeedMode;
 }
 
 export interface PlannerBookingListItem {
@@ -308,6 +313,7 @@ export async function createPlannerEvent(
     eventId: String(data.eventId ?? data.EventId ?? ""),
     plannerClientEventId: String(data.plannerClientEventId ?? data.PlannerClientEventId ?? ""),
     tasksGenerated: Number(data.tasksGenerated ?? data.TasksGenerated ?? 0),
+    taskSeedMode: (data.taskSeedMode ?? data.TaskSeedMode) as EventTaskSeedMode | undefined,
   };
 }
 

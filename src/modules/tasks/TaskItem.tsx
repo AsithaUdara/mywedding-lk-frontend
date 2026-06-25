@@ -6,7 +6,11 @@ import { type Task, updateTaskStatus } from "@/shared/lib/api/tasks";
 import { Check } from "lucide-react";
 import { cn } from "@/shared/lib/cn";
 import { Badge } from "@/shared/components/ui";
-import { formatTaskDueDate, taskStatusLabel } from "@/modules/tasks/taskDisplay";
+import {
+  formatTaskDueDate,
+  TASK_STATUS_OPTIONS,
+  taskStatusLabel,
+} from "@/modules/tasks/taskDisplay";
 
 interface TaskItemProps {
   task: Task;
@@ -15,19 +19,23 @@ interface TaskItemProps {
   onStatusChange: () => void;
 }
 
-const TaskItem = ({ task, readOnly = false, compact = false, onStatusChange }: TaskItemProps) => {
+const TaskItem = ({
+  task,
+  readOnly = false,
+  compact = false,
+  onStatusChange,
+}: TaskItemProps) => {
   const { user } = useAuth();
   const [isUpdating, setIsUpdating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleCheckboxChange = async () => {
-    if (!user || isUpdating || readOnly) return;
+  const handleStatusChange = async (newStatus: Task["status"]) => {
+    if (!user || isUpdating || readOnly || newStatus === task.status) return;
     setIsUpdating(true);
     setErrorMessage(null);
 
     try {
       const token = await user.getIdToken();
-      const newStatus = task.status === "Completed" ? "ToDo" : "Completed";
       await updateTaskStatus(token, task.id, newStatus);
       onStatusChange();
     } catch (error) {
@@ -37,6 +45,11 @@ const TaskItem = ({ task, readOnly = false, compact = false, onStatusChange }: T
     } finally {
       setIsUpdating(false);
     }
+  };
+
+  const handleCheckboxChange = async () => {
+    const nextStatus = task.status === "Completed" ? "ToDo" : "Completed";
+    await handleStatusChange(nextStatus);
   };
 
   const isCompleted = task.status === "Completed";
@@ -107,10 +120,37 @@ const TaskItem = ({ task, readOnly = false, compact = false, onStatusChange }: T
           ) : null}
         </div>
 
-        <Badge variant="status" status={task.status} className="shrink-0">
-          {taskStatusLabel(task.status)}
-        </Badge>
+        {readOnly ? (
+          <Badge variant="status" status={task.status} className="shrink-0">
+            {taskStatusLabel(task.status)}
+          </Badge>
+        ) : (
+          <label className="sr-only" htmlFor={`task-status-${task.id}`}>
+            Status for {task.title}
+          </label>
+        )}
+        {!readOnly && (
+          <select
+            id={`task-status-${task.id}`}
+            value={task.status}
+            disabled={isUpdating}
+            onChange={(e) => void handleStatusChange(e.target.value as Task["status"])}
+            className={cn(
+              "shrink-0 cursor-pointer rounded-full border border-white/60 bg-white/50 px-2.5 py-1 text-xs font-semibold text-foreground",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              isUpdating && "cursor-wait opacity-50"
+            )}
+            aria-label={`Status: ${taskStatusLabel(task.status)}`}
+          >
+            {TASK_STATUS_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
+
       {errorMessage && (
         <p className="mt-1 pl-10 text-xs font-medium text-destructive">{errorMessage}</p>
       )}

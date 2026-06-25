@@ -1,34 +1,47 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowRight, CalendarDays, CheckCircle2, ClipboardCheck, Clock, PartyPopper } from "lucide-react";
+import {
+  AlertTriangle,
+  CalendarDays,
+  CheckCircle2,
+  ClipboardCheck,
+  CreditCard,
+} from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
-import { getPlannerEvents, PlannerEventListItem } from "@/shared/lib/api/planner";
-import { PlannerBookingsTable } from "@/modules/planner/PlannerBookingsTable";
-import { ErrorBanner, StatusBadge } from "@/modules/planner/components/ui";
+import { getPlannerBookings, getPlannerEvents, PlannerEventListItem, type PlannerBookingListItem } from "@/shared/lib/api/planner";
+import { PlannerBookingCard } from "@/modules/planner/bookings/PlannerBookingCard";
+import { BookingsToolbar } from "@/modules/planner/bookings/BookingsToolbar";
+import {
+  type BookingFilter,
+  buildWeddingBookingSummaries,
+  computeBookingStats,
+  filterBookings,
+} from "@/modules/planner/bookings/plannerBookingHelpers";
+import type { BookingFilterCounts } from "@/modules/planner/bookings/bookingStatusDisplay";
+import { PlannerWeddingBookingRow } from "@/modules/planner/bookings/PlannerWeddingBookingRow";
+import { ErrorBanner } from "@/modules/planner/components/ui";
 import { EmptyState, PageLoadingSkeleton } from "@/shared/components/ui";
-import { GlassButton, GlassPageHeader, GlassSectionCard, GlassStatCard } from "@/modules/vendor/dashboard/glass-ui";
+import {
+  GlassButton,
+  GlassPageHeader,
+  GlassSectionCard,
+  GlassStatCard,
+} from "@/modules/vendor/dashboard/glass-ui";
 import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
 import { cn } from "@/shared/lib/cn";
 
 type ViewTab = "bookings" | "events";
 
-const VIEW_TABS: { value: ViewTab; label: string }[] = [
-  { value: "bookings", label: "Vendor bookings" },
-  { value: "events", label: "By wedding" },
-];
-
-type EventFilter = "all" | "attention";
-
-function eventBookingTotal(event: PlannerEventListItem): number {
-  return event.requestedBookings + event.confirmedBookings + event.completedBookings;
-}
+type WeddingFilter = "all" | "attention";
 
 export default function PlannerBookingsPage() {
   const { user } = useAuth();
+  const [bookings, setBookings] = useState<PlannerBookingListItem[]>([]);
   const [events, setEvents] = useState<PlannerEventListItem[]>([]);
   const [view, setView] = useState<ViewTab>("bookings");
-  const [eventFilter, setEventFilter] = useState<EventFilter>("all");
+  const [bookingFilter, setBookingFilter] = useState<BookingFilter>("all");
+  const [weddingFilter, setWeddingFilter] = useState<WeddingFilter>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,10 +50,15 @@ export default function PlannerBookingsPage() {
     try {
       setLoading(true);
       const token = await user.getIdToken();
-      const data = await getPlannerEvents(token);
-      setEvents(data);
+      const [bookingData, eventData] = await Promise.all([
+        getPlannerBookings(token),
+        getPlannerEvents(token),
+      ]);
+      setBookings(bookingData);
+      setEvents(eventData);
       setError(null);
     } catch (err) {
+      if (err instanceof Error && err.message === "Planner subscription expired.") return;
       setError(err instanceof Error ? err.message : "Failed to load bookings.");
     } finally {
       setLoading(false);
@@ -51,48 +69,51 @@ export default function PlannerBookingsPage() {
     void load();
   }, [load]);
 
-  const totals = useMemo(
-    () =>
-      events.reduce(
-        (acc, e) => {
-          acc.pending += e.requestedBookings;
-          acc.confirmed += e.confirmedBookings;
-          acc.completed += e.completedBookings;
-          return acc;
-        },
-        { pending: 0, confirmed: 0, completed: 0 }
-      ),
-    [events]
+  const stats = useMemo(() => computeBookingStats(bookings, events), [bookings, events]);
+
+  const filteredBookings = useMemo(
+    () => filterBookings(bookings, bookingFilter),
+    [bookings, bookingFilter]
   );
 
-  const confirmRate = useMemo(() => {
-    const decided = totals.confirmed + totals.completed;
-    if (decided + totals.pending === 0) return 0;
-    return Math.round((decided / (decided + totals.pending)) * 100);
-  }, [totals]);
-
-  const eventsNeedingAction = useMemo(
-    () => events.filter((e) => e.requestedBookings > 0).length,
-    [events]
-  );
-
-  const filteredEvents = useMemo(() => {
-    let list = [...events];
-    if (eventFilter === "attention") {
-      list = list.filter((e) => e.requestedBookings > 0);
+  const weddingSummaries = useMemo(() => {
+    const summaries = buildWeddingBookingSummaries(events, bookings);
+    if (weddingFilter === "attention") {
+      return summaries.filter((summary) => summary.pending > 0);
     }
-    return list.sort((a, b) => b.requestedBookings - a.requestedBookings);
-  }, [events, eventFilter]);
+    return summaries;
+  }, [events, bookings, weddingFilter]);
 
-  if (loading && events.length === 0) {
+  const allWeddingSummaries = useMemo(
+    () => buildWeddingBookingSummaries(events, bookings),
+    [events, bookings]
+  );
+
+  const filterCounts = useMemo<BookingFilterCounts>(
+    () => ({
+      all: bookings.length,
+      action: filterBookings(bookings, "action").length,
+      confirmed: filterBookings(bookings, "confirmed").length,
+      completed: filterBookings(bookings, "completed").length,
+    }),
+    [bookings]
+  );
+
+  const bookingFilterLabel =
+    ({ all: "All", action: "Needs action", confirmed: "Confirmed", completed: "Completed" } as const)[
+      bookingFilter
+    ];
+
+  if (loading && bookings.length === 0 && events.length === 0) {
     return <PageLoadingSkeleton />;
   }
 
   return (
-    <div className="space-y-6 pb-4">
+    <div className="space-y-6 pb-4 md:space-y-8">
       <GlassPageHeader
         title="Bookings"
-        description="Vendor requests and payments across your portfolio."
+        description="Vendor requests and payments — sync PayHere status or open procurement to manage shortlists."
+        badge="Operations"
         action={
           <GlassButton href="/planner/procurement" variant="primary" className="gap-1.5">
             <ClipboardCheck size={16} aria-hidden />
@@ -105,150 +126,121 @@ export default function PlannerBookingsPage() {
 
       <div className="grid gap-4 sm:grid-cols-3">
         <GlassStatCard
-          label="Pending"
-          value={totals.pending}
-          sub={eventsNeedingAction > 0 ? `${eventsNeedingAction} weddings` : "Awaiting vendor"}
-          icon={Clock}
-          iconTheme="warning"
+          label="Needs action"
+          value={stats.needsAction}
+          sub={
+            stats.weddingsWithPending > 0
+              ? `${stats.weddingsWithPending} wedding${stats.weddingsWithPending === 1 ? "" : "s"}`
+              : "No pending requests"
+          }
+          icon={AlertTriangle}
+          iconTheme={stats.needsAction > 0 ? "warning" : "success"}
+        />
+        <GlassStatCard
+          label="Awaiting payment"
+          value={stats.awaitingPayment}
+          sub="Pending PayHere or deposit"
+          icon={CreditCard}
+          iconTheme="accent"
         />
         <GlassStatCard
           label="Confirmed"
-          value={totals.confirmed}
-          sub={`${confirmRate}% confirm rate`}
+          value={stats.confirmed}
+          sub={stats.completed > 0 ? `${stats.completed} completed` : "Vendor locked in"}
           icon={CheckCircle2}
           iconTheme="primary"
-        />
-        <GlassStatCard
-          label="Completed"
-          value={totals.completed}
-          sub="Delivered"
-          icon={PartyPopper}
-          iconTheme="success"
         />
       </div>
 
       <GlassSectionCard
-        title={view === "bookings" ? "Vendor bookings" : "By wedding"}
+        title="Booking inbox"
         subtitle={
           view === "bookings"
-            ? "Sync payment status if a PayHere webhook was missed"
-            : "Jump into an event to approve requests"
-        }
-        action={
-          <div className="flex flex-wrap items-center gap-2">
-            {view === "events" ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setEventFilter("all")}
-                  className={cn(
-                    "rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
-                    eventFilter === "all"
-                      ? "bg-primary text-primary-foreground"
-                      : "border border-white/60 bg-white/40 text-foreground hover:bg-white/60"
-                  )}
-                >
-                  All
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEventFilter("attention")}
-                  className={cn(
-                    "rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
-                    eventFilter === "attention"
-                      ? "bg-primary text-primary-foreground"
-                      : "border border-white/60 bg-white/40 text-foreground hover:bg-white/60"
-                  )}
-                >
-                  Needs action
-                </button>
-              </>
-            ) : null}
-            <div className="flex rounded-full border border-white/60 bg-white/40 p-0.5">
-              {VIEW_TABS.map((tab) => (
-                <button
-                  key={tab.value}
-                  type="button"
-                  onClick={() => setView(tab.value)}
-                  className={cn(
-                    "rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
-                    view === tab.value
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-foreground hover:bg-white/60"
-                  )}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
+            ? bookingFilter === "all"
+              ? "Every vendor request and payment across your portfolio"
+              : `Showing ${filteredBookings.length} of ${stats.total} bookings`
+            : weddingFilter === "all"
+              ? "Booking activity grouped by client wedding"
+              : `${weddingSummaries.length} wedding${weddingSummaries.length === 1 ? "" : "s"} with pending requests`
         }
       >
-        {view === "bookings" ? (
-          <PlannerBookingsTable />
-        ) : loading ? (
-          <p className={cn("py-6 text-center", vg.subtitle)}>Loading…</p>
-        ) : events.length === 0 ? (
+        <BookingsToolbar
+          view={view}
+          onViewChange={setView}
+          bookingFilter={bookingFilter}
+          onBookingFilterChange={setBookingFilter}
+          weddingFilter={weddingFilter}
+          onWeddingFilterChange={setWeddingFilter}
+          filterCounts={filterCounts}
+          weddingCount={allWeddingSummaries.length}
+          weddingsNeedingAction={allWeddingSummaries.filter((s) => s.pending > 0).length}
+        />
+
+        {loading ? (
+          <p className={cn("py-8 text-center", vg.subtitle)}>Refreshing bookings…</p>
+        ) : view === "bookings" ? (
+          filteredBookings.length === 0 ? (
+            <EmptyState
+              title={bookingFilter === "all" ? "No vendor bookings yet" : "No bookings in this filter"}
+              description={
+                bookingFilter === "all"
+                  ? "Bookings appear when clients request vendors from your managed weddings."
+                  : `No ${bookingFilterLabel.toLowerCase()} bookings. You have ${stats.total} total — try All or Needs action.`
+              }
+              action={
+                stats.total > 0 && bookingFilter !== "all" ? (
+                  <GlassButton type="button" variant="ghost" onClick={() => setBookingFilter("all")}>
+                    Show all bookings
+                  </GlassButton>
+                ) : (
+                  <GlassButton href="/planner/procurement" variant="primary" className="gap-1.5">
+                    <ClipboardCheck size={16} aria-hidden />
+                    Open procurement
+                  </GlassButton>
+                )
+              }
+              className="border-0 bg-transparent shadow-none"
+            />
+          ) : (
+            <ul className="space-y-3" role="list">
+              {filteredBookings.map((booking) => (
+                <li key={booking.bookingId}>
+                  <PlannerBookingCard booking={booking} onSynced={load} />
+                </li>
+              ))}
+            </ul>
+          )
+        ) : weddingSummaries.length === 0 ? (
           <EmptyState
-            title="No weddings yet"
-            description="Booking counts appear when you manage client events."
-            action={
-              <GlassButton href="/planner/events" variant="primary" className="gap-1.5">
-                <CalendarDays size={16} aria-hidden />
-                Events
-              </GlassButton>
+            title={events.length === 0 ? "No weddings yet" : "No bookings in this view"}
+            description={
+              events.length === 0
+                ? "Booking counts appear when you manage client events."
+                : weddingFilter === "attention"
+                  ? "No weddings have pending vendor requests right now."
+                  : "No booking activity recorded yet for your portfolio."
             }
-            className="border-0 bg-transparent shadow-none"
-          />
-        ) : filteredEvents.length === 0 ? (
-          <EmptyState
-            title="All clear"
-            description="No weddings have pending vendor requests right now."
             action={
-              <GlassButton type="button" variant="ghost" onClick={() => setEventFilter("all")}>
-                Show all weddings
-              </GlassButton>
+              weddingFilter === "attention" ? (
+                <GlassButton type="button" variant="ghost" onClick={() => setWeddingFilter("all")}>
+                  Show all weddings
+                </GlassButton>
+              ) : (
+                <GlassButton href="/planner/events" variant="primary" className="gap-1.5">
+                  <CalendarDays size={16} aria-hidden />
+                  Events
+                </GlassButton>
+              )
             }
             className="border-0 bg-transparent shadow-none"
           />
         ) : (
-          <ul className="divide-y divide-white/50" role="list">
-            {filteredEvents.map((event) => {
-              const total = eventBookingTotal(event);
-              return (
-                <li key={event.eventId}>
-                  <div className="flex flex-wrap items-center justify-between gap-3 py-3.5 first:pt-0 last:pb-0">
-                    <div className="min-w-0">
-                      <p className={cn("font-medium", vg.body)}>{event.eventName}</p>
-                      <p className={cn("mt-0.5 truncate text-sm", vg.subtitle)}>
-                        {event.clientEmail || "No client email"}
-                        {total > 0 && (
-                          <>
-                            {" · "}
-                            <span className="text-foreground">
-                              {event.requestedBookings} pending · {event.confirmedBookings} confirmed ·{" "}
-                              {event.completedBookings} done
-                            </span>
-                          </>
-                        )}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      {event.requestedBookings > 0 && (
-                        <span className="rounded-full bg-warning/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-warning">
-                          Action
-                        </span>
-                      )}
-                      {event.status && <StatusBadge status={event.status} />}
-                      <GlassButton href={`/events/${event.eventId}`} variant="ghost" className="gap-1">
-                        Open
-                        <ArrowRight size={14} aria-hidden />
-                      </GlassButton>
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
+          <ul className="space-y-3" role="list">
+            {weddingSummaries.map((summary) => (
+              <li key={summary.event.eventId}>
+                <PlannerWeddingBookingRow summary={summary} />
+              </li>
+            ))}
           </ul>
         )}
       </GlassSectionCard>

@@ -34,6 +34,14 @@ import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
 import { cn } from "@/shared/lib/cn";
 import { dispatchVendorProposalsUpdated } from "@/shared/lib/vendorProposalEvents";
 import { VendorInsightLinks } from "@/modules/procurement/VendorInsightLinks";
+import { PlannerProposalCard } from "@/modules/planner/procurement/PlannerProposalCard";
+import { ProposalPipelineStepper } from "@/modules/planner/procurement/ProposalPipelineStepper";
+import {
+  filterByPipeline,
+  groupByPipelineStage,
+  PIPELINE_STEPS,
+  type PipelineFilter,
+} from "@/modules/planner/procurement/proposalPipelineStages";
 
 type Mode = "planner" | "client";
 
@@ -56,6 +64,7 @@ export function VendorShortlistPanel({ eventId, mode, pollBookingId }: Props) {
   const [paymentSuccess, setPaymentSuccess] = useState<string | null>(null);
   const [actionId, setActionId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [pipelineFilter, setPipelineFilter] = useState<PipelineFilter>("all");
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -80,6 +89,10 @@ export function VendorShortlistPanel({ eventId, mode, pollBookingId }: Props) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    setPipelineFilter("all");
+  }, [eventId]);
 
   useEffect(() => {
     if (!pollBookingId || !user || mode !== "client") return;
@@ -153,6 +166,8 @@ export function VendorShortlistPanel({ eventId, mode, pollBookingId }: Props) {
   }, [pollBookingId, user, mode, eventId, load]);
 
   const draftIds = items.filter((i) => i.status === "Draft").map((i) => i.id);
+  const visibleItems = mode === "planner" ? filterByPipeline(items, pipelineFilter) : items;
+  const groupedItems = mode === "planner" ? groupByPipelineStage(items) : null;
 
   const handleSendToClient = async () => {
     if (!draftIds.length || !user) return;
@@ -244,26 +259,43 @@ export function VendorShortlistPanel({ eventId, mode, pollBookingId }: Props) {
       {error && <ErrorBanner message={error} />}
       {mode === "client" && isViewer && <ViewerReadOnlyNotice />}
 
-      {mode === "planner" && (
-        <div className="flex flex-wrap items-center gap-3">
+      {mode === "planner" && items.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="min-w-0 flex-1">
+              <ProposalPipelineStepper
+                items={items}
+                filter={pipelineFilter}
+                onFilterChange={setPipelineFilter}
+              />
+            </div>
+            <div className="flex shrink-0 flex-wrap items-center gap-2 lg:pt-6">
+              <GlassButton type="button" variant="primary" onClick={() => setAddOpen(true)} className="gap-2">
+                <Store size={16} aria-hidden />
+                Add proposal
+              </GlassButton>
+              {draftIds.length > 0 && (
+                <GlassButton
+                  type="button"
+                  variant="ghost"
+                  className="gap-2"
+                  disabled={actionId === "send-all"}
+                  onClick={() => void handleSendToClient()}
+                >
+                  <Send size={16} aria-hidden />
+                  {actionId === "send-all" ? "Sending…" : `Send ${draftIds.length} to client`}
+                </GlassButton>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {mode === "planner" && items.length === 0 && (
+        <div className="flex flex-wrap items-center gap-2">
           <GlassButton type="button" variant="primary" onClick={() => setAddOpen(true)} className="gap-2">
             <Store size={16} aria-hidden />
             Add proposal
-          </GlassButton>
-          {draftIds.length > 0 && (
-            <GlassButton
-              type="button"
-              variant="ghost"
-              className="gap-2"
-              disabled={actionId === "send-all"}
-              onClick={() => void handleSendToClient()}
-            >
-              <Send size={16} aria-hidden />
-              {actionId === "send-all" ? "Sending…" : `Send ${draftIds.length} draft(s) to client`}
-            </GlassButton>
-          )}
-          <GlassButton href="/vendors" variant="ghost">
-            Browse vendor directory
           </GlassButton>
         </div>
       )}
@@ -278,6 +310,77 @@ export function VendorShortlistPanel({ eventId, mode, pollBookingId }: Props) {
               : "When your planner shares vendor options, they will appear here for you to review."
           }
         />
+      ) : mode === "planner" ? (
+        visibleItems.length === 0 ? (
+          <EmptyState
+            icon={Store}
+            title={
+              pipelineFilter === "all"
+                ? "No vendor proposals yet"
+                : "No proposals in this stage"
+            }
+            description={
+              pipelineFilter === "all"
+                ? "Add vendors from the directory or use AI match to build a shortlist."
+                : "Try another pipeline stage or show all proposals."
+            }
+            action={
+              pipelineFilter !== "all" ? (
+                <GlassButton type="button" variant="ghost" onClick={() => setPipelineFilter("all")}>
+                  Show all proposals
+                </GlassButton>
+              ) : undefined
+            }
+            className="border-0 bg-transparent shadow-none"
+          />
+        ) : pipelineFilter === "all" && groupedItems ? (
+          <div className="space-y-5">
+            {PIPELINE_STEPS.map((step) => {
+              const stageItems = groupedItems.get(step.id) ?? [];
+              if (stageItems.length === 0) return null;
+              return (
+                <section key={step.id}>
+                  <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[#5E6C84]">
+                    {step.label}
+                    <span className="ml-1.5 font-normal text-[#97A0AF]">({stageItems.length})</span>
+                  </h3>
+                  <ul className="space-y-2" role="list">
+                    {stageItems.map((item) => (
+                      <li key={item.id}>
+                        <PlannerProposalCard item={item} />
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              );
+            })}
+            {(groupedItems.get("closed")?.length ?? 0) > 0 && (
+              <section>
+                <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[#5E6C84]">
+                  Closed
+                  <span className="ml-1.5 font-normal text-[#97A0AF]">
+                    ({groupedItems.get("closed")!.length})
+                  </span>
+                </h3>
+                <ul className="space-y-2" role="list">
+                  {groupedItems.get("closed")!.map((item) => (
+                    <li key={item.id}>
+                      <PlannerProposalCard item={item} />
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+          </div>
+        ) : (
+          <ul className="space-y-2" role="list">
+            {visibleItems.map((item) => (
+              <li key={item.id}>
+                <PlannerProposalCard item={item} />
+              </li>
+            ))}
+          </ul>
+        )
       ) : (
         <ul className="space-y-4" role="list">
           {items.map((item) => (

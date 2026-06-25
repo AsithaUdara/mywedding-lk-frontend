@@ -1,18 +1,28 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
-  CalendarDays,
+  AlertTriangle,
   CheckCircle2,
   ClipboardList,
   Clock,
+  Sparkles,
   Store,
 } from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
 import { getPlannerEvents, PlannerEventListItem } from "@/shared/lib/api/planner";
+import { getVendorShortlist, type VendorShortlistItem } from "@/shared/lib/api/vendorShortlist";
+import { ProcurementEventContext } from "@/modules/planner/procurement/ProcurementEventContext";
+import {
+  computeProcurementStats,
+  shortlistCountsForEvent,
+} from "@/modules/planner/procurement/plannerProcurementHelpers";
+import { EventPickerSelect } from "@/modules/planner/planning/EventPlanningHeader";
+import { usePlannerCreateEventModal } from "@/modules/planner/subscription/PlannerCreateEventProvider";
 import { VendorShortlistPanel } from "@/modules/procurement/VendorShortlistPanel";
 import { ErrorBanner } from "@/modules/planner/components/ui";
-import { EmptyState, PageLoadingSkeleton, inputClass } from "@/shared/components/ui";
+import { EmptyState, PageLoadingSkeleton } from "@/shared/components/ui";
 import {
   GlassButton,
   GlassPageHeader,
@@ -20,12 +30,18 @@ import {
   GlassStatCard,
 } from "@/modules/vendor/dashboard/glass-ui";
 import { rf } from "@/modules/design-system/regal-frost/tokens";
-import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
 import { cn } from "@/shared/lib/cn";
 
 export default function PlannerProcurementPage() {
   const { user } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const eventIdFromUrl = searchParams.get("eventId");
+  const { openCreateEventModal } = usePlannerCreateEventModal();
   const [events, setEvents] = useState<PlannerEventListItem[]>([]);
+  const [shortlistsByEvent, setShortlistsByEvent] = useState<Map<string, VendorShortlistItem[]>>(
+    new Map()
+  );
   const [eventId, setEventId] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,53 +50,111 @@ export default function PlannerProcurementPage() {
     if (!user) return;
     try {
       setLoading(true);
-      const t = await user.getIdToken();
-      const data = await getPlannerEvents(t);
+      const token = await user.getIdToken();
+      const data = await getPlannerEvents(token);
+
+      const shortlistEntries: [string, VendorShortlistItem[]][] = await Promise.all(
+        data.map(async (event) => {
+          try {
+            const items = await getVendorShortlist(token, event.eventId);
+            return [event.eventId, items] as [string, VendorShortlistItem[]];
+          } catch {
+            return [event.eventId, []] as [string, VendorShortlistItem[]];
+          }
+        })
+      );
+
       setEvents(data);
-      setEventId((prev) => prev || data[0]?.eventId || "");
+      setShortlistsByEvent(new Map(shortlistEntries));
+      setEventId((prev) => {
+        if (eventIdFromUrl && data.some((e) => e.eventId === eventIdFromUrl)) {
+          return eventIdFromUrl;
+        }
+        if (prev && data.some((e) => e.eventId === prev)) {
+          return prev;
+        }
+        return data[0]?.eventId || "";
+      });
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load events.");
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, eventIdFromUrl]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  const handleSelectEvent = useCallback(
+    (nextEventId: string) => {
+      setEventId(nextEventId);
+      router.replace(`/planner/procurement?eventId=${encodeURIComponent(nextEventId)}`, {
+        scroll: false,
+      });
+    },
+    [router]
+  );
 
   const selected = useMemo(
     () => events.find((e) => e.eventId === eventId),
     [events, eventId]
   );
 
-  const totals = useMemo(
-    () =>
-      events.reduce(
-        (acc, e) => {
-          acc.pending += e.requestedBookings;
-          acc.confirmed += e.confirmedBookings;
-          return acc;
-        },
-        { pending: 0, confirmed: 0 }
-      ),
-    [events]
+  const allShortlistItems = useMemo(
+    () => [...shortlistsByEvent.values()].flat(),
+    [shortlistsByEvent]
   );
 
-  if (loading) return <PageLoadingSkeleton />;
+  const stats = useMemo(
+    () => computeProcurementStats(events, allShortlistItems),
+    [events, allShortlistItems]
+  );
+
+  const selectedShortlist = useMemo(
+    () => shortlistsByEvent.get(eventId) ?? [],
+    [shortlistsByEvent, eventId]
+  );
+
+  const selectedCounts = useMemo(
+    () => shortlistCountsForEvent(selectedShortlist),
+    [selectedShortlist]
+  );
+
+  if (loading && events.length === 0) {
+    return <PageLoadingSkeleton />;
+  }
 
   return (
     <div className="space-y-6 pb-4 md:space-y-8">
       <GlassPageHeader
-        title="Vendor procurement"
-        description="Build shortlists, send proposals to clients, and track approvals through to booking."
-        badge="Procurement"
+        title="Procurement"
+        description="Build vendor proposals, send to clients for approval, and track through to booking."
+        badge="Vendors"
         action={
-          <GlassButton href="/vendors" variant="ghost" className="gap-1.5">
-            <Store size={16} aria-hidden />
-            Vendor directory
-          </GlassButton>
+          events.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <EventPickerSelect
+                events={events}
+                selectedEventId={eventId}
+                onSelectEvent={handleSelectEvent}
+              />
+              <GlassButton href="/vendors" variant="ghost" className="gap-1.5">
+                <Store size={16} aria-hidden />
+                Directory
+              </GlassButton>
+              <GlassButton href="/planner/ai" variant="ghost" className="gap-1.5">
+                <Sparkles size={16} aria-hidden />
+                AI match
+              </GlassButton>
+            </div>
+          ) : (
+            <GlassButton href="/vendors" variant="ghost" className="gap-1.5">
+              <Store size={16} aria-hidden />
+              Vendor directory
+            </GlassButton>
+          )
         }
       />
 
@@ -90,9 +164,9 @@ export default function PlannerProcurementPage() {
         <EmptyState
           icon={ClipboardList}
           title="No client events yet"
-          description="Create an event under Events before adding vendor proposals."
+          description="Create a wedding event before building vendor proposals."
           action={
-            <GlassButton href="/planner/dashboard#create-event-dashboard" variant="primary">
+            <GlassButton type="button" variant="primary" onClick={openCreateEventModal}>
               Create event
             </GlassButton>
           }
@@ -100,83 +174,52 @@ export default function PlannerProcurementPage() {
         />
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-3">
             <GlassStatCard
-              label="Managed weddings"
-              value={events.length}
-              sub="Client events in portfolio"
+              label="Draft proposals"
+              value={stats.draftProposals}
+              sub={stats.draftProposals > 0 ? "Ready to send to client" : "No drafts waiting"}
               icon={ClipboardList}
-              iconTheme="primary"
+              iconTheme={stats.draftProposals > 0 ? "warning" : "primary"}
             />
             <GlassStatCard
-              label="Pending requests"
-              value={totals.pending}
-              sub="Across all weddings"
+              label="Awaiting client"
+              value={stats.awaitingClient}
+              sub="Sent — waiting for approval"
               icon={Clock}
-              iconTheme="warning"
+              iconTheme="accent"
             />
             <GlassStatCard
               label="Confirmed vendors"
-              value={totals.confirmed}
-              sub="Bookings locked in"
-              icon={CheckCircle2}
-              iconTheme="success"
-            />
-            <GlassStatCard
-              label="Selected event"
-              value={selected?.eventName.split(" ")[0] ?? "—"}
+              value={stats.confirmedVendors}
               sub={
-                selected
-                  ? new Date(selected.eventDate).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })
-                  : "Pick a wedding below"
+                stats.pendingBookings > 0
+                  ? `${stats.pendingBookings} booking${stats.pendingBookings === 1 ? "" : "s"} in progress`
+                  : "Locked in across portfolio"
               }
-              icon={CalendarDays}
-              iconTheme="accent"
+              icon={stats.pendingBookings > 0 ? AlertTriangle : CheckCircle2}
+              iconTheme={stats.pendingBookings > 0 ? "warning" : "success"}
             />
           </div>
 
           <GlassSectionCard
-            title="Client event"
-            subtitle="Choose which wedding you are building vendor proposals for"
-          >
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-              <div className="min-w-[240px] flex-1">
-                <label htmlFor="procurement-event" className={cn("mb-1.5 block", vg.body, "font-semibold")}>
-                  Wedding
-                </label>
-                <select
-                  id="procurement-event"
-                  value={eventId}
-                  onChange={(e) => setEventId(e.target.value)}
-                  className={cn(inputClass, "border-white/55 bg-white/40 backdrop-blur-sm")}
-                >
-                  {events.map((e) => (
-                    <option key={e.eventId} value={e.eventId}>
-                      {e.eventName} — {e.clientEmail}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {selected && (
-                <p className={cn("pb-1", vg.subtitle)}>
-                  Client:{" "}
-                  <span className="font-medium text-foreground">{selected.clientEmail}</span>
-                  {" · "}
-                  Budget tracked in event hub
-                </p>
-              )}
-            </div>
-          </GlassSectionCard>
-
-          <GlassSectionCard
             title="Proposal pipeline"
-            subtitle="Draft → sent to client → approved → booking requested → vendor confirmed"
+            subtitle={
+              selectedCounts.total > 0
+                ? `${selectedCounts.total} proposal${selectedCounts.total === 1 ? "" : "s"} for this wedding — click a stage to filter`
+                : "Add vendor proposals and track them through to booking"
+            }
           >
-            {eventId ? <VendorShortlistPanel eventId={eventId} mode="planner" /> : null}
+            {selected && <ProcurementEventContext event={selected} counts={selectedCounts} />}
+            {eventId ? (
+              <VendorShortlistPanel eventId={eventId} mode="planner" />
+            ) : (
+              <EmptyState
+                title="Select a wedding"
+                description="Choose an event from the picker above to manage vendor proposals."
+                className="border-0 bg-transparent shadow-none"
+              />
+            )}
           </GlassSectionCard>
         </>
       )}

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "@/shared/context/AuthContext";
 import { getTasksForEvent, type Task } from "@/shared/lib/api/tasks";
 import { useRealTime } from "@/shared/context/RealTimeContext";
-import { CheckSquare, ChevronDown, ListTodo, PlusCircle, TrendingUp } from "lucide-react";
+import { CheckSquare, ChevronDown, ListTodo, PlusCircle, TrendingUp, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEventPermission } from "@/shared/hooks/useEventPermission";
 import { ViewerReadOnlyNotice } from "@/shared/components/ui/ViewerReadOnlyNotice";
@@ -40,6 +40,17 @@ const ChecklistSection = ({ eventId }: ChecklistSectionProps) => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [filter, setFilter] = useState<TaskFilter>("active");
   const [completedExpanded, setCompletedExpanded] = useState(false);
+  const [isPlanner, setIsPlanner] = useState(false);
+
+  useEffect(() => {
+    if (!user) {
+      setIsPlanner(false);
+      return;
+    }
+    void user.getIdTokenResult().then((result) => {
+      setIsPlanner(result.claims.role === "planner");
+    });
+  }, [user]);
 
   const fetchTasks = useCallback(async () => {
     if (!user) return;
@@ -83,7 +94,19 @@ const ChecklistSection = ({ eventId }: ChecklistSectionProps) => {
   const completedList = sortTasksForDisplay(tasks.filter((t) => t.status === "Completed"));
 
   return (
-    <section className={rf.panel}>
+    <div className="space-y-3">
+      {isPlanner && (
+        <GlassButton
+          href={`/planner/tasks?eventId=${encodeURIComponent(eventId)}`}
+          variant="ghost"
+          className="gap-1.5 -ml-1"
+        >
+          <ArrowLeft size={16} aria-hidden />
+          Back to timeline
+        </GlassButton>
+      )}
+
+      <section className={rf.panel}>
       <div className={cn("flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between", rf.panelHeader)}>
         <div className="min-w-0 flex-1">
           <h2 className={rf.sectionTitle}>My tasks</h2>
@@ -318,6 +341,7 @@ const ChecklistSection = ({ eventId }: ChecklistSectionProps) => {
         )}
       </div>
     </section>
+    </div>
   );
 };
 

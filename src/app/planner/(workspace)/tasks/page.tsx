@@ -6,14 +6,14 @@ import {
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
+  BookmarkPlus,
   CalendarDays,
   CalendarRange,
-  CheckCircle2,
   ChevronDown,
   ChevronRight,
   Clock3,
-  Link2,
   ListTodo,
+  Plus,
   RefreshCw,
   Sparkles,
   X,
@@ -21,23 +21,37 @@ import {
 import { useAuth } from "@/shared/context/AuthContext";
 import { getPlannerEvents, PlannerEventListItem } from "@/shared/lib/api/planner";
 import {
+  createTask,
+  deleteTask,
   generateDiscoveryTasks,
+  generateFullChecklist,
   getTasksForEvent,
   patchTaskSchedule,
   realignEventTaskSchedule,
   Task,
+  updateTask,
 } from "@/shared/lib/api/tasks";
+import { TaskFormModal, type TaskFormValues } from "@/modules/planner/tasks/TaskFormModal";
+import { TaskIssueCard } from "@/modules/planner/tasks/TaskIssueCard";
+import { TaskIssueCell } from "@/modules/planner/tasks/TaskIssueCell";
+import { SaveTaskTemplateModal } from "@/modules/planner/templates/SaveTaskTemplateModal";
+import {
+  applyPlannerTaskTemplate,
+  getPlannerTaskTemplates,
+  type PlannerTaskTemplateListItem,
+} from "@/shared/lib/api/plannerTaskTemplates";
 import { getEventBrief, type EventBrief } from "@/shared/lib/api/eventBrief";
 import { EventBriefPanel } from "@/modules/planner/brief/EventBriefPanel";
 import { ChecklistPlanWizard } from "@/modules/planner/checklist/ChecklistPlanWizard";
+import { usePlannerCreateEventModal } from "@/modules/planner/subscription/PlannerCreateEventProvider";
 import { usePlannerBranding } from "@/modules/planner/branding/PlannerBrandingProvider";
 import { EventPickerSelect } from "@/modules/planner/planning/EventPlanningHeader";
 import { PlannerSetupFlow, type SetupStep } from "@/modules/planner/planning/PlannerSetupFlow";
 import {
+  applyGanttDependencyLabels,
   buildGanttTimeline,
   checkDependencyViolation,
   countScheduleHealth,
-  formatDueDate,
   formatScheduleHealthSummary,
   GanttTaskView,
   GanttTimeline,
@@ -45,6 +59,7 @@ import {
   inferStage,
   mapApiTaskToGanttView,
   partitionGanttTasks,
+  sortGanttTasksForDisplay,
   weeksToIsoRange,
 } from "@/modules/planner/gantt/ganttTimeline";
 import { ErrorBanner } from "@/modules/planner/components/ui";
@@ -58,45 +73,11 @@ import {
 import { rf } from "@/modules/design-system/regal-frost/tokens";
 import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
 import { cn } from "@/shared/lib/cn";
-
-const STAGE_PILL: Record<GanttTaskView["stage"], string> = {
-  Onboarding: "bg-warning/10 text-warning ring-1 ring-warning/15",
-  Planning: "bg-accent/10 text-accent ring-1 ring-accent/15",
-  Execution: "bg-primary/10 text-primary ring-1 ring-primary/15",
-};
-
-function TaskMetaBadges({ task }: { task: GanttTaskView }) {
-  return (
-    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-      {task.dueThisWeek && !task.isOverdue && (
-        <span className="rounded-full bg-warning/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-warning ring-1 ring-warning/15">
-          Due this week
-        </span>
-      )}
-      <span
-        className={cn(
-          "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-          STAGE_PILL[task.stage]
-        )}
-      >
-        {task.completion}%
-      </span>
-      <span className={cn("inline-flex items-center gap-1", vg.caption)}>
-        <Clock3 size={11} aria-hidden />
-        {task.owner}
-      </span>
-      {task.dependency && (
-        <span className={cn("inline-flex items-center gap-1", vg.caption)}>
-          <Link2 size={11} aria-hidden />
-          {task.dependency.toUpperCase()}
-        </span>
-      )}
-    </div>
-  );
-}
+import { taskStatusShortLabel } from "@/modules/tasks/taskDisplay";
 
 export default function PlannerTasksPage() {
   const { user } = useAuth();
+  const { openCreateEventModal } = usePlannerCreateEventModal();
   const { brand } = usePlannerBranding();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -116,12 +97,73 @@ export default function PlannerTasksPage() {
   const [setupStep, setSetupStep] = useState<SetupStep>(1);
   const [showNewEventTip, setShowNewEventTip] = useState(false);
   const [seedingDiscovery, setSeedingDiscovery] = useState(false);
+  const [seedingMaster, setSeedingMaster] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
   const [savingTaskId, setSavingTaskId] = useState<string | null>(null);
+  const [taskModalOpen, setTaskModalOpen] = useState(false);
+  const [taskModalMode, setTaskModalMode] = useState<"add" | "edit">("add");
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [taskFormSaving, setTaskFormSaving] = useState(false);
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
+  const [customTemplates, setCustomTemplates] = useState<PlannerTaskTemplateListItem[]>([]);
+  const [selectedCustomTemplateId, setSelectedCustomTemplateId] = useState("");
+  const [applyingCustomTemplate, setApplyingCustomTemplate] = useState(false);
   const dragState = useRef<{ taskId: string; startX: number; startWeek: number } | null>(null);
+  const ganttHeaderRef = useRef<HTMLDivElement>(null);
+  const [ganttHeaderHeight, setGanttHeaderHeight] = useState(56);
 
   const weekCount = timeline.weekCount;
+
+  useEffect(() => {
+    if (!user) {
+      setCustomTemplates([]);
+      return;
+    }
+    void (async () => {
+      try {
+        const token = await user.getIdToken();
+        const data = await getPlannerTaskTemplates(token);
+        setCustomTemplates(data);
+        setSelectedCustomTemplateId((prev) => prev || data[0]?.id || "");
+      } catch {
+        setCustomTemplates([]);
+      }
+    })();
+  }, [user, saveTemplateOpen, checklistMessage]);
+
+  const handleApplyCustomTemplate = async (replaceExisting = false) => {
+    if (!user || !selectedEventId || !selectedCustomTemplateId) return;
+    try {
+      setApplyingCustomTemplate(true);
+      setError(null);
+      const token = await user.getIdToken();
+      const result = await applyPlannerTaskTemplate(
+        token,
+        selectedCustomTemplateId,
+        selectedEventId,
+        replaceExisting
+      );
+      setChecklistMessage(result.message);
+      setEvents((prev) =>
+        prev.map((ev) =>
+          ev.eventId === selectedEventId
+            ? {
+                ...ev,
+                taskPlanPhase: result.taskPlanPhase === "Full" ? "Full" : "Discovery",
+                eventLifecycleStage:
+                  result.taskPlanPhase === "Full" ? "Planning" : ev.eventLifecycleStage,
+              }
+            : ev
+        )
+      );
+      await loadTasks();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to apply your template.");
+    } finally {
+      setApplyingCustomTemplate(false);
+    }
+  };
 
   const loadEvents = useCallback(async () => {
     if (!user) return;
@@ -195,8 +237,11 @@ export default function PlannerTasksPage() {
       );
       setTimeline(nextTimeline);
       setRawTasks(apiTasks);
-      const idToShort = new Map(apiTasks.map((t, i) => [t.id, `t${i + 1}`]));
-      setTasks(apiTasks.map((t, i) => mapApiTaskToGanttView(t, i, nextTimeline, idToShort)));
+      const views = apiTasks.map((t, i) =>
+        mapApiTaskToGanttView(t, i, nextTimeline, new Map())
+      );
+      const titleByTaskId = new Map(views.map((t) => [t.id, t.title]));
+      setTasks(applyGanttDependencyLabels(views, titleByTaskId));
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load tasks.");
@@ -217,6 +262,11 @@ export default function PlannerTasksPage() {
   }, [loadTasks]);
 
   const tasksById = useMemo(() => new Map(tasks.map((t) => [t.id, t])), [tasks]);
+  const taskIndexById = useMemo(() => {
+    const map = new Map<string, number>();
+    rawTasks.forEach((task, index) => map.set(task.id, index));
+    return map;
+  }, [rawTasks]);
   const partition = useMemo(() => partitionGanttTasks(tasks), [tasks]);
   const scheduleHealth = useMemo(() => countScheduleHealth(rawTasks), [rawTasks]);
 
@@ -234,16 +284,29 @@ export default function PlannerTasksPage() {
 
   const activeByStage = useMemo(() => {
     const order: GanttTaskView["stage"][] = ["Onboarding", "Planning", "Execution"];
+    const sortedActive = sortGanttTasksForDisplay(partition.active);
     const groups = new Map<GanttTaskView["stage"], GanttTaskView[]>(
       order.map((stage) => [stage, [] as GanttTaskView[]])
     );
-    for (const task of partition.active) {
+    for (const task of sortedActive) {
       groups.get(task.stage)!.push(task);
     }
     return order
       .map((stage) => ({ stage, items: groups.get(stage)! }))
       .filter((group) => group.items.length > 0);
   }, [partition.active]);
+
+  useEffect(() => {
+    const el = ganttHeaderRef.current;
+    if (!el) return;
+
+    const syncHeight = () => setGanttHeaderHeight(el.offsetHeight);
+    syncHeight();
+
+    const observer = new ResizeObserver(syncHeight);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [activeByStage.length, weekCount, tasks.length]);
 
   const handleRealign = async () => {
     if (!user || !selectedEventId) return;
@@ -260,6 +323,68 @@ export default function PlannerTasksPage() {
     } finally {
       setRealigning(false);
     }
+  };
+
+  const toIsoDate = (dateOnly: string): string | undefined => {
+    if (!dateOnly) return undefined;
+    return new Date(`${dateOnly}T12:00:00`).toISOString();
+  };
+
+  const openAddTask = () => {
+    setTaskModalMode("add");
+    setEditingTask(null);
+    setTaskModalOpen(true);
+  };
+
+  const openEditTask = (taskId: string) => {
+    const task = rawTasks.find((t) => t.id === taskId);
+    if (!task) return;
+    setTaskModalMode("edit");
+    setEditingTask(task);
+    setTaskModalOpen(true);
+  };
+
+  const handleTaskFormSave = async (values: TaskFormValues) => {
+    if (!user || !selectedEventId) return;
+    setTaskFormSaving(true);
+    try {
+      const token = await user.getIdToken();
+      const payload = {
+        title: values.title.trim(),
+        description: editingTask?.description ?? null,
+        status: values.status,
+        startDate: toIsoDate(values.startDate) ?? null,
+        dueDate: toIsoDate(values.dueDate) ?? null,
+        dependsOnTaskId: values.dependsOnTaskId || null,
+        updateDependency: true,
+      };
+
+      if (taskModalMode === "add") {
+        await createTask(token, selectedEventId, {
+          title: payload.title,
+          startDate: payload.startDate ?? undefined,
+          dueDate: payload.dueDate ?? undefined,
+          dependsOnTaskId: payload.dependsOnTaskId ?? undefined,
+        });
+      } else if (editingTask) {
+        await updateTask(token, selectedEventId, editingTask.id, payload);
+      }
+
+      setTaskModalOpen(false);
+      setEditingTask(null);
+      await loadTasks();
+    } finally {
+      setTaskFormSaving(false);
+    }
+  };
+
+  const handleTaskFormDelete = async () => {
+    if (!user || !selectedEventId || !editingTask) return;
+    const token = await user.getIdToken();
+    await deleteTask(token, selectedEventId, editingTask.id);
+    setTaskModalOpen(false);
+    setEditingTask(null);
+    await loadTasks();
   };
 
   const persistTaskWeeks = async (taskId: string, startWeek: number, duration: number) => {
@@ -330,17 +455,20 @@ export default function PlannerTasksPage() {
   const renderGanttRow = (task: GanttTaskView) => (
     <div
       key={task.id}
-      className="grid grid-cols-[minmax(220px,280px)_1fr] items-center border-b border-white/30 transition-colors last:border-b-0 hover:bg-white/45"
+      className="group/row grid grid-cols-[minmax(240px,300px)_1fr] items-stretch border-b border-[#EBECF0] bg-white transition-colors last:border-b-0 hover:bg-[#FAFBFC]"
     >
-      <div className="border-r border-white/30 px-4 py-2.5">
-        <p className={cn("line-clamp-2 text-sm font-medium leading-snug", vg.body)}>{task.title}</p>
-        <TaskMetaBadges task={task} />
+      <div className="border-r border-[#EBECF0]">
+        <TaskIssueCell
+          task={task}
+          taskIndex={taskIndexById.get(task.id) ?? 0}
+          onOpen={openEditTask}
+        />
       </div>
 
       <div
-        className="relative mx-3 my-2 h-8 rounded-lg bg-white/55 ring-1 ring-white/60"
+        className="relative mx-3 my-2 h-8 rounded bg-[#F4F5F7]"
         style={{
-          backgroundImage: `repeating-linear-gradient(to right, hsl(345 20% 50% / 0.06) 0, hsl(345 20% 50% / 0.06) 1px, transparent 1px, transparent calc(100% / ${weekCount}))`,
+          backgroundImage: `repeating-linear-gradient(to right, #DFE1E6 0, #DFE1E6 1px, transparent 1px, transparent calc(100% / ${weekCount}))`,
         }}
         onPointerMove={(e) => {
           const width = (e.currentTarget as HTMLDivElement).offsetWidth;
@@ -348,14 +476,14 @@ export default function PlannerTasksPage() {
         }}
       >
         <div
-          className="pointer-events-none absolute inset-y-0 w-0.5 bg-primary/50"
+          className="pointer-events-none absolute inset-y-0 w-0.5 bg-[#DE350B]/60"
           style={{ left: `${((weekCount - 0.5) / weekCount) * 100}%` }}
           aria-hidden
         />
 
         {task.isMilestone ? (
           <div
-            className="absolute top-1/2 z-[1] h-4 w-4 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-sm bg-primary shadow-sm ring-2 ring-primary/30"
+            className="absolute top-1/2 z-[1] h-4 w-4 -translate-x-1/2 -translate-y-1/2 rotate-45 rounded-sm bg-[#DE350B] shadow-sm ring-2 ring-[#DE350B]/30"
             style={{ left: `${((weekCount - 0.5) / weekCount) * 100}%` }}
             title={task.title}
             aria-label={`Milestone: ${task.title}`}
@@ -370,9 +498,10 @@ export default function PlannerTasksPage() {
             onPointerDown={(e) => onBarPointerDown(e, task)}
             onPointerUp={(e) => onBarPointerUp(e, task)}
             className={cn(
-              "absolute top-1/2 flex h-6 -translate-y-1/2 cursor-grab items-center justify-end overflow-hidden rounded-md bg-primary px-2 text-[10px] font-semibold text-primary-foreground shadow-sm active:cursor-grabbing",
+              "absolute top-1/2 flex h-6 -translate-y-1/2 cursor-grab items-center justify-end overflow-hidden rounded px-2 text-[10px] font-semibold text-white shadow-sm active:cursor-grabbing",
+              task.status === "InProgress" ? "bg-[#0052CC]" : "bg-[#42526E]",
               (draggingTaskId === task.id || savingTaskId === task.id) &&
-                "opacity-80 ring-2 ring-accent/50"
+                "opacity-80 ring-2 ring-[#0052CC]/40"
             )}
             style={{
               left: `calc(${(task.startWeek / weekCount) * 100}% + 2px)`,
@@ -381,11 +510,11 @@ export default function PlannerTasksPage() {
             }}
           >
             <span
-              className="absolute inset-y-0 left-0 bg-accent/35"
+              className="absolute inset-y-0 left-0 bg-[#36B37E]/50"
               style={{ width: `${task.completion}%` }}
               aria-hidden
             />
-            <span className="relative z-[1] tabular-nums">{task.completion}%</span>
+            <span className="relative z-[1] tabular-nums">{taskStatusShortLabel(task.status)}</span>
           </div>
         )}
       </div>
@@ -428,6 +557,29 @@ export default function PlannerTasksPage() {
     }
   };
 
+  const handleSeedMasterChecklist = async () => {
+    if (!user || !selectedEventId) return;
+    try {
+      setSeedingMaster(true);
+      setError(null);
+      const token = await user.getIdToken();
+      const result = await generateFullChecklist(token, selectedEventId);
+      setChecklistMessage(result.message);
+      setEvents((prev) =>
+        prev.map((ev) =>
+          ev.eventId === selectedEventId
+            ? { ...ev, taskPlanPhase: "Full", eventLifecycleStage: "Planning" }
+            : ev
+        )
+      );
+      await loadTasks();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to generate master checklist.");
+    } finally {
+      setSeedingMaster(false);
+    }
+  };
+
   const handleChecklistApplied = useCallback(async () => {
     setChecklistMessage("Master checklist applied. Refreshing timeline…");
     setEvents((prev) =>
@@ -446,30 +598,19 @@ export default function PlannerTasksPage() {
       {partition.catchUp.length > 0 && (
         <GlassSectionCard
           title="Catch-up queue"
-          subtitle="Overdue tasks — complete them or click Realign schedule to spread remaining work from today forward"
+          subtitle={`${partition.catchUp.length} overdue issue${partition.catchUp.length === 1 ? "" : "s"} — click a card to edit or use Realign to reschedule`}
         >
-          <ul className="divide-y divide-white/40 rounded-xl border border-destructive/15 bg-destructive/[0.02]">
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
             {partition.catchUp.map((task) => (
-              <li
+              <TaskIssueCard
                 key={task.id}
-                className="flex flex-wrap items-start justify-between gap-3 px-4 py-3 sm:items-center"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className={cn("text-sm font-medium", vg.body)}>{task.title}</p>
-                  <TaskMetaBadges task={task} />
-                </div>
-                <div className="text-right">
-                  <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-destructive ring-1 ring-destructive/20">
-                    <AlertTriangle size={10} aria-hidden />
-                    Overdue
-                  </span>
-                  <p className={cn("mt-1 tabular-nums", vg.caption)}>
-                    Due {formatDueDate(task.dueDate)}
-                  </p>
-                </div>
-              </li>
+                task={task}
+                taskIndex={taskIndexById.get(task.id) ?? 0}
+                onOpen={openEditTask}
+                variant="overdue"
+              />
             ))}
-          </ul>
+          </div>
         </GlassSectionCard>
       )}
 
@@ -477,42 +618,87 @@ export default function PlannerTasksPage() {
         title={isDiscoveryPhase ? "Starter tasks" : "Your timeline"}
         subtitle={
           isDiscoveryPhase
-            ? "Complete these first — drag bars to change dates"
-            : "Today → wedding day · drag bars to reschedule"
+            ? "Click any issue to edit · drag schedule bars to change dates"
+            : "Click any issue to edit · drag bars on the timeline to reschedule"
         }
         action={
-          savingTaskId ? (
-            <span className={cn("inline-flex items-center gap-1.5", vg.caption)}>
-              <Clock3 size={14} className="animate-pulse" aria-hidden />
-              Saving…
-            </span>
-          ) : (
-            <span
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full border border-white/55 bg-white/40 px-3 py-1 backdrop-blur-sm",
-                vg.caption
-              )}
-            >
-              <CalendarRange size={14} aria-hidden />
-              {partition.active.length} active · {weekCount} weeks
-            </span>
-          )
+          <div className="flex flex-wrap items-center gap-2">
+            {selectedEventId && (
+              <GlassButton type="button" variant="primary" className="gap-1.5" onClick={openAddTask}>
+                <Plus size={14} aria-hidden />
+                Add task
+              </GlassButton>
+            )}
+            {savingTaskId ? (
+              <span className={cn("inline-flex items-center gap-1.5", vg.caption)}>
+                <Clock3 size={14} className="animate-pulse" aria-hidden />
+                Saving…
+              </span>
+            ) : (
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full border border-white/55 bg-white/40 px-3 py-1 backdrop-blur-sm",
+                  vg.caption
+                )}
+              >
+                <CalendarRange size={14} aria-hidden />
+                {partition.active.length} active · {weekCount} weeks
+              </span>
+            )}
+          </div>
         }
       >
         {tasks.length === 0 && !loading ? (
           <EmptyState
-            title="No discovery tasks yet"
-            description="New events receive 8 discovery tasks automatically when created. If this event is missing them, generate them now."
+            title="No tasks on this timeline yet"
+            description="Add tasks one by one, or apply a standard wedding template to seed the Gantt."
             action={
               selectedEventId ? (
-                <GlassButton
-                  type="button"
-                  variant="primary"
-                  disabled={seedingDiscovery}
-                  onClick={() => void handleSeedDiscoveryTasks()}
-                >
-                  {seedingDiscovery ? "Generating…" : "Generate 8 discovery tasks"}
-                </GlassButton>
+                <div className="flex flex-wrap justify-center gap-2">
+                  <GlassButton type="button" variant="primary" className="gap-1.5" onClick={openAddTask}>
+                    <Plus size={14} aria-hidden />
+                    Add first task
+                  </GlassButton>
+                  <GlassButton
+                    type="button"
+                    variant="ghost"
+                    disabled={seedingDiscovery}
+                    onClick={() => void handleSeedDiscoveryTasks()}
+                  >
+                    {seedingDiscovery ? "Generating…" : "Starter template (8)"}
+                  </GlassButton>
+                  <GlassButton
+                    type="button"
+                    variant="ghost"
+                    disabled={seedingMaster}
+                    onClick={() => void handleSeedMasterChecklist()}
+                  >
+                    {seedingMaster ? "Generating…" : "Master template (50)"}
+                  </GlassButton>
+                  {customTemplates.length > 0 && (
+                    <>
+                      <select
+                        value={selectedCustomTemplateId}
+                        onChange={(e) => setSelectedCustomTemplateId(e.target.value)}
+                        className={cn(inputClass, "rounded-full border-white/55 bg-white/40 px-3 py-1.5 text-xs")}
+                      >
+                        {customTemplates.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.name} ({t.taskCount})
+                          </option>
+                        ))}
+                      </select>
+                      <GlassButton
+                        type="button"
+                        variant="ghost"
+                        disabled={applyingCustomTemplate || !selectedCustomTemplateId}
+                        onClick={() => void handleApplyCustomTemplate(false)}
+                      >
+                        {applyingCustomTemplate ? "Applying…" : "My template"}
+                      </GlassButton>
+                    </>
+                  )}
+                </div>
               ) : undefined
             }
             className="border-0 bg-transparent shadow-none"
@@ -528,23 +714,32 @@ export default function PlannerTasksPage() {
             className="border-0 bg-transparent shadow-none"
           />
         ) : (
-          <div className="overflow-hidden rounded-xl border border-white/55 bg-white/30">
+          <div className="rounded-lg border border-[#DFE1E6] bg-white shadow-sm">
             <div className="max-h-[min(60vh,640px)] overflow-auto">
-              <div className="min-w-[760px]">
-                <div className="sticky top-0 z-20 grid grid-cols-[minmax(220px,280px)_1fr] border-b border-white/50 bg-white/90 backdrop-blur-sm">
-                  <div className={cn("px-4 py-3", vg.label)}>Task</div>
-                  <div className="relative border-l border-white/40 px-3 py-3">
+              <div className="min-w-[800px]">
+                <div
+                  ref={ganttHeaderRef}
+                  className="sticky top-0 z-30 grid grid-cols-[minmax(240px,300px)_1fr] border-b border-[#DFE1E6] bg-[#FAFBFC]"
+                >
+                  <div className="border-r border-[#DFE1E6] px-3 py-2.5">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-[#5E6C84]">
+                      Issues
+                    </span>
+                    <span className="mt-0.5 block text-[11px] font-normal normal-case text-[#97A0AF]">
+                      {partition.active.length} active
+                    </span>
+                  </div>
+                  <div className="relative border-l border-[#EBECF0] px-3 py-2.5">
                     <div className="relative h-6 min-w-0">
                       {weekLabels.map((week) =>
                         week.label ? (
                           <span
                             key={week.index}
                             className={cn(
-                              "absolute whitespace-nowrap tabular-nums",
-                              vg.caption,
+                              "absolute whitespace-nowrap text-[11px] tabular-nums",
                               week.isWedding
-                                ? "right-0 translate-x-0 font-bold text-primary"
-                                : "-translate-x-1/2 font-semibold text-muted-foreground"
+                                ? "right-0 translate-x-0 font-bold text-[#DE350B]"
+                                : "-translate-x-1/2 font-semibold text-[#97A0AF]"
                             )}
                             style={
                               week.isWedding
@@ -563,16 +758,16 @@ export default function PlannerTasksPage() {
                 {activeByStage.map((group) => (
                   <div key={group.stage}>
                     <div
-                      className={cn(
-                        "sticky top-[49px] z-10 border-b border-white/40 bg-white/80 px-4 py-2 backdrop-blur-sm",
-                        vg.caption,
-                        "font-semibold uppercase tracking-wide text-muted-foreground"
-                      )}
+                      className="sticky z-20 grid grid-cols-[minmax(240px,300px)_1fr] border-b border-[#DFE1E6] bg-[#F4F5F7] shadow-[inset_0_-1px_0_#EBECF0]"
+                      style={{ top: ganttHeaderHeight }}
                     >
-                      {group.stage}
-                      <span className="ml-2 font-normal normal-case text-muted-foreground/80">
-                        ({group.items.length})
-                      </span>
+                      <div className="flex items-center border-r border-[#EBECF0] px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-[#5E6C84]">
+                        {group.stage}
+                        <span className="ml-1.5 font-normal text-[#97A0AF]">
+                          ({group.items.length})
+                        </span>
+                      </div>
+                      <div className="min-h-[34px] bg-[#F4F5F7]" aria-hidden />
                     </div>
                     {group.items.map((task) => renderGanttRow(task))}
                   </div>
@@ -606,22 +801,16 @@ export default function PlannerTasksPage() {
           }
         >
           {showCompleted && (
-            <ul className="divide-y divide-white/40 rounded-xl border border-white/55 bg-white/25">
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
               {partition.completed.map((task) => (
-                <li
+                <TaskIssueCard
                   key={task.id}
-                  className="flex items-center justify-between gap-3 px-4 py-2.5 opacity-75"
-                >
-                  <span className={cn("text-sm line-through decoration-muted-foreground/50", vg.body)}>
-                    {task.title}
-                  </span>
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-success">
-                    <CheckCircle2 size={14} aria-hidden />
-                    Done
-                  </span>
-                </li>
+                  task={task}
+                  taskIndex={taskIndexById.get(task.id) ?? 0}
+                  onOpen={openEditTask}
+                />
               ))}
-            </ul>
+            </div>
           )}
         </GlassSectionCard>
       )}
@@ -687,6 +876,27 @@ export default function PlannerTasksPage() {
                 <Sparkles size={16} aria-hidden />
                 AI
               </GlassButton>
+              {selectedEventId && tasks.length > 0 && (
+                <GlassButton
+                  type="button"
+                  variant="ghost"
+                  className="gap-1.5 whitespace-nowrap"
+                  onClick={() => setSaveTemplateOpen(true)}
+                >
+                  <BookmarkPlus size={16} aria-hidden />
+                  Save template
+                </GlassButton>
+              )}
+              {selectedEventId && (
+                <GlassButton
+                  href={`/events/${selectedEventId}/checklist`}
+                  variant="ghost"
+                  className="gap-1.5 whitespace-nowrap"
+                >
+                  <ListTodo size={16} aria-hidden />
+                  My Tasks
+                </GlassButton>
+              )}
             </div>
           }
         />
@@ -708,7 +918,7 @@ export default function PlannerTasksPage() {
         </div>
       )}
 
-      {selectedEvent && tasks.length > 0 && (
+      {selectedEvent && tasks.length > 0 && !isDiscoveryPhase && scheduleHealth.overdue > 0 && (
         <div
           className={cn(
             "inline-flex flex-wrap items-center gap-2 rounded-xl border px-4 py-2.5 text-sm",
@@ -762,7 +972,7 @@ export default function PlannerTasksPage() {
           title="No events to plan yet"
           description="Create a wedding event — we'll add 8 discovery tasks to your timeline automatically."
           action={
-            <GlassButton href="/planner/dashboard#create-event-dashboard" variant="primary">
+            <GlassButton type="button" variant="primary" onClick={openCreateEventModal}>
               Create event
             </GlassButton>
           }
@@ -835,6 +1045,41 @@ export default function PlannerTasksPage() {
       ) : (
         timelineWorkspace
       )}
+
+      <TaskFormModal
+        open={taskModalOpen}
+        mode={taskModalMode}
+        eventId={selectedEventId}
+        tasks={rawTasks}
+        saving={taskFormSaving}
+        initial={
+          editingTask
+            ? {
+                taskId: editingTask.id,
+                title: editingTask.title,
+                status: editingTask.status,
+                startDate: editingTask.startDate ?? undefined,
+                dueDate: editingTask.dueDate ?? undefined,
+                dependsOnTaskId: editingTask.dependsOnTaskId ?? "",
+              }
+            : undefined
+        }
+        onClose={() => {
+          setTaskModalOpen(false);
+          setEditingTask(null);
+        }}
+        onSave={handleTaskFormSave}
+        onDelete={taskModalMode === "edit" ? handleTaskFormDelete : undefined}
+      />
+
+      <SaveTaskTemplateModal
+        open={saveTemplateOpen}
+        eventId={selectedEventId}
+        eventName={selectedEvent?.eventName}
+        taskCount={tasks.length}
+        onClose={() => setSaveTemplateOpen(false)}
+        onSaved={() => setChecklistMessage("Template saved. Find it under Settings or when creating events.")}
+      />
     </div>
   );
 }

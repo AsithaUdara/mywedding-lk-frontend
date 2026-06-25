@@ -15,6 +15,26 @@ export function taskStatusLabel(status: Task["status"]): string {
   }
 }
 
+/** Short label for narrow Gantt bars */
+export function taskStatusShortLabel(status: Task["status"]): string {
+  switch (status) {
+    case "ToDo":
+      return "To do";
+    case "InProgress":
+      return "Active";
+    case "Completed":
+      return "Done";
+    default:
+      return status;
+  }
+}
+
+export const TASK_STATUS_OPTIONS: { value: Task["status"]; label: string }[] = [
+  { value: "ToDo", label: "To do" },
+  { value: "InProgress", label: "In progress" },
+  { value: "Completed", label: "Done" },
+];
+
 export function formatTaskDueDate(dueDate: string | null): { label: string; tone: "default" | "soon" | "overdue" } | null {
   if (!dueDate) return null;
 

@@ -10,10 +10,30 @@ type Props = {
   onClose: () => void;
 };
 
+function successCopy(result: CreatePlannerEventResult): string {
+  const eventName = result.eventName?.trim() || "Your wedding";
+  const mode = result.taskSeedMode ?? "DiscoveryStarter";
+
+  if (mode === "Manual") {
+    return `${eventName} is ready with an empty timeline — add tasks manually or apply a template later.`;
+  }
+
+  if (mode === "MasterChecklist") {
+    const count = result.tasksGenerated > 0 ? result.tasksGenerated : 50;
+    return `${eventName} is ready with ${count} tasks from the master wedding template on your timeline.`;
+  }
+
+  if (mode === "CustomTemplate") {
+    const count = result.tasksGenerated > 0 ? result.tasksGenerated : "your";
+    return `${eventName} is ready with ${count} tasks from your saved template.`;
+  }
+
+  const count = result.tasksGenerated > 0 ? result.tasksGenerated : 8;
+  return `${eventName} is ready with ${count} starter tasks from the discovery template.`;
+}
+
 export function PlannerCreateEventSuccess({ result, onClose }: Props) {
   const router = useRouter();
-  const eventName = result.eventName?.trim() || "Your wedding";
-  const taskCount = result.tasksGenerated > 0 ? result.tasksGenerated : 8;
 
   const openTimeline = () => {
     router.push(
@@ -34,11 +54,7 @@ export function PlannerCreateEventSuccess({ result, onClose }: Props) {
       >
         Event created
       </h2>
-      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-        <span className="font-medium text-foreground">{eventName}</span> is ready with{" "}
-        <span className="font-medium text-foreground">{taskCount} starter tasks</span> on your
-        timeline.
-      </p>
+      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{successCopy(result)}</p>
 
       <div className="mt-6 flex flex-col gap-2">
         <Button type="button" size="lg" className="w-full gap-2" onClick={openTimeline}>

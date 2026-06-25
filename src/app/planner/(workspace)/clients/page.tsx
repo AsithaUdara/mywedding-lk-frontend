@@ -1,22 +1,24 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  ArrowRight,
-  CalendarClock,
-  CircleDollarSign,
-  GripVertical,
-  UserRoundPlus,
-  Users,
-} from "lucide-react";
+import { AlertTriangle, CalendarClock, Plus, Users } from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
 import {
   EventLifecycleStage,
   getPlannerEvents,
-  PlannerEventListItem,
   updatePlannerEventStage,
 } from "@/shared/lib/api/planner";
-import { ErrorBanner, formatLKR } from "@/modules/planner/components/ui";
+import { getTasksForEvent } from "@/shared/lib/api/tasks";
+import { ClientKanbanCard } from "@/modules/planner/clients/ClientKanbanCard";
+import {
+  mapEventToPipelineCard,
+  PIPELINE_STAGES,
+  STAGE_HINTS,
+  type ClientPipelineCard,
+} from "@/modules/planner/clients/plannerClientHelpers";
+import { formatWeddingDate } from "@/modules/planner/dashboard/plannerDashboardHelpers";
+import { ErrorBanner } from "@/modules/planner/components/ui";
+import { usePlannerCreateEventModal } from "@/modules/planner/subscription/PlannerCreateEventProvider";
 import { EmptyState, PageLoadingSkeleton } from "@/shared/components/ui";
 import {
   GlassButton,
@@ -24,79 +26,12 @@ import {
   GlassStatCard,
 } from "@/modules/vendor/dashboard/glass-ui";
 import { rf } from "@/modules/design-system/regal-frost/tokens";
-import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
 import { cn } from "@/shared/lib/cn";
-
-type ClientCard = {
-  id: string;
-  title: string;
-  couple: string;
-  email: string;
-  weddingDate: string;
-  budget: number;
-  completion: number;
-  stage: EventLifecycleStage;
-  priority: "High" | "Medium" | "Low";
-};
-
-const STAGES: EventLifecycleStage[] = ["Lead", "Onboarding", "Planning", "Execution", "Archived"];
-
-const STAGE_ACCENT: Record<EventLifecycleStage, string> = {
-  Lead: "border-t-muted-foreground/50",
-  Onboarding: "border-t-warning",
-  Planning: "border-t-accent",
-  Execution: "border-t-primary",
-  Archived: "border-t-border",
-};
-
-const PRIORITY_PILL: Record<ClientCard["priority"], string> = {
-  High: "bg-primary/10 text-primary ring-1 ring-primary/15",
-  Medium: "bg-warning/10 text-warning ring-1 ring-warning/15",
-  Low: "bg-white/50 text-muted-foreground ring-1 ring-white/60",
-};
-
-function completionForStage(stage: EventLifecycleStage): number {
-  switch (stage) {
-    case "Lead":
-      return 12;
-    case "Onboarding":
-      return 25;
-    case "Planning":
-      return 45;
-    case "Execution":
-      return 70;
-    case "Archived":
-      return 100;
-    default:
-      return 0;
-  }
-}
-
-function priorityForEvent(event: PlannerEventListItem): ClientCard["priority"] {
-  const daysUntil = (new Date(event.eventDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
-  if (daysUntil <= 90) return "High";
-  if (daysUntil <= 180) return "Medium";
-  return "Low";
-}
-
-function mapEventToCard(event: PlannerEventListItem): ClientCard {
-  const stage = (event.eventLifecycleStage ?? "Lead") as EventLifecycleStage;
-  return {
-    id: event.eventId,
-    title: event.eventName,
-    couple: event.clientEmail.split("@")[0] || "Client",
-    email: event.clientEmail,
-    weddingDate: event.eventDate,
-    budget: event.totalBudget,
-    completion: completionForStage(stage),
-    stage,
-    priority: priorityForEvent(event),
-  };
-}
 
 export default function PlannerClientsPage() {
   const { user } = useAuth();
-  const [clients, setClients] = useState<ClientCard[]>([]);
+  const { openCreateEventModal } = usePlannerCreateEventModal();
+  const [clients, setClients] = useState<ClientPipelineCard[]>([]);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -108,7 +43,19 @@ export default function PlannerClientsPage() {
       setLoading(true);
       const token = await user.getIdToken();
       const events = await getPlannerEvents(token);
-      setClients(events.map(mapEventToCard));
+
+      const cards = await Promise.all(
+        events.map(async (event) => {
+          try {
+            const tasks = await getTasksForEvent(token, event.eventId);
+            return mapEventToPipelineCard(event, tasks);
+          } catch {
+            return mapEventToPipelineCard(event, []);
+          }
+        })
+      );
+
+      setClients(cards);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load clients.");
@@ -121,27 +68,22 @@ export default function PlannerClientsPage() {
     void load();
   }, [load]);
 
-  const totalValue = useMemo(() => clients.reduce((sum, c) => sum + c.budget, 0), [clients]);
-  const activeCount = useMemo(
-    () => clients.filter((c) => c.stage !== "Lead" && c.stage !== "Archived").length,
-    [clients]
-  );
-  const weightedProgress = useMemo(() => {
-    if (clients.length === 0) return 0;
-    return Math.round(clients.reduce((sum, c) => sum + c.completion, 0) / clients.length);
+  const setupCount = useMemo(() => clients.filter((c) => c.needsSetup).length, [clients]);
+  const nextWedding = useMemo(() => {
+    const now = Date.now() - 24 * 60 * 60 * 1000;
+    return (
+      [...clients]
+        .filter((c) => new Date(c.weddingDate).getTime() >= now)
+        .sort((a, b) => new Date(a.weddingDate).getTime() - new Date(b.weddingDate).getTime())[0] ??
+      null
+    );
   }, [clients]);
 
   const moveCard = async (cardId: string, targetStage: EventLifecycleStage) => {
     const previous = clients;
     setClients((prev) =>
       prev.map((client) =>
-        client.id === cardId
-          ? {
-              ...client,
-              stage: targetStage,
-              completion: completionForStage(targetStage),
-            }
-          : client
+        client.id === cardId ? { ...client, stage: targetStage } : client
       )
     );
 
@@ -168,159 +110,110 @@ export default function PlannerClientsPage() {
       {error && <ErrorBanner message={error} />}
 
       <GlassPageHeader
-        title="Clients pipeline"
-        description="Drag each client event through lifecycle stages — from lead to archived."
-        badge="CRM"
+        title="Clients"
+        description="Kanban pipeline — drag cards between columns to update lifecycle stage."
+        badge="Board"
         action={
-          <GlassButton href="/planner/dashboard#create-event-dashboard" variant="primary" className="gap-1.5">
-            <UserRoundPlus size={16} aria-hidden />
-            Add new lead
+          <GlassButton
+            type="button"
+            variant="primary"
+            className="gap-1.5"
+            onClick={openCreateEventModal}
+          >
+            <Plus size={16} aria-hidden />
+            New client event
           </GlassButton>
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-3">
         <GlassStatCard
-          label="Managed clients"
+          label="In pipeline"
           value={clients.length}
-          sub="Events in your portfolio"
+          sub="Active client weddings"
           icon={Users}
           iconTheme="primary"
         />
         <GlassStatCard
-          label="Pipeline value"
-          value={totalValue > 0 ? formatLKR(totalValue) : "—"}
-          sub="Total wedding budgets"
-          icon={CircleDollarSign}
-          iconTheme="accent"
+          label="Setup needed"
+          value={setupCount}
+          sub={setupCount > 0 ? "Brief or checklist incomplete" : "All weddings on track"}
+          icon={AlertTriangle}
+          iconTheme={setupCount > 0 ? "warning" : "success"}
         />
         <GlassStatCard
-          label="Active / progress"
-          value={`${activeCount} · ${weightedProgress}%`}
-          sub="In onboarding through execution"
+          label="Next wedding"
+          value={nextWedding ? nextWedding.daysUntil : "—"}
+          sub={
+            nextWedding
+              ? `${nextWedding.title} · ${formatWeddingDate(nextWedding.weddingDate)}`
+              : "No upcoming dates"
+          }
           icon={CalendarClock}
-          iconTheme="success"
+          iconTheme="accent"
         />
       </div>
 
       {clients.length === 0 ? (
         <EmptyState
-          title="No clients in your pipeline"
-          description="Create a client event to start tracking lifecycle stages."
+          title="No clients yet"
+          description="Create a wedding event to start tracking lifecycle and planning progress."
           action={
-            <GlassButton href="/planner/events" variant="primary">
+            <GlassButton type="button" variant="primary" onClick={openCreateEventModal}>
               Create first event
             </GlassButton>
           }
           className={cn(rf.panel, "border-0 shadow-none")}
         />
       ) : (
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
-          {STAGES.map((stage) => {
-            const stageItems = clients.filter((client) => client.stage === stage);
-            return (
-              <section
-                key={stage}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  const cardId = e.dataTransfer.getData("text/plain");
-                  if (cardId) void moveCard(cardId, stage);
-                  setDraggingId(null);
-                }}
-                className={cn(
-                  rf.panel,
-                  "border-t-4 p-4 sm:p-5",
-                  STAGE_ACCENT[stage]
-                )}
-              >
-                <div className="mb-4 flex items-center justify-between gap-2">
-                  <p className={vg.label}>{stage}</p>
-                  <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold tabular-nums text-primary">
-                    {stageItems.length}
-                  </span>
-                </div>
-
-                <div className="min-h-[120px] space-y-3">
-                  {stageItems.length === 0 && (
-                    <div
-                      className={cn(
-                        "rounded-xl border border-dashed border-white/60 bg-white/25 px-3 py-8 text-center",
-                        vg.caption
-                      )}
-                    >
-                      Drop client here
+        <div className="-mx-1 overflow-x-auto pb-2">
+          <div className="flex min-w-min gap-3 px-1">
+            {PIPELINE_STAGES.map((stage) => {
+              const stageItems = clients.filter((client) => client.stage === stage);
+              return (
+                <section
+                  key={stage}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    const cardId = e.dataTransfer.getData("text/plain");
+                    if (cardId) void moveCard(cardId, stage);
+                    setDraggingId(null);
+                  }}
+                  className="flex w-[272px] shrink-0 flex-col rounded-lg bg-[#F4F5F7] p-2"
+                >
+                  <header className="flex items-start justify-between gap-2 px-1.5 py-2">
+                    <div className="min-w-0">
+                      <h2 className="text-xs font-semibold uppercase tracking-wide text-[#5E6C84]">
+                        {stage}
+                        <span className="ml-1 font-normal text-[#97A0AF]">({stageItems.length})</span>
+                      </h2>
+                      <p className="mt-0.5 line-clamp-2 text-[10px] leading-snug text-[#97A0AF]">
+                        {STAGE_HINTS[stage]}
+                      </p>
                     </div>
-                  )}
-                  {stageItems.map((client) => (
-                    <article
-                      key={client.id}
-                      draggable={savingId !== client.id}
-                      onDragStart={(e) => {
-                        e.dataTransfer.setData("text/plain", client.id);
-                        setDraggingId(client.id);
-                      }}
-                      onDragEnd={() => setDraggingId(null)}
-                      className={cn(
-                        "cursor-grab rounded-xl border border-white/55 bg-white/40 p-4 backdrop-blur-sm",
-                        "transition-all duration-200 active:cursor-grabbing",
-                        "hover:border-[hsl(42_48%_52%/0.28)] hover:bg-white/55 hover:shadow-[0_4px_20px_hsl(345_100%_25%/0.08)]",
-                        (draggingId === client.id || savingId === client.id) && "opacity-60"
-                      )}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className={cn("truncate font-medium", vg.body)}>{client.title}</p>
-                          <p className={cn("truncate", vg.caption)}>{client.couple}</p>
-                        </div>
-                        <GripVertical
-                          size={14}
-                          className="mt-0.5 shrink-0 text-muted-foreground"
-                          aria-hidden
-                        />
+                  </header>
+
+                  <div className="flex min-h-[80px] flex-1 flex-col gap-2 rounded-md p-0.5">
+                    {stageItems.length === 0 && (
+                      <div className="rounded border border-dashed border-[#C1C7D0] bg-[#FAFBFC]/60 px-3 py-8 text-center text-[11px] text-[#97A0AF]">
+                        Drop issues here
                       </div>
-                      <p className={cn("mt-2 truncate", vg.caption)}>{client.email}</p>
-                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/50 ring-1 ring-white/60">
-                        <div
-                          className="h-full rounded-full bg-primary transition-all duration-300"
-                          style={{ width: `${Math.max(client.completion, 8)}%` }}
-                          role="progressbar"
-                          aria-valuenow={client.completion}
-                          aria-valuemin={0}
-                          aria-valuemax={100}
-                        />
-                      </div>
-                      <div className="mt-3 flex items-center justify-between">
-                        <span
-                          className={cn(
-                            "rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-                            PRIORITY_PILL[client.priority]
-                          )}
-                        >
-                          {client.priority}
-                        </span>
-                        <span className={cn("font-medium tabular-nums", vg.caption)}>
-                          {client.completion}%
-                        </span>
-                      </div>
-                      <div className={cn("mt-3 flex items-center justify-between", vg.caption)}>
-                        <span>
-                          {new Date(client.weddingDate).toLocaleDateString(undefined, {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
-                        </span>
-                        <GlassButton href={`/events/${client.id}`} variant="ghost" className="gap-0.5 px-2 py-1">
-                          Open
-                          <ArrowRight size={12} aria-hidden />
-                        </GlassButton>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </section>
-            );
-          })}
+                    )}
+                    {stageItems.map((client) => (
+                      <ClientKanbanCard
+                        key={client.id}
+                        client={client}
+                        dragging={draggingId === client.id}
+                        saving={savingId === client.id}
+                        onDragStart={(id) => setDraggingId(id)}
+                        onDragEnd={() => setDraggingId(null)}
+                      />
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

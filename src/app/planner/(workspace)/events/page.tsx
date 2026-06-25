@@ -2,13 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ArrowRight,
-  CalendarDays,
+  AlertTriangle,
+  CalendarClock,
   CalendarPlus,
-  CircleDollarSign,
   Filter,
-  PiggyBank,
-  TrendingUp,
   Users,
 } from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
@@ -16,17 +13,18 @@ import {
   usePlannerCreateEventModal,
   usePlannerEventCreated,
 } from "@/modules/planner/subscription/PlannerCreateEventProvider";
+import { getPlannerEvents } from "@/shared/lib/api/planner";
+import { getTasksForEvent } from "@/shared/lib/api/tasks";
+import { getVendorShortlist } from "@/shared/lib/api/vendorShortlist";
+import { PlannerEventCard } from "@/modules/planner/events/PlannerEventCard";
 import {
-  EventLifecycleStage,
-  getPlannerEvents,
-  PlannerEventListItem,
-} from "@/shared/lib/api/planner";
-import { ErrorBanner, StatusBadge, formatLKR } from "@/modules/planner/components/ui";
-import {
-  budgetUsageBarWidth,
-  budgetUsagePercent,
-  formatPercentDisplay,
-} from "@/shared/lib/format";
+  countPortfolioAttention,
+  mapEventToPortfolioItem,
+  sortPortfolioByWeddingDate,
+  type PlannerEventPortfolioItem,
+} from "@/modules/planner/events/plannerEventHelpers";
+import { formatWeddingDate } from "@/modules/planner/dashboard/plannerDashboardHelpers";
+import { ErrorBanner } from "@/modules/planner/components/ui";
 import { EmptyState, PageLoadingSkeleton } from "@/shared/components/ui";
 import {
   GlassButton,
@@ -47,28 +45,10 @@ const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
   { value: "Archived", label: "Archived" },
 ];
 
-const LIFECYCLE_PILL: Record<EventLifecycleStage, string> = {
-  Lead: "bg-muted/60 text-muted-foreground ring-1 ring-white/60",
-  Onboarding: "bg-warning/10 text-warning ring-1 ring-warning/15",
-  Planning: "bg-accent/10 text-accent ring-1 ring-accent/15",
-  Execution: "bg-primary/10 text-primary ring-1 ring-primary/15",
-  Archived: "bg-white/50 text-muted-foreground ring-1 ring-white/60",
-};
-
-function daysUntilWedding(eventDate: string): number {
-  return Math.ceil(
-    (new Date(eventDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-  );
-}
-
-function budgetUtilization(spent: number, total: number): number {
-  return budgetUsagePercent(spent, total);
-}
-
 export default function PlannerEventsPage() {
   const { user } = useAuth();
   const { openCreateEventModal } = usePlannerCreateEventModal();
-  const [events, setEvents] = useState<PlannerEventListItem[]>([]);
+  const [portfolio, setPortfolio] = useState<PlannerEventPortfolioItem[]>([]);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -78,15 +58,30 @@ export default function PlannerEventsPage() {
     try {
       setLoading(true);
       const token = await user.getIdToken();
-      const data = await getPlannerEvents(token, statusFilter === "all" ? undefined : statusFilter);
-      setEvents(data);
+      const events = await getPlannerEvents(token);
+
+      const items = await Promise.all(
+        events.map(async (event) => {
+          try {
+            const [tasks, shortlist] = await Promise.all([
+              getTasksForEvent(token, event.eventId),
+              getVendorShortlist(token, event.eventId),
+            ]);
+            return mapEventToPortfolioItem(event, tasks, shortlist);
+          } catch {
+            return mapEventToPortfolioItem(event, [], []);
+          }
+        })
+      );
+
+      setPortfolio(sortPortfolioByWeddingDate(items));
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load events.");
     } finally {
       setLoading(false);
     }
-  }, [user, statusFilter]);
+  }, [user]);
 
   useEffect(() => {
     void fetchEvents();
@@ -94,31 +89,40 @@ export default function PlannerEventsPage() {
 
   usePlannerEventCreated(fetchEvents);
 
-  const totals = useMemo(
-    () =>
-      events.reduce(
-        (acc, item) => {
-          acc.totalBudget += item.totalBudget;
-          acc.totalSpent += item.spentBudget;
-          if (item.status === "Active") acc.active += 1;
-          return acc;
-        },
-        { totalBudget: 0, totalSpent: 0, active: 0 }
-      ),
-    [events]
+  const filteredPortfolio = useMemo(() => {
+    if (statusFilter === "all") return portfolio;
+    return portfolio.filter((item) => item.event.status === statusFilter);
+  }, [portfolio, statusFilter]);
+
+  const activeCount = useMemo(
+    () => portfolio.filter((item) => item.event.status === "Active").length,
+    [portfolio]
   );
 
-  const portfolioUtilization = budgetUtilization(totals.totalSpent, totals.totalBudget);
+  const attentionCount = useMemo(() => countPortfolioAttention(portfolio), [portfolio]);
 
-  if (loading && events.length === 0) {
+  const nextWedding = useMemo(() => {
+    const now = Date.now() - 24 * 60 * 60 * 1000;
+    return (
+      portfolio.find(
+        (item) =>
+          item.event.status === "Active" &&
+          new Date(item.event.eventDate).getTime() >= now
+      ) ?? null
+    );
+  }, [portfolio]);
+
+  const filterLabel = STATUS_FILTERS.find((f) => f.value === statusFilter)?.label ?? statusFilter;
+
+  if (loading && portfolio.length === 0) {
     return <PageLoadingSkeleton />;
   }
 
   return (
     <div className="space-y-6 pb-4 md:space-y-8">
       <GlassPageHeader
-        title="Wedding events"
-        description="Create client weddings, track budgets and bookings, and open each event hub for day-to-day planning."
+        title="Events"
+        description="Your wedding portfolio — open an event for details, or jump to timeline and procurement."
         badge="Portfolio"
         action={
           <GlassButton type="button" variant="primary" className="gap-1.5" onClick={openCreateEventModal}>
@@ -130,40 +134,41 @@ export default function PlannerEventsPage() {
 
       {error && <ErrorBanner message={error} />}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-3">
         <GlassStatCard
-          label="Events shown"
-          value={events.length}
-          sub={totals.active > 0 ? `${totals.active} active` : "In current filter"}
+          label="Active weddings"
+          value={activeCount}
+          sub={`${portfolio.length} total in portfolio`}
           icon={Users}
           iconTheme="primary"
         />
         <GlassStatCard
-          label="Portfolio budget"
-          value={formatLKR(totals.totalBudget)}
-          sub="Total allocated"
-          icon={PiggyBank}
+          label="Needs attention"
+          value={attentionCount}
+          sub={attentionCount > 0 ? "Setup, tasks, or bookings" : "All events on track"}
+          icon={AlertTriangle}
+          iconTheme={attentionCount > 0 ? "warning" : "success"}
+        />
+        <GlassStatCard
+          label="Next wedding"
+          value={nextWedding ? nextWedding.daysUntil : "—"}
+          sub={
+            nextWedding
+              ? `${nextWedding.event.eventName} · ${formatWeddingDate(nextWedding.event.eventDate)}`
+              : "No upcoming dates"
+          }
+          icon={CalendarClock}
           iconTheme="accent"
-        />
-        <GlassStatCard
-          label="Total spent"
-          value={formatLKR(totals.totalSpent)}
-          sub="Across shown events"
-          icon={CircleDollarSign}
-          iconTheme="warning"
-        />
-        <GlassStatCard
-          label="Budget utilization"
-          value={formatPercentDisplay(portfolioUtilization)}
-          sub="Spent vs planned"
-          icon={TrendingUp}
-          iconTheme="success"
         />
       </div>
 
       <GlassSectionCard
         title="Wedding portfolio"
-        subtitle="Filter by operational status · open any event for tasks, budget, and team"
+        subtitle={
+          statusFilter === "all"
+            ? "Sorted by wedding date · all statuses"
+            : `Showing ${filteredPortfolio.length} ${filterLabel.toLowerCase()} · ${portfolio.length} total in portfolio`
+        }
         action={
           <div className="flex flex-wrap items-center gap-1.5">
             <Filter size={14} className="shrink-0 text-muted-foreground" aria-hidden />
@@ -188,13 +193,13 @@ export default function PlannerEventsPage() {
       >
         {loading ? (
           <p className={cn("py-8 text-center", vg.subtitle)}>Refreshing events…</p>
-        ) : events.length === 0 ? (
+        ) : filteredPortfolio.length === 0 ? (
           <EmptyState
             title="No weddings in this view"
             description={
               statusFilter === "all"
-                ? "Create your first client event to start managing budgets and bookings."
-                : `No events with status “${statusFilter}”. Try another filter or create a new event.`
+                ? "Create your first client event to start planning on the timeline."
+                : `No events with status “${filterLabel}”. You have ${portfolio.length} wedding${portfolio.length === 1 ? "" : "s"} in your portfolio — try All or Active.`
             }
             action={
               <GlassButton type="button" variant="primary" className="gap-1.5" onClick={openCreateEventModal}>
@@ -205,126 +210,12 @@ export default function PlannerEventsPage() {
             className="border-0 bg-transparent shadow-none"
           />
         ) : (
-          <ul className="space-y-4" role="list">
-            {events.map((event) => {
-              const stage = (event.eventLifecycleStage ?? "Planning") as EventLifecycleStage;
-              const utilization = budgetUtilization(event.spentBudget, event.totalBudget);
-              const days = daysUntilWedding(event.eventDate);
-
-              return (
-                <li key={event.plannerClientEventId}>
-                  <article
-                    className={cn(
-                      "rounded-xl border border-white/55 bg-white/40 p-5 backdrop-blur-sm sm:p-6",
-                      "transition-all duration-200 hover:border-[hsl(42_48%_52%/0.28)] hover:bg-white/55 hover:shadow-[0_4px_20px_hsl(345_100%_25%/0.08)]"
-                    )}
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      <div className="flex min-w-0 gap-4">
-                        <div
-                          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 font-glass-body text-lg font-bold text-primary"
-                          aria-hidden
-                        >
-                          {event.eventName.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="min-w-0">
-                          <h3 className={cn("truncate font-medium", vg.body)}>{event.eventName}</h3>
-                          <p className={cn("mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5", vg.subtitle)}>
-                            <span className="inline-flex items-center gap-1">
-                              <CalendarDays size={14} aria-hidden />
-                              {new Date(event.eventDate).toLocaleDateString(undefined, {
-                                month: "long",
-                                day: "numeric",
-                                year: "numeric",
-                              })}
-                            </span>
-                            <span aria-hidden>·</span>
-                            <span className="truncate">{event.clientEmail || "No client email"}</span>
-                          </p>
-                          <p className={cn("mt-1 font-medium", vg.caption)}>
-                            {days > 0
-                              ? `${days} days until wedding`
-                              : days === 0
-                                ? "Wedding day"
-                                : `${Math.abs(days)} days ago`}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <StatusBadge status={event.status} />
-                        <span
-                          className={cn(
-                            "rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-                            LIFECYCLE_PILL[stage]
-                          )}
-                        >
-                          {stage}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 space-y-1.5">
-                      <div className="flex justify-between text-xs">
-                        <span className={vg.caption}>Budget spent</span>
-                        <span className="font-semibold tabular-nums text-foreground">
-                          {formatLKR(event.spentBudget)}
-                          <span className={cn("font-normal", vg.caption)}>
-                            {" "}
-                            / {formatLKR(event.totalBudget)} ({formatPercentDisplay(utilization)})
-                          </span>
-                        </span>
-                      </div>
-                      <div className="h-2 overflow-hidden rounded-full bg-white/50 ring-1 ring-white/60">
-                        <div
-                          className={cn(
-                            "h-full rounded-full transition-all duration-300",
-                            utilization >= 90
-                              ? "bg-destructive"
-                              : utilization >= 70
-                                ? "bg-warning"
-                                : "bg-primary"
-                          )}
-                          style={{ width: `${budgetUsageBarWidth(event.spentBudget, event.totalBudget)}%` }}
-                          role="progressbar"
-                          aria-valuenow={utilization}
-                          aria-valuemin={0}
-                          aria-valuemax={100}
-                          aria-label={`${formatPercentDisplay(utilization)} of budget spent`}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-medium", vg.caption, "bg-white/50 ring-1 ring-white/60")}>
-                        Pending {event.requestedBookings}
-                      </span>
-                      <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary ring-1 ring-primary/15">
-                        Confirmed {event.confirmedBookings}
-                      </span>
-                      <span className="rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-medium text-accent ring-1 ring-accent/15">
-                        Completed {event.completedBookings}
-                      </span>
-                    </div>
-
-                    <div className="mt-4 flex flex-wrap gap-2 border-t border-white/40 pt-4">
-                      <GlassButton href={`/events/${event.eventId}`} variant="primary" className="gap-1">
-                        Open event
-                        <ArrowRight size={14} aria-hidden />
-                      </GlassButton>
-                      <GlassButton href={`/events/${event.eventId}/budget`} variant="ghost">
-                        Budget
-                      </GlassButton>
-                      <GlassButton href={`/events/${event.eventId}/team`} variant="ghost">
-                        Team
-                      </GlassButton>
-                      <GlassButton href="/planner/tasks" variant="ghost">
-                        Timeline
-                      </GlassButton>
-                    </div>
-                  </article>
-                </li>
-              );
-            })}
+          <ul className="space-y-3" role="list">
+            {filteredPortfolio.map((item) => (
+              <li key={item.event.plannerClientEventId}>
+                <PlannerEventCard item={item} />
+              </li>
+            ))}
           </ul>
         )}
       </GlassSectionCard>

@@ -42,7 +42,6 @@ export function ChecklistPlanWizard({
   taskPlanPhase,
   isPlannerPro = false,
   onApplied,
-  embedded = true,
 }: ChecklistPlanWizardProps) {
   const { user } = useAuth();
   const [preview, setPreview] = useState<ChecklistPlanPreview | null>(null);

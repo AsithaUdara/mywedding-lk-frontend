@@ -8,15 +8,23 @@ type RegalFrostShellProps = {
   className?: string;
   /** Show ambient mesh gradient orbs (workspace-style pages) */
   mesh?: boolean;
+  /** Marketing / public-site shell styling */
+  marketing?: boolean;
 };
 
 /** Root wrapper for Regal Frost porcelain canvas + glass typography */
-export function RegalFrostShell({ children, className, mesh = false }: RegalFrostShellProps) {
+export function RegalFrostShell({
+  children,
+  className,
+  mesh = false,
+  marketing = false,
+}: RegalFrostShellProps) {
   return (
     <div
       className={cn(
         "regal-frost-shell font-glass-body text-foreground",
         mesh && "vgo-flex-shell relative flex min-h-screen w-full flex-col",
+        marketing && "marketing-page",
         glassFontVariables,
         className
       )}
