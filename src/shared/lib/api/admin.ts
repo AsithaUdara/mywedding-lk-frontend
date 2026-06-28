@@ -29,6 +29,30 @@ export interface AdminVendor {
   subscriptionTier: string;
 }
 
+export interface AdminVendorSummary {
+  total: number;
+  verified: number;
+  pending: number;
+  rejected: number;
+  liveListings: number;
+  categories: number;
+}
+
+export interface PagedResult<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}
+
+export type AdminVendorDirectoryParams = {
+  page?: number;
+  pageSize?: number;
+  status?: AdminVendorStatusFilter | "All";
+  search?: string;
+};
+
 export interface PlatformStats {
   totalUsers: number;
   totalVendors: number;
@@ -137,14 +161,71 @@ function mapAdminVendor(raw: Record<string, unknown>): AdminVendor {
   };
 }
 
+export async function getAdminVendorSummary(token: string): Promise<AdminVendorSummary> {
+  const res = await adminFetch(token, "/api/admin/vendors/summary");
+  const data = await res.json();
+  return {
+    total: Number(data.total ?? data.Total ?? 0),
+    verified: Number(data.verified ?? data.Verified ?? 0),
+    pending: Number(data.pending ?? data.Pending ?? 0),
+    rejected: Number(data.rejected ?? data.Rejected ?? 0),
+    liveListings: Number(data.liveListings ?? data.LiveListings ?? 0),
+    categories: Number(data.categories ?? data.Categories ?? 0),
+  };
+}
+
+function mapPagedResult<T>(
+  data: Record<string, unknown>,
+  mapItem: (row: Record<string, unknown>) => T
+): PagedResult<T> {
+  const rawItems = data.items ?? data.Items;
+  const items = Array.isArray(rawItems)
+    ? rawItems.map((row) => mapItem(row as Record<string, unknown>))
+    : [];
+
+  const page = Number(data.page ?? data.Page ?? 1);
+  const pageSize = Number(data.pageSize ?? data.PageSize ?? 10);
+  const totalCount = Number(data.totalCount ?? data.TotalCount ?? 0);
+  const totalPagesRaw = Number(data.totalPages ?? data.TotalPages ?? 0);
+
+  return {
+    items,
+    page,
+    pageSize,
+    totalCount,
+    totalPages: totalPagesRaw > 0 ? totalPagesRaw : pageSize > 0 ? Math.ceil(totalCount / pageSize) : 0,
+  };
+}
+
+export async function getAdminVendorsPage(
+  token: string,
+  params: AdminVendorDirectoryParams = {}
+): Promise<PagedResult<AdminVendor>> {
+  const search = new URLSearchParams();
+  const page = params.page ?? 1;
+  const pageSize = params.pageSize ?? 10;
+  search.set("page", String(page));
+  search.set("pageSize", String(pageSize));
+
+  if (params.status && params.status !== "All") {
+    search.set("status", params.status);
+  }
+  if (params.search?.trim()) {
+    search.set("search", params.search.trim());
+  }
+
+  const res = await adminFetch(token, `/api/admin/vendors?${search.toString()}`);
+  const data = await res.json();
+  return mapPagedResult(data as Record<string, unknown>, mapAdminVendor);
+}
+
+/** @deprecated Use getAdminVendorsPage for paginated directory views. */
 export async function getAdminVendors(
   token: string,
   status?: AdminVendorStatusFilter
 ): Promise<AdminVendor[]> {
-  const qs = status ? `?status=${encodeURIComponent(status)}` : "";
-  const res = await adminFetch(token, `/api/admin/vendors${qs}`);
-  const data = await res.json();
-  return (Array.isArray(data) ? data : []).map((row) => mapAdminVendor(row as Record<string, unknown>));
+  const result = await getAdminVendorsPage(token, { status, page: 1, pageSize: 50 });
+  return result.items;
 }
 
 export async function verifyVendor(token: string, vendorId: string): Promise<void> {
