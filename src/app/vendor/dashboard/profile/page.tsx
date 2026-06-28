@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   BadgeCheck,
@@ -16,10 +16,9 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
 import {
-  getVendorBusinessProfile,
   updateVendorBusinessProfile,
-  VendorBusinessProfile,
 } from "@/shared/lib/api/vendors";
+import { useVendorBusinessProfileQuery } from "@/shared/hooks/query/useVendorQueries";
 import { SRI_LANKA_CITIES, SRI_LANKA_PROVINCES } from "@/modules/vendor/signup/constants";
 import {
   EmptyState,
@@ -76,7 +75,13 @@ function VerificationBadge({ verified }: { verified: boolean }) {
 
 export default function VendorProfilePage() {
   const { user } = useAuth();
-  const [profile, setProfile] = useState<VendorBusinessProfile | null>(null);
+  const {
+    data: profile = null,
+    isLoading: loading,
+    isFetching,
+    error: queryError,
+    refetch,
+  } = useVendorBusinessProfileQuery();
   const [form, setForm] = useState({
     businessName: "",
     businessDescription: "",
@@ -85,52 +90,34 @@ export default function VendorProfilePage() {
     city: "",
     province: "",
   });
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    if (!user) return;
-    try {
-      setError(null);
-      const token = await user.getIdToken();
-      const data = await getVendorBusinessProfile(token);
-      setProfile(data);
-      setForm({
-        businessName: data.businessName ?? "",
-        businessDescription: data.businessDescription ?? "",
-        websiteUrl: data.websiteUrl ?? "",
-        contactPhone: data.contactPhone ?? "",
-        city: data.city ?? "",
-        province: data.province ?? "",
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load business profile.");
-      setProfile(null);
-    }
-  }, [user]);
+  useEffect(() => {
+    if (!profile) return;
+    setForm({
+      businessName: profile.businessName ?? "",
+      businessDescription: profile.businessDescription ?? "",
+      websiteUrl: profile.websiteUrl ?? "",
+      contactPhone: profile.contactPhone ?? "",
+      city: profile.city ?? "",
+      province: profile.province ?? "",
+    });
+  }, [profile]);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        setLoading(true);
-        await load();
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [load]);
+    if (queryError) setError(queryError.message);
+  }, [queryError]);
+
+  const refreshing = isFetching && !loading;
+
+  const load = async () => {
+    await refetch();
+  };
 
   const handleRefresh = async () => {
-    setRefreshing(true);
     await load();
-    setRefreshing(false);
   };
 
   const handleSave = async (e: React.FormEvent) => {

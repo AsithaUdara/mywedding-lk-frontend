@@ -5,11 +5,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { BadgeCheck, Building2, FolderKanban } from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
 import {
-  getPlannerDashboard,
-  PlannerDashboardResponse,
   updatePlannerAgencyLogo,
   updatePlannerProfile,
 } from "@/shared/lib/api/planner";
+import { usePlannerDashboardQuery } from "@/shared/hooks/query/usePlannerQueries";
+import { usePlannerQueryInvalidation } from "@/shared/hooks/query/useQueryInvalidation";
 import { uploadAgencyLogo } from "@/shared/lib/plannerMedia";
 import { usePlannerBranding } from "@/modules/planner/branding/PlannerBrandingProvider";
 import { PlannerAgencyLogoSection } from "@/modules/planner/settings/PlannerAgencyLogoSection";
@@ -41,8 +41,13 @@ export default function PlannerSettingsPage() {
   const searchParams = useSearchParams();
   const tabFromUrl = parseSettingsTab(searchParams.get("tab"));
   const { refresh: refreshBranding } = usePlannerBranding();
+  const { invalidatePlannerAll } = usePlannerQueryInvalidation();
+  const {
+    data: profile = null,
+    isLoading: loading,
+    error: queryError,
+  } = usePlannerDashboardQuery();
 
-  const [profile, setProfile] = useState<PlannerDashboardResponse | null>(null);
   const [tab, setTab] = useState<SettingsTab>(tabFromUrl);
   const [form, setForm] = useState<PlannerProfileFormState>({
     businessName: "",
@@ -50,11 +55,26 @@ export default function PlannerSettingsPage() {
     contactPhone: "",
     city: "",
   });
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (profile) {
+      setForm(profileToForm(profile));
+    }
+  }, [profile]);
+
+  useEffect(() => {
+    if (queryError) {
+      setError(queryError.message);
+    }
+  }, [queryError]);
+
+  useEffect(() => {
+    setTab(tabFromUrl);
+  }, [tabFromUrl]);
 
   const syncUrl = useCallback(
     (nextTab: SettingsTab) => {
@@ -65,30 +85,6 @@ export default function PlannerSettingsPage() {
     },
     [router]
   );
-
-  const loadProfile = useCallback(async () => {
-    if (!user) return;
-    try {
-      setLoading(true);
-      const token = await user.getIdToken();
-      const data = await getPlannerDashboard(token);
-      setProfile(data);
-      setForm(profileToForm(data));
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load planner profile.");
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    void loadProfile();
-  }, [loadProfile]);
-
-  useEffect(() => {
-    setTab(tabFromUrl);
-  }, [tabFromUrl]);
 
   const stats = useMemo(() => computeSettingsStats(profile), [profile]);
   const isPro = stats.isPro;
@@ -108,7 +104,8 @@ export default function PlannerSettingsPage() {
       const token = await user.getIdToken();
       await updatePlannerProfile(token, form);
       setMessage("Profile saved.");
-      await loadProfile();
+      await invalidatePlannerAll();
+      await refreshBranding();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save profile.");
     } finally {
@@ -136,7 +133,7 @@ export default function PlannerSettingsPage() {
       const url = await uploadAgencyLogo(file, profile.plannerId);
       await updatePlannerAgencyLogo(token, url);
       setMessage("Agency logo updated.");
-      await Promise.all([loadProfile(), refreshBranding()]);
+      await Promise.all([invalidatePlannerAll(), refreshBranding()]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to upload agency logo.");
     } finally {

@@ -1,11 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
-import { useAuth } from "@/shared/context/AuthContext";
-import { getBudgetOverview, getExpenses, type BudgetOverview, type Expense } from "@/shared/lib/api/budget";
+import React, { useState } from "react";
 import { useEventPermission } from "@/shared/hooks/useEventPermission";
 import { ViewerReadOnlyNotice } from "@/shared/components/ui/ViewerReadOnlyNotice";
-import { useRealTime } from "@/shared/context/RealTimeContext";
 import { PlusCircle } from "lucide-react";
 import BudgetOverviewDisplay from "./BudgetOverviewDisplay";
 import ExpenseList from "./ExpenseList";
@@ -14,44 +11,34 @@ import { GlassButton } from "@/modules/vendor/dashboard/glass-ui";
 import { rf } from "@/modules/design-system/regal-frost/tokens";
 import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
 import { cn } from "@/shared/lib/cn";
+import {
+  useEventBudgetOverviewQuery,
+  useEventExpensesQuery,
+} from "@/shared/hooks/query/useEventQueries";
 
 interface BudgetSectionProps {
   eventId: string;
 }
 
 const BudgetSection = ({ eventId }: BudgetSectionProps) => {
-  const { user } = useAuth();
-  const { budgetVersion } = useRealTime();
-  const [overview, setOverview] = useState<BudgetOverview | null>(null);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    data: overview = null,
+    isLoading: overviewLoading,
+    refetch: refetchOverview,
+  } = useEventBudgetOverviewQuery(eventId);
+  const {
+    data: expenses = [],
+    isLoading: expensesLoading,
+    refetch: refetchExpenses,
+  } = useEventExpensesQuery(eventId);
+  const isLoading = overviewLoading || expensesLoading;
   const { isViewer } = useEventPermission(eventId);
   const [isModalOpen, setModalOpen] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    if (!user) return;
-    try {
-      setIsLoading(true);
-      const token = await user.getIdToken();
-      const [overviewData, expensesData] = await Promise.all([
-        getBudgetOverview(token, eventId),
-        getExpenses(token, eventId),
-      ]);
-      setOverview(overviewData);
-      setExpenses(expensesData);
-    } catch (error) {
-      console.error("Failed to fetch budget data:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user, eventId]);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData, budgetVersion]);
-
   const handleExpenseAdded = () => {
     setModalOpen(false);
+    void refetchOverview();
+    void refetchExpenses();
   };
 
   return (

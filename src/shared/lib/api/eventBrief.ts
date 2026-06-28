@@ -1,4 +1,4 @@
-import { parseApiError } from "@/shared/lib/api/parseApiError";
+import { apiRequestJson } from "@/shared/lib/api/apiRequest";
 import type { TaskPlanPhase } from "@/shared/lib/api/planner";
 
 export interface EventBrief {
@@ -87,15 +87,13 @@ export const WEDDING_STYLE_OPTIONS = [
 ] as const;
 
 export async function getEventBrief(token: string, eventId: string): Promise<EventBrief> {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/events/${eventId}/brief`,
-    { headers: { Authorization: `Bearer ${token}` } }
+  const data = await apiRequestJson<Record<string, unknown>>(
+    token,
+    `/api/events/${eventId}/brief`,
+    { method: "GET" },
+    { fallbackError: "Failed to load event brief." }
   );
-  if (!response.ok) {
-    throw new Error(await parseApiError(response, "Failed to load event brief."));
-  }
-  const data = await response.json();
-  return mapEventBrief(data as Record<string, unknown>);
+  return mapEventBrief(data);
 }
 
 export async function updateEventBrief(
@@ -103,20 +101,14 @@ export async function updateEventBrief(
   eventId: string,
   payload: UpdateEventBriefPayload
 ): Promise<EventBrief> {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/events/${eventId}/brief`,
+  const data = await apiRequestJson<Record<string, unknown>>(
+    token,
+    `/api/events/${eventId}/brief`,
     {
       method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify(payload),
-    }
+    },
+    { fallbackError: "Failed to save event brief." }
   );
-  if (!response.ok) {
-    throw new Error(await parseApiError(response, "Failed to save event brief."));
-  }
-  const data = await response.json();
-  return mapEventBrief(data as Record<string, unknown>);
+  return mapEventBrief(data);
 }

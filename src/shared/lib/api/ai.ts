@@ -1,65 +1,100 @@
-const BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
+import { apiRequestJson } from "@/shared/lib/api/apiRequest";
 
-export async function sendAiChat(token: string, eventId: string, message: string) {
-  const res = await fetch(`${BASE}/api/ai/chat`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ eventId, message }),
-  });
-  if (!res.ok) throw new Error("Failed to get AI response.");
-  return res.json();
+export interface AiChatResponse {
+  reply: string;
 }
 
-export async function getAiVendorRecommendations(token: string, eventId: string, topN = 5) {
-  const res = await fetch(`${BASE}/api/ai/recommend-vendors`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ eventId, topN }),
-  });
-  if (!res.ok) throw new Error("Failed to get recommendations.");
-  return res.json();
+export interface AiVendorRecommendation {
+  vendorId: string;
+  businessName: string;
+  score: number;
+  reason: string;
 }
 
-export async function generateAiItinerary(token: string, eventId: string) {
-  const res = await fetch(`${BASE}/api/ai/itinerary/generate`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ eventId }),
-  });
-  if (!res.ok) throw new Error("Failed to generate itinerary.");
-  return res.json();
+export interface AiItineraryItem {
+  id: string;
+  title: string;
+  description?: string;
+  startsAt: string;
+  endsAt: string;
 }
 
-export async function getAiItinerary(token: string, eventId: string) {
-  const res = await fetch(`${BASE}/api/ai/itinerary/${eventId}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) throw new Error("Failed to load itinerary.");
-  return res.json();
+export interface AiItineraryResponse {
+  itineraryId: string;
+  items: AiItineraryItem[];
+}
+
+export async function sendAiChat(
+  token: string,
+  eventId: string,
+  message: string
+): Promise<AiChatResponse> {
+  return apiRequestJson(
+    token,
+    "/api/ai/chat",
+    {
+      method: "POST",
+      body: JSON.stringify({ eventId, message }),
+    },
+    { fallbackError: "Failed to get AI response." }
+  );
+}
+
+export async function getAiVendorRecommendations(
+  token: string,
+  eventId: string,
+  topN = 5
+): Promise<AiVendorRecommendation[]> {
+  return apiRequestJson(
+    token,
+    "/api/ai/recommend-vendors",
+    {
+      method: "POST",
+      body: JSON.stringify({ eventId, topN }),
+    },
+    { fallbackError: "Failed to get recommendations." }
+  );
+}
+
+export async function generateAiItinerary(
+  token: string,
+  eventId: string
+): Promise<AiItineraryResponse> {
+  return apiRequestJson(
+    token,
+    "/api/ai/itinerary/generate",
+    {
+      method: "POST",
+      body: JSON.stringify({ eventId }),
+    },
+    { fallbackError: "Failed to generate itinerary." }
+  );
+}
+
+export async function getAiItinerary(
+  token: string,
+  eventId: string
+): Promise<AiItineraryResponse> {
+  return apiRequestJson(
+    token,
+    `/api/ai/itinerary/${eventId}`,
+    { method: "GET" },
+    { fallbackError: "Failed to load itinerary." }
+  );
 }
 
 export async function saveAiItinerary(
   token: string,
   itineraryId: string,
   items: Array<{ title: string; description?: string; startsAt: string; endsAt: string }>
-) {
-  const res = await fetch(`${BASE}/api/ai/itinerary/${itineraryId}`, {
-    method: "PUT",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
+): Promise<AiItineraryResponse> {
+  return apiRequestJson(
+    token,
+    `/api/ai/itinerary/${itineraryId}`,
+    {
+      method: "PUT",
+      body: JSON.stringify({ items }),
     },
-    body: JSON.stringify({ items }),
-  });
-  if (!res.ok) throw new Error("Failed to save itinerary.");
-  return res.json();
+    { fallbackError: "Failed to save itinerary." }
+  );
 }

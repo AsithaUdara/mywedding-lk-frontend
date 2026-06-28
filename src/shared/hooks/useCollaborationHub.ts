@@ -1,5 +1,8 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import * as signalR from '@microsoft/signalr';
+import { useQueryClient } from '@tanstack/react-query';
+import { getApiBaseUrl } from '@/shared/lib/api/apiClient';
+import { queryKeys } from '@/shared/lib/query/queryKeys';
 
 export interface CollaborationHubState {
   connection: signalR.HubConnection | null;
@@ -19,6 +22,7 @@ export interface CollaborationHubState {
 }
 
 export const useCollaborationHub = (eventId: string, token: string | null): CollaborationHubState => {
+  const queryClient = useQueryClient();
   const [connection, setConnection] = useState<signalR.HubConnection | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState<object | null>(null);
@@ -39,7 +43,7 @@ export const useCollaborationHub = (eventId: string, token: string | null): Coll
     if (!eventId || !token) return;
     if (connectionRef.current) return;
 
-    const hubUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/hubs/collaboration`;
+    const hubUrl = `${getApiBaseUrl()}/hubs/collaboration`;
 
     const newConnection = new signalR.HubConnectionBuilder()
       .withUrl(hubUrl, { accessTokenFactory: () => token })
@@ -62,7 +66,9 @@ export const useCollaborationHub = (eventId: string, token: string | null): Coll
       });
 
       newConnection.on('ChecklistUpdated', () => {
-        if (isMounted) incrementChecklist();
+        if (!isMounted) return;
+        incrementChecklist();
+        void queryClient.invalidateQueries({ queryKey: queryKeys.events.tasks(eventId) });
       });
 
       newConnection.on('PollsUpdated', () => {
@@ -70,11 +76,15 @@ export const useCollaborationHub = (eventId: string, token: string | null): Coll
       });
 
       newConnection.on('BudgetUpdated', () => {
-        if (isMounted) incrementBudget();
+        if (!isMounted) return;
+        incrementBudget();
+        void queryClient.invalidateQueries({ queryKey: queryKeys.events.budget(eventId) });
       });
 
       newConnection.on('InvitationAccepted', () => {
-        if (isMounted) incrementInvitations();
+        if (!isMounted) return;
+        incrementInvitations();
+        void queryClient.invalidateQueries({ queryKey: queryKeys.events.shortlist(eventId) });
       });
     };
 
@@ -115,7 +125,7 @@ export const useCollaborationHub = (eventId: string, token: string | null): Coll
           setIsConnected(false);
         });
     };
-  }, [eventId, token, incrementChecklist, incrementPolls, incrementBudget, incrementInvitations]);
+  }, [eventId, token, incrementChecklist, incrementPolls, incrementBudget, incrementInvitations, queryClient]);
 
   return {
     connection,

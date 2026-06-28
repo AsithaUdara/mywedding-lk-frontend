@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   Briefcase,
   Eye,
@@ -14,17 +14,19 @@ import {
   Trophy,
   Wallet,
 } from "lucide-react";
-import { useAuth } from "@/shared/context/AuthContext";
 import {
-  getVendorAnalytics,
-  getVendorInquiryTrend,
-  getVendorProfileViews,
-  getVendorWinRate,
   MonthlyCountPoint,
-  VendorAnalytics,
   WeeklyViewPoint,
   WinRateSummary,
 } from "@/shared/lib/api/vendors";
+import {
+  useVendorAnalyticsQuery,
+  useVendorInquiryTrendQuery,
+  useVendorProfileViewsQuery,
+  useVendorWinRateQuery,
+} from "@/shared/hooks/query/useVendorQueries";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/shared/lib/query/queryKeys";
 import {
   EmptyState,
   ErrorBanner,
@@ -160,55 +162,41 @@ function MonthlyEarningsChart({
 }
 
 export function AnalyticsDashboard({ compact = false, fullPage = false }: AnalyticsDashboardProps) {
-  const { user } = useAuth();
-  const [profileViews, setProfileViews] = useState<WeeklyViewPoint[]>([]);
-  const [inquiryTrend, setInquiryTrend] = useState<MonthlyCountPoint[]>([]);
-  const [winRate, setWinRate] = useState<WinRateSummary>({ won: 0, pending: 0, lost: 0 });
-  const [summary, setSummary] = useState<VendorAnalytics | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const {
+    data: profileViews = [],
+    isLoading: viewsLoading,
+    isFetching: viewsFetching,
+    error: viewsError,
+  } = useVendorProfileViewsQuery(6);
+  const {
+    data: inquiryTrend = [],
+    isLoading: trendLoading,
+    isFetching: trendFetching,
+    error: trendError,
+  } = useVendorInquiryTrendQuery(6);
+  const {
+    data: winRate = { won: 0, pending: 0, lost: 0 },
+    isLoading: winLoading,
+    isFetching: winFetching,
+    error: winError,
+  } = useVendorWinRateQuery();
+  const {
+    data: summary = null,
+    isLoading: summaryLoading,
+    isFetching: summaryFetching,
+    error: summaryError,
+  } = useVendorAnalyticsQuery(fullPage);
 
-  const load = useCallback(async () => {
-    if (!user) return;
-    try {
-      setError(null);
-      const token = await user.getIdToken();
-      const [views, inquiries, win, dashboard] = await Promise.all([
-        getVendorProfileViews(token, 6),
-        getVendorInquiryTrend(token, 6),
-        getVendorWinRate(token),
-        fullPage ? getVendorAnalytics(token) : Promise.resolve(null),
-      ]);
-      setProfileViews(views);
-      setInquiryTrend(inquiries);
-      setWinRate(win);
-      setSummary(dashboard);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load analytics.");
-    }
-  }, [user, fullPage]);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (!user) return;
-      try {
-        setLoading(true);
-        await load();
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [load, user]);
+  const loading = viewsLoading || trendLoading || winLoading || (fullPage && summaryLoading);
+  const refreshing = viewsFetching || trendFetching || winFetching || (fullPage && summaryFetching);
+  const error = useMemo(() => {
+    const err = viewsError ?? trendError ?? winError ?? (fullPage ? summaryError : null);
+    return err?.message ?? null;
+  }, [viewsError, trendError, winError, summaryError, fullPage]);
 
   const handleRefresh = async () => {
-    setRefreshing(true);
-    await load();
-    setRefreshing(false);
+    await queryClient.invalidateQueries({ queryKey: queryKeys.vendor.all });
   };
 
   const viewsMax = useMemo(() => Math.max(...profileViews.map((d) => d.views), 1), [profileViews]);

@@ -3,8 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Bot, CalendarRange, ClipboardList, Sparkles, Store } from "lucide-react";
-import { useAuth } from "@/shared/context/AuthContext";
-import { getPlannerEvents, PlannerEventListItem } from "@/shared/lib/api/planner";
+import { usePlannerEventsQuery } from "@/shared/hooks/query/usePlannerQueries";
 import { AiToolbar } from "@/modules/planner/ai/AiToolbar";
 import { TaskSuggestionPanel } from "@/modules/planner/ai/TaskSuggestionPanel";
 import { VendorSuggestionPanel } from "@/modules/planner/ai/VendorSuggestionPanel";
@@ -28,18 +27,31 @@ import { rf } from "@/modules/design-system/regal-frost/tokens";
 import { cn } from "@/shared/lib/cn";
 
 export default function PlannerAiPage() {
-  const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const eventIdFromUrl = searchParams.get("eventId");
   const toolFromUrl = parseAiTool(searchParams.get("tool"));
   const { openCreateEventModal } = usePlannerCreateEventModal();
 
-  const [events, setEvents] = useState<PlannerEventListItem[]>([]);
+  const { data: events = [], isLoading: loading, error: queryError } = usePlannerEventsQuery();
   const [tool, setTool] = useState<AiTool>(toolFromUrl);
   const [eventId, setEventId] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  const error = queryError?.message ?? null;
+
+  useEffect(() => {
+    if (events.length === 0) return;
+    const workflowEvents = eventsForAiWorkflow(events);
+    setEventId((prev) => {
+      if (eventIdFromUrl && workflowEvents.some((event) => event.eventId === eventIdFromUrl)) {
+        return eventIdFromUrl;
+      }
+      if (prev && workflowEvents.some((event) => event.eventId === prev)) {
+        return prev;
+      }
+      return workflowEvents[0]?.eventId || "";
+    });
+  }, [events, eventIdFromUrl]);
 
   const syncUrl = useCallback(
     (nextEventId: string, nextTool: AiTool) => {
@@ -51,35 +63,6 @@ export default function PlannerAiPage() {
     },
     [router]
   );
-
-  const load = useCallback(async () => {
-    if (!user) return;
-    try {
-      setLoading(true);
-      const token = await user.getIdToken();
-      const data = await getPlannerEvents(token);
-      setEvents(data);
-      setEventId((prev) => {
-        const workflowEvents = eventsForAiWorkflow(data);
-        if (eventIdFromUrl && workflowEvents.some((event) => event.eventId === eventIdFromUrl)) {
-          return eventIdFromUrl;
-        }
-        if (prev && workflowEvents.some((event) => event.eventId === prev)) {
-          return prev;
-        }
-        return workflowEvents[0]?.eventId || "";
-      });
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load events.");
-    } finally {
-      setLoading(false);
-    }
-  }, [user, eventIdFromUrl]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
 
   useEffect(() => {
     setTool(toolFromUrl);

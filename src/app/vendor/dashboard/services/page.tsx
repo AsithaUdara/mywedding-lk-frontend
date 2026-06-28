@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import {
   Eye,
@@ -16,10 +16,10 @@ import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import { useAuth } from "@/shared/context/AuthContext";
 import {
   deleteVendorDashboardService,
-  getVendorDashboardServices,
   updateVendorDashboardService,
   VendorDashboardService,
 } from "@/shared/lib/api/vendors";
+import { useVendorServicesQuery } from "@/shared/hooks/query/useVendorQueries";
 import {
   IconButton,
   InlineSpinner,
@@ -272,9 +272,13 @@ function ServiceCatalogRow({
 export default function VendorServicesPage() {
   const { user } = useAuth();
   const { canPublishListings } = useVendorVerification();
-  const [services, setServices] = useState<VendorService[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const {
+    data: services = [],
+    isLoading: loading,
+    isFetching,
+    error: queryError,
+    refetch,
+  } = useVendorServicesQuery();
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -282,39 +286,18 @@ export default function VendorServicesPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null);
 
-  const fetchServices = useCallback(async () => {
-    if (!user) return;
-    try {
-      setError(null);
-      const token = await user.getIdToken();
-      const data = await getVendorDashboardServices(token);
-      setServices(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load services.");
-      setServices([]);
-    }
-  }, [user]);
-
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (!user) return;
-      try {
-        setLoading(true);
-        await fetchServices();
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [fetchServices, user]);
+    if (queryError) setError(queryError.message);
+  }, [queryError]);
+
+  const refreshing = isFetching && !loading;
+
+  const fetchServices = async () => {
+    await refetch();
+  };
 
   const handleRefresh = async () => {
-    setRefreshing(true);
     await fetchServices();
-    setRefreshing(false);
   };
 
   const filteredServices = useMemo(() => {
@@ -350,9 +333,7 @@ export default function VendorServicesPage() {
         service.id,
         buildServiceUpdatePayload(service, nextActive)
       );
-      setServices((prev) =>
-        prev.map((s) => (s.id === service.id ? { ...s, isActive: nextActive } : s))
-      );
+      await refetch();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update listing visibility.");
     } finally {
@@ -365,7 +346,7 @@ export default function VendorServicesPage() {
     try {
       const token = await user.getIdToken();
       await deleteVendorDashboardService(token, serviceIdToDelete);
-      setServices((prev) => prev.filter((service) => service.id !== serviceIdToDelete));
+      await refetch();
       setDeleteModalOpen(false);
       setServiceIdToDelete(null);
       setDeleteError(null);

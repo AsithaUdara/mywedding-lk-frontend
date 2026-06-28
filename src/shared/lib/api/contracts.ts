@@ -1,3 +1,7 @@
+import { apiFetch } from "@/shared/lib/api/apiClient";
+import { apiRequestJson, apiUrl } from "@/shared/lib/api/apiRequest";
+import { parseApiError } from "@/shared/lib/api/parseApiError";
+
 export interface BookingContractDetails {
   bookingId: string;
   eventId: string;
@@ -56,30 +60,21 @@ export async function getBookingContract(
   token: string,
   bookingId: string
 ): Promise<BookingContractDetails> {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/bookings/${bookingId}/contract`,
-    {
-      headers: { Authorization: `Bearer ${token}` },
-    }
+  const data = await apiRequestJson<Record<string, unknown>>(
+    token,
+    `/api/bookings/${bookingId}/contract`,
+    { method: "GET" },
+    { fallbackError: "Failed to load contract." }
   );
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || err.detail || "Failed to load contract.");
-  }
-  const data = await res.json();
-  return mapContractDetails(data as Record<string, unknown>);
+  return mapContractDetails(data);
 }
 
 export async function openBookingContractPdf(token: string, bookingId: string): Promise<void> {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/bookings/${bookingId}/contract/file`,
-    {
-      headers: { Authorization: `Bearer ${token}` },
-    }
-  );
+  const res = await apiFetch(token, apiUrl(`/api/bookings/${bookingId}/contract/file`), {
+    method: "GET",
+  });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || err.detail || "Failed to open contract PDF.");
+    throw new Error(await parseApiError(res, "Failed to open contract PDF."));
   }
   const blob = await res.blob();
   const objectUrl = URL.createObjectURL(blob);
@@ -100,17 +95,12 @@ export async function uploadBookingContract(
     formData.append("generateStandardContract", "true");
   }
 
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/bookings/${bookingId}/contract/upload`,
-    {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body: formData,
-    }
-  );
+  const res = await apiFetch(token, apiUrl(`/api/bookings/${bookingId}/contract/upload`), {
+    method: "POST",
+    body: formData,
+  });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || err.detail || "Failed to upload contract.");
+    throw new Error(await parseApiError(res, "Failed to upload contract."));
   }
   const data = await res.json();
   return {
@@ -126,18 +116,12 @@ export async function sendBookingContractToClient(
   token: string,
   bookingId: string
 ): Promise<{ sentToClientAtUtc: string }> {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/bookings/${bookingId}/contract/send`,
-    {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-    }
+  const data = await apiRequestJson<Record<string, unknown>>(
+    token,
+    `/api/bookings/${bookingId}/contract/send`,
+    { method: "POST" },
+    { fallbackError: "Failed to send contract." }
   );
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || err.detail || "Failed to send contract.");
-  }
-  const data = await res.json();
   return {
     sentToClientAtUtc: String(data.sentToClientAtUtc ?? data.SentToClientAtUtc ?? ""),
   };
@@ -161,22 +145,15 @@ export async function signBookingContract(
   bookingId: string,
   payload: SignContractPayload
 ): Promise<SignContractResult> {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/bookings/${bookingId}/contract/sign`,
+  const data = await apiRequestJson<Record<string, unknown>>(
+    token,
+    `/api/bookings/${bookingId}/contract/sign`,
     {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify(payload),
-    }
+    },
+    { fallbackError: "Failed to sign contract." }
   );
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || err.detail || "Failed to sign contract.");
-  }
-  const data = await res.json();
   return {
     bookingId: String(data.bookingId ?? data.BookingId ?? bookingId),
     eventId: String(data.eventId ?? data.EventId ?? ""),

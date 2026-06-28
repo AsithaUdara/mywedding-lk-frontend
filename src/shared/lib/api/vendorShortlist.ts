@@ -1,5 +1,7 @@
+import { apiUrl } from "@/shared/lib/api/apiRequest";
 import { parseApiError } from "@/shared/lib/api/parseApiError";
 import { plannerFetch } from "@/shared/lib/api/plannerHttp";
+import { apiRequest } from "@/shared/lib/api/apiRequest";
 
 export type VendorShortlistItemStatus =
   | "Draft"
@@ -93,18 +95,17 @@ function mapItem(raw: Record<string, unknown>): VendorShortlistItem {
   };
 }
 
-const base = () => process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export async function getVendorShortlist(
   token: string,
   eventId: string
 ): Promise<VendorShortlistItem[]> {
-  const response = await fetch(`${base()}/api/events/${eventId}/vendor-shortlist`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!response.ok) {
-    throw new Error(await parseApiError(response, "Failed to load vendor proposals."));
-  }
+  const response = await apiRequest(
+    token,
+    `/api/events/${eventId}/vendor-shortlist`,
+    { method: "GET" },
+    { fallbackError: "Failed to load vendor proposals." }
+  );
   const data = await response.json();
   return (Array.isArray(data) ? data : []).map((row) =>
     mapItem(row as Record<string, unknown>)
@@ -121,7 +122,7 @@ export async function createVendorShortlist(
 ): Promise<string[]> {
   const response = await plannerFetch(
     token,
-    `${base()}/api/planner/events/${eventId}/vendor-shortlist`,
+    `${apiUrl(`/api/planner/events/${eventId}/vendor-shortlist`)}`,
     {
       method: "POST",
       body: JSON.stringify({
@@ -150,7 +151,7 @@ export async function sendShortlistToClient(
 ): Promise<void> {
   const response = await plannerFetch(
     token,
-    `${base()}/api/planner/events/${eventId}/vendor-shortlist/send`,
+    apiUrl(`/api/planner/events/${eventId}/vendor-shortlist/send`),
     {
       method: "POST",
       body: JSON.stringify(itemIds?.length ? { itemIds } : {}),
@@ -167,22 +168,17 @@ export async function approveShortlistItem(
   itemId: string,
   reject = false
 ): Promise<void> {
-  const response = await fetch(
-    `${base()}/api/events/${eventId}/vendor-shortlist/${itemId}/approve`,
+  await apiRequest(
+    token,
+    `/api/events/${eventId}/vendor-shortlist/${itemId}/approve`,
     {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify({ reject }),
+    },
+    {
+      fallbackError: reject ? "Failed to decline proposal." : "Failed to approve proposal.",
     }
   );
-  if (!response.ok) {
-    throw new Error(
-      await parseApiError(response, reject ? "Failed to decline proposal." : "Failed to approve proposal.")
-    );
-  }
 }
 
 export async function requestBookingFromShortlist(
@@ -190,36 +186,30 @@ export async function requestBookingFromShortlist(
   eventId: string,
   itemId: string
 ): Promise<string> {
-  const response = await fetch(
-    `${base()}/api/events/${eventId}/vendor-shortlist/${itemId}/request-booking`,
-    {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-    }
+  const response = await apiRequest(
+    token,
+    `/api/events/${eventId}/vendor-shortlist/${itemId}/request-booking`,
+    { method: "POST" },
+    { fallbackError: "Failed to request booking." }
   );
-  if (!response.ok) {
-    throw new Error(await parseApiError(response, "Failed to request booking."));
-  }
   const data = (await response.json()) as { bookingId?: string };
   return String(data.bookingId ?? "");
 }
 
 export async function acceptVendorBooking(token: string, bookingId: string): Promise<void> {
-  const response = await fetch(`${base()}/api/bookings/${bookingId}/accept`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!response.ok) {
-    throw new Error(await parseApiError(response, "Failed to accept booking."));
-  }
+  await apiRequest(
+    token,
+    `/api/bookings/${bookingId}/accept`,
+    { method: "POST" },
+    { fallbackError: "Failed to accept booking." }
+  );
 }
 
 export async function declineVendorBooking(token: string, bookingId: string): Promise<void> {
-  const response = await fetch(`${base()}/api/bookings/${bookingId}/decline`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!response.ok) {
-    throw new Error(await parseApiError(response, "Failed to decline booking."));
-  }
+  await apiRequest(
+    token,
+    `/api/bookings/${bookingId}/decline`,
+    { method: "POST" },
+    { fallbackError: "Failed to decline booking." }
+  );
 }

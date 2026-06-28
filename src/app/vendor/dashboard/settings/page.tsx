@@ -1,16 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/shared/context/AuthContext";
 import {
   createVendorSubscriptionCheckout,
-  getVendorBillingProfile,
-  getVendorSubscription,
   openPayHereCheckout,
   saveVendorBillingProfile,
   setVendorSubscription,
 } from "@/shared/lib/api/vendors";
+import {
+  useVendorBillingProfileQuery,
+  useVendorSubscriptionQuery,
+} from "@/shared/hooks/query/useVendorQueries";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/shared/lib/query/queryKeys";
 import {
   VENDOR_TIER_FEATURES,
   VENDOR_TIER_PRICING,
@@ -63,9 +67,21 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 export default function VendorSettingsPage() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
+  const {
+    data: subscription,
+    isLoading: subLoading,
+    isFetching: subFetching,
+    error: subError,
+  } = useVendorSubscriptionQuery();
+  const {
+    data: billingProfile,
+    isLoading: profileLoading,
+    isFetching: profileFetching,
+    error: profileError,
+  } = useVendorBillingProfileQuery();
+
   const [tier, setTier] = useState<VendorTier>("Free");
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -79,56 +95,40 @@ export default function VendorSettingsPage() {
   const [cvv, setCvv] = useState("");
 
   const paymentReturn = searchParams.get("payment");
-
-  const load = useCallback(async () => {
-    if (!user) return;
-    try {
-      setError(null);
-      const token = await user.getIdToken();
-      const [sub, profile] = await Promise.all([
-        getVendorSubscription(token),
-        getVendorBillingProfile(token),
-      ]);
-      if (sub.tier === "Featured" || sub.tier === "Sponsored" || sub.tier === "Free") {
-        setTier(sub.tier);
-      }
-      setHasPaymentMethod(profile.hasPaymentMethod);
-      setSavedLast4(profile.last4 ?? null);
-      setSavedBrand(profile.cardBrand ?? null);
-      if (profile.cardholderName) setCardholderName(profile.cardholderName);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load billing.");
-    }
-  }, [user]);
+  const loading = subLoading || profileLoading;
+  const refreshing = subFetching || profileFetching;
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        setLoading(true);
-        await load();
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [load]);
+    if (!subscription) return;
+    if (subscription.tier === "Featured" || subscription.tier === "Sponsored" || subscription.tier === "Free") {
+      setTier(subscription.tier);
+    }
+  }, [subscription]);
+
+  useEffect(() => {
+    if (!billingProfile) return;
+    setHasPaymentMethod(billingProfile.hasPaymentMethod);
+    setSavedLast4(billingProfile.last4 ?? null);
+    setSavedBrand(billingProfile.cardBrand ?? null);
+    if (billingProfile.cardholderName) setCardholderName(billingProfile.cardholderName);
+  }, [billingProfile]);
+
+  useEffect(() => {
+    const err = subError ?? profileError;
+    if (err) setError(err.message);
+  }, [subError, profileError]);
 
   useEffect(() => {
     if (paymentReturn === "success") {
       setMessage("Payment received. Your plan will activate shortly after confirmation.");
-      void load();
+      void queryClient.invalidateQueries({ queryKey: queryKeys.vendor.all });
     } else if (paymentReturn === "cancelled") {
       setError("Payment was cancelled. Your plan was not changed.");
     }
-  }, [paymentReturn, load]);
+  }, [paymentReturn, queryClient]);
 
   const handleRefresh = async () => {
-    setRefreshing(true);
-    await load();
-    setRefreshing(false);
+    await queryClient.invalidateQueries({ queryKey: queryKeys.vendor.all });
   };
 
   const savePaymentMethod = async () => {
@@ -160,7 +160,7 @@ export default function VendorSettingsPage() {
       setMessage("Payment method saved securely (only masked details are stored).");
       setCardNumber("");
       setCvv("");
-      await load();
+      await queryClient.invalidateQueries({ queryKey: queryKeys.vendor.all });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save payment method.");
     } finally {
@@ -186,7 +186,7 @@ export default function VendorSettingsPage() {
       if (tier === "Free") {
         await setVendorSubscription(token, { tier, monthlyFee: 0 });
         setMessage("Plan updated to Free.");
-        await load();
+        await queryClient.invalidateQueries({ queryKey: queryKeys.vendor.all });
         return;
       }
 
@@ -199,7 +199,7 @@ export default function VendorSettingsPage() {
 
       await setVendorSubscription(token, { tier, monthlyFee });
       setMessage("Subscription updated successfully.");
-      await load();
+      await queryClient.invalidateQueries({ queryKey: queryKeys.vendor.all });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update subscription.");
     } finally {

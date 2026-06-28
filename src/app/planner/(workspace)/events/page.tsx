@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   AlertTriangle,
   CalendarClock,
@@ -8,20 +8,14 @@ import {
   Filter,
   Users,
 } from "lucide-react";
-import { useAuth } from "@/shared/context/AuthContext";
 import {
   usePlannerCreateEventModal,
   usePlannerEventCreated,
 } from "@/modules/planner/subscription/PlannerCreateEventProvider";
-import { getPlannerEvents } from "@/shared/lib/api/planner";
-import { getTasksForEvent } from "@/shared/lib/api/tasks";
-import { getVendorShortlist } from "@/shared/lib/api/vendorShortlist";
+import { usePlannerPortfolioQuery } from "@/shared/hooks/query/usePlannerPortfolioQuery";
 import { PlannerEventCard } from "@/modules/planner/events/PlannerEventCard";
 import {
   countPortfolioAttention,
-  mapEventToPortfolioItem,
-  sortPortfolioByWeddingDate,
-  type PlannerEventPortfolioItem,
 } from "@/modules/planner/events/plannerEventHelpers";
 import { formatWeddingDate } from "@/modules/planner/dashboard/plannerDashboardHelpers";
 import { ErrorBanner } from "@/modules/planner/components/ui";
@@ -46,48 +40,21 @@ const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
 ];
 
 export default function PlannerEventsPage() {
-  const { user } = useAuth();
   const { openCreateEventModal } = usePlannerCreateEventModal();
-  const [portfolio, setPortfolio] = useState<PlannerEventPortfolioItem[]>([]);
+  const {
+    portfolio,
+    isLoading: loading,
+    isFetching,
+    error: queryError,
+    refetch,
+  } = usePlannerPortfolioQuery();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const fetchEvents = useCallback(async () => {
-    if (!user) return;
-    try {
-      setLoading(true);
-      const token = await user.getIdToken();
-      const events = await getPlannerEvents(token);
+  usePlannerEventCreated(() => {
+    void refetch();
+  });
 
-      const items = await Promise.all(
-        events.map(async (event) => {
-          try {
-            const [tasks, shortlist] = await Promise.all([
-              getTasksForEvent(token, event.eventId),
-              getVendorShortlist(token, event.eventId),
-            ]);
-            return mapEventToPortfolioItem(event, tasks, shortlist);
-          } catch {
-            return mapEventToPortfolioItem(event, [], []);
-          }
-        })
-      );
-
-      setPortfolio(sortPortfolioByWeddingDate(items));
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load events.");
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    void fetchEvents();
-  }, [fetchEvents]);
-
-  usePlannerEventCreated(fetchEvents);
+  const error = queryError?.message ?? null;
 
   const filteredPortfolio = useMemo(() => {
     if (statusFilter === "all") return portfolio;
@@ -191,7 +158,7 @@ export default function PlannerEventsPage() {
           </div>
         }
       >
-        {loading ? (
+        {isFetching ? (
           <p className={cn("py-8 text-center", vg.subtitle)}>Refreshing events…</p>
         ) : filteredPortfolio.length === 0 ? (
           <EmptyState

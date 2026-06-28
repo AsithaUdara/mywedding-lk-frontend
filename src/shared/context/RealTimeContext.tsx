@@ -2,8 +2,11 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import * as signalR from '@microsoft/signalr';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from './AuthContext';
 import { mapMessage, type Message } from '@/shared/lib/api/collaboration';
+import { getApiBaseUrl } from '@/shared/lib/api/apiClient';
+import { queryKeys } from '@/shared/lib/query/queryKeys';
 
 interface RealTimeContextType {
     connection: signalR.HubConnection | null;
@@ -34,6 +37,7 @@ export const useRealTime = () => useContext(RealTimeContext);
 
 export const RealTimeProvider: React.FC<{ children: React.ReactNode; eventId: string }> = ({ children, eventId }) => {
     const { user } = useAuth();
+    const queryClient = useQueryClient();
     const [connection, setConnection] = useState<signalR.HubConnection | null>(null);
     const [isConnected, setIsConnected] = useState(false);
 
@@ -71,7 +75,7 @@ export const RealTimeProvider: React.FC<{ children: React.ReactNode; eventId: st
         };
 
         const newConnection = new signalR.HubConnectionBuilder()
-            .withUrl(`${process.env.NEXT_PUBLIC_API_BASE_URL}/hubs/collaboration`, {
+            .withUrl(`${getApiBaseUrl()}/hubs/collaboration`, {
                 accessTokenFactory: () => user.getIdToken(),
             })
             .configureLogging(customLogger)
@@ -106,19 +110,34 @@ export const RealTimeProvider: React.FC<{ children: React.ReactNode; eventId: st
                         });
 
                         newConnection.on('ChecklistUpdated', () => {
-                            if (isMounted) incrementChecklist();
+                            if (!isMounted) return;
+                            incrementChecklist();
+                            void queryClient.invalidateQueries({
+                                queryKey: queryKeys.events.tasks(eventId),
+                            });
                         });
 
                         newConnection.on('BudgetUpdated', () => {
-                            if (isMounted) incrementBudget();
+                            if (!isMounted) return;
+                            incrementBudget();
+                            void queryClient.invalidateQueries({
+                                queryKey: queryKeys.events.budget(eventId),
+                            });
+                            void queryClient.invalidateQueries({
+                                queryKey: queryKeys.events.expenses(eventId),
+                            });
                         });
 
                         newConnection.on('PollsUpdated', () => {
-                            if (isMounted) incrementPolls();
+                            if (!isMounted) incrementPolls();
                         });
 
                         newConnection.on('InvitationAccepted', () => {
-                            if (isMounted) incrementInvitations();
+                            if (!isMounted) return;
+                            incrementInvitations();
+                            void queryClient.invalidateQueries({
+                                queryKey: queryKeys.events.shortlist(eventId),
+                            });
                         });
                     }
                 }
@@ -142,7 +161,7 @@ export const RealTimeProvider: React.FC<{ children: React.ReactNode; eventId: st
             }
             connectionRef.current = null;
         };
-    }, [user, eventId, incrementChecklist, incrementBudget, incrementPolls, incrementActivity, incrementInvitations]);
+    }, [user, eventId, incrementChecklist, incrementBudget, incrementPolls, incrementActivity, incrementInvitations, queryClient]);
 
     return (
         <RealTimeContext.Provider value={{

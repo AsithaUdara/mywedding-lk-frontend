@@ -1,7 +1,7 @@
 "use client";
 
-import { Store, TrendingUp, Users, Wallet, Percent } from "lucide-react";
-import type { PlatformAnalytics } from "@/shared/lib/api/admin";
+import { ClipboardList, ShieldAlert, TrendingUp, Users, Wallet } from "lucide-react";
+import type { PayoutDueItem, PendingVendor, PlatformAnalytics } from "@/shared/lib/api/admin";
 import { GlassStatCard } from "@/modules/vendor/dashboard/glass-ui";
 import { formatLKR } from "@/shared/components/ui";
 
@@ -15,43 +15,62 @@ function kpiSub(base: string, delta: number | undefined) {
   return trend ? `${base} · ${trend}` : base;
 }
 
-export function AdminPlatformKpis({ data }: { data: PlatformAnalytics }) {
+type AdminPlatformKpisProps = {
+  data: PlatformAnalytics;
+  pendingVendors: PendingVendor[];
+  payoutsDue: PayoutDueItem[];
+};
+
+export function AdminPlatformKpis({ data, pendingVendors, payoutsDue }: AdminPlatformKpisProps) {
+  const payoutCommission = payoutsDue.reduce((sum, row) => sum + row.commissionAmount, 0);
+
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       <GlassStatCard
         label="MRR"
         value={formatLKR(data.mrr)}
-        sub={kpiSub("Planner SaaS", data.mrrDeltaPct)}
+        sub={kpiSub("Planner subscriptions", data.mrrDeltaPct)}
         icon={Wallet}
         iconTheme="accent"
       />
       <GlassStatCard
         label="TPV"
         value={formatLKR(data.tpv)}
-        sub={kpiSub("Processing volume", data.tpvDeltaPct)}
+        sub={kpiSub("Booking volume", data.tpvDeltaPct)}
         icon={TrendingUp}
         iconTheme="primary"
       />
       <GlassStatCard
         label="Take rate"
         value={formatLKR(data.takeRateRevenue)}
-        sub="Platform commission"
-        icon={Percent}
+        sub="Platform commission earned"
+        icon={ClipboardList}
         iconTheme="warning"
+      />
+      <GlassStatCard
+        label="KYB pending"
+        value={pendingVendors.length}
+        sub={pendingVendors.length > 0 ? "Awaiting verification" : "Queue clear"}
+        icon={ShieldAlert}
+        iconTheme={pendingVendors.length > 0 ? "warning" : "success"}
+      />
+      <GlassStatCard
+        label="Unsettled payouts"
+        value={payoutsDue.length}
+        sub={
+          payoutsDue.length > 0
+            ? `${formatLKR(payoutCommission)} commission`
+            : "Nothing due"
+        }
+        icon={Wallet}
+        iconTheme={payoutsDue.length > 0 ? "warning" : "success"}
       />
       <GlassStatCard
         label="Active planners"
         value={data.activePlanners}
-        sub="Last 30 days"
+        sub={`${data.registeredVendors} vendors · ${data.totalBookings} bookings`}
         icon={Users}
         iconTheme="primary"
-      />
-      <GlassStatCard
-        label="Vendors"
-        value={data.registeredVendors}
-        sub={`${data.activeCouples} active couples`}
-        icon={Store}
-        iconTheme="success"
       />
     </div>
   );

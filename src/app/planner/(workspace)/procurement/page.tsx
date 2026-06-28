@@ -10,9 +10,8 @@ import {
   Sparkles,
   Store,
 } from "lucide-react";
-import { useAuth } from "@/shared/context/AuthContext";
-import { getPlannerEvents, PlannerEventListItem } from "@/shared/lib/api/planner";
-import { getVendorShortlist, type VendorShortlistItem } from "@/shared/lib/api/vendorShortlist";
+import { usePlannerProcurementQuery } from "@/shared/hooks/query/usePlannerProcurementQuery";
+import type { VendorShortlistItem } from "@/shared/lib/api/vendorShortlist";
 import { ProcurementEventContext } from "@/modules/planner/procurement/ProcurementEventContext";
 import {
   computeProcurementStats,
@@ -33,59 +32,36 @@ import { rf } from "@/modules/design-system/regal-frost/tokens";
 import { cn } from "@/shared/lib/cn";
 
 export default function PlannerProcurementPage() {
-  const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const eventIdFromUrl = searchParams.get("eventId");
   const { openCreateEventModal } = usePlannerCreateEventModal();
-  const [events, setEvents] = useState<PlannerEventListItem[]>([]);
-  const [shortlistsByEvent, setShortlistsByEvent] = useState<Map<string, VendorShortlistItem[]>>(
-    new Map()
-  );
+  const { rows, isLoading: loading, error: queryError } = usePlannerProcurementQuery();
   const [eventId, setEventId] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    if (!user) return;
-    try {
-      setLoading(true);
-      const token = await user.getIdToken();
-      const data = await getPlannerEvents(token);
-
-      const shortlistEntries: [string, VendorShortlistItem[]][] = await Promise.all(
-        data.map(async (event) => {
-          try {
-            const items = await getVendorShortlist(token, event.eventId);
-            return [event.eventId, items] as [string, VendorShortlistItem[]];
-          } catch {
-            return [event.eventId, []] as [string, VendorShortlistItem[]];
-          }
-        })
-      );
-
-      setEvents(data);
-      setShortlistsByEvent(new Map(shortlistEntries));
-      setEventId((prev) => {
-        if (eventIdFromUrl && data.some((e) => e.eventId === eventIdFromUrl)) {
-          return eventIdFromUrl;
-        }
-        if (prev && data.some((e) => e.eventId === prev)) {
-          return prev;
-        }
-        return data[0]?.eventId || "";
-      });
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load events.");
-    } finally {
-      setLoading(false);
+  const events = useMemo(() => rows.map((row) => row.event), [rows]);
+  const shortlistsByEvent = useMemo(() => {
+    const map = new Map<string, VendorShortlistItem[]>();
+    for (const row of rows) {
+      map.set(row.event.eventId, row.shortlist);
     }
-  }, [user, eventIdFromUrl]);
+    return map;
+  }, [rows]);
+
+  const error = queryError?.message ?? null;
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (events.length === 0) return;
+    setEventId((prev) => {
+      if (eventIdFromUrl && events.some((e) => e.eventId === eventIdFromUrl)) {
+        return eventIdFromUrl;
+      }
+      if (prev && events.some((e) => e.eventId === prev)) {
+        return prev;
+      }
+      return events[0]?.eventId || "";
+    });
+  }, [events, eventIdFromUrl]);
 
   const handleSelectEvent = useCallback(
     (nextEventId: string) => {

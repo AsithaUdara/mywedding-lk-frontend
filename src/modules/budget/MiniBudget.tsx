@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
-import { useAuth } from "@/shared/context/AuthContext";
-import { getBudgetOverview, type BudgetOverview } from "@/shared/lib/api/budget";
-import { useRealTime } from "@/shared/context/RealTimeContext";
+import React from "react";
+import { type BudgetOverview } from "@/shared/lib/api/budget";
+import { useEventBudgetOverviewQuery } from "@/shared/hooks/query/useEventQueries";
 import { AlertTriangle, ArrowRight, CircleDollarSign, PiggyBank, Wallet } from "lucide-react";
 import Skeleton from "@/shared/components/ui/Skeleton";
 import { motion } from "framer-motion";
@@ -183,27 +182,7 @@ function BudgetKpiGrid({ overview }: { overview: BudgetOverview }) {
 }
 
 const MiniBudget = ({ eventId, className }: { eventId: string; className?: string }) => {
-  const { user } = useAuth();
-  const { budgetVersion } = useRealTime();
-  const [overview, setOverview] = useState<BudgetOverview | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const fetchBudget = useCallback(async () => {
-    if (!user) return;
-    try {
-      const token = await user.getIdToken();
-      const data = await getBudgetOverview(token, eventId);
-      setOverview(data);
-    } catch (error) {
-      console.error("Failed to fetch budget overview:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user, eventId]);
-
-  useEffect(() => {
-    void fetchBudget();
-  }, [fetchBudget, budgetVersion]);
+  const { data: overview = null, isLoading } = useEventBudgetOverviewQuery(eventId);
 
   if (isLoading) {
     return (

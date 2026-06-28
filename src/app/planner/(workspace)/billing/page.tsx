@@ -1,14 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Crown, Settings, Users, Zap } from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
 import {
   createPlannerSubscriptionCheckout,
-  getPlannerOverview,
-  PlannerOverviewResponse,
 } from "@/shared/lib/api/planner";
+import { usePlannerOverviewQuery } from "@/shared/hooks/query/usePlannerQueries";
+import { usePlannerQueryInvalidation } from "@/shared/hooks/query/useQueryInvalidation";
 import { submitPayHereCheckout } from "@/shared/lib/payhereCheckout";
 import { BillingCapacityPanel } from "@/modules/planner/billing/BillingCapacityPanel";
 import { BillingPlanCard } from "@/modules/planner/billing/BillingPlanCard";
@@ -32,30 +32,21 @@ import {
 export default function PlannerBillingPage() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
-  const [overview, setOverview] = useState<PlannerOverviewResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { invalidatePlannerAll } = usePlannerQueryInvalidation();
+  const {
+    data: overview = null,
+    isLoading: loading,
+    error: queryError,
+  } = usePlannerOverviewQuery();
   const [upgrading, setUpgrading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    if (!user) return;
-    try {
-      setLoading(true);
-      const token = await user.getIdToken();
-      const data = await getPlannerOverview(token);
-      setOverview(data);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load billing data.");
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
-
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (queryError) {
+      setError(queryError.message);
+    }
+  }, [queryError]);
 
   useEffect(() => {
     if (searchParams.get("expired") === "1") {
@@ -69,11 +60,11 @@ export default function PlannerBillingPage() {
     const paymentReturn = searchParams.get("payment");
     if (paymentReturn === "success") {
       setMessage("Payment received. Planner Pro will activate shortly after confirmation.");
-      void load();
+      void invalidatePlannerAll();
     } else if (paymentReturn === "cancelled") {
       setError("Payment was cancelled. Your plan was not changed.");
     }
-  }, [searchParams, load]);
+  }, [searchParams, invalidatePlannerAll]);
 
   const stats = useMemo(() => computeBillingStats(overview), [overview]);
 
@@ -169,7 +160,7 @@ export default function PlannerBillingPage() {
           <PlannerPaymentMethodSection
             isPro={stats.isPro}
             subscriptionEndsAt={overview?.subscriptionEndsAt}
-            onUpdated={() => void load()}
+            onUpdated={() => void invalidatePlannerAll()}
           />
         </GlassSectionCard>
       )}

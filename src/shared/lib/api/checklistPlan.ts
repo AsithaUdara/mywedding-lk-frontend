@@ -1,3 +1,5 @@
+import { apiRequestJson, apiUrl } from "@/shared/lib/api/apiRequest";
+import { plannerFetch } from "@/shared/lib/api/plannerHttp";
 import { parseApiError } from "@/shared/lib/api/parseApiError";
 
 export interface ChecklistPreviewTask {
@@ -88,15 +90,13 @@ export async function getChecklistPreview(
   token: string,
   eventId: string
 ): Promise<ChecklistPlanPreview> {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/events/${eventId}/checklist-preview`,
-    { headers: { Authorization: `Bearer ${token}` } }
+  const data = await apiRequestJson<Record<string, unknown>>(
+    token,
+    `/api/events/${eventId}/checklist-preview`,
+    { method: "GET" },
+    { fallbackError: "Failed to load checklist preview." }
   );
-  if (!response.ok) {
-    throw new Error(await parseApiError(response, "Failed to load checklist preview."));
-  }
-  const data = await response.json();
-  return mapPreview(data as Record<string, unknown>);
+  return mapPreview(data);
 }
 
 export async function generatePersonalizedChecklistPlan(
@@ -104,17 +104,10 @@ export async function generatePersonalizedChecklistPlan(
   eventId: string,
   meetingNotesOrTranscript?: string
 ): Promise<PersonalizedChecklistPlan> {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/planner/ai/personalize-checklist-plan`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ eventId, meetingNotesOrTranscript }),
-    }
-  );
+  const response = await plannerFetch(token, apiUrl("/api/planner/ai/personalize-checklist-plan"), {
+    method: "POST",
+    body: JSON.stringify({ eventId, meetingNotesOrTranscript }),
+  });
   if (!response.ok) {
     throw new Error(await parseApiError(response, "Failed to generate checklist plan."));
   }
@@ -151,19 +144,13 @@ export async function applyChecklistPlan(
     markBriefComplete?: boolean;
   }
 ): Promise<{ message: string; tasksCreated: number; taskPlanPhase: string }> {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/events/${eventId}/tasks/generate-checklist`,
+  return apiRequestJson(
+    token,
+    `/api/events/${eventId}/tasks/generate-checklist`,
     {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify(payload),
-    }
+    },
+    { fallbackError: "Failed to apply checklist plan." }
   );
-  if (!response.ok) {
-    throw new Error(await parseApiError(response, "Failed to apply checklist plan."));
-  }
-  return response.json();
 }

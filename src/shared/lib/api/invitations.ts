@@ -1,3 +1,6 @@
+import { apiFetch } from "@/shared/lib/api/apiClient";
+import { apiUrl } from "@/shared/lib/api/apiRequest";
+
 export type SendInvitationResult = {
   invitationId: string;
   emailSent: boolean;
@@ -6,17 +9,12 @@ export type SendInvitationResult = {
   message: string;
 };
 
-export const sendInvitation = async (
+export async function sendInvitation(
   token: string,
   inviteData: { eventId: string; email: string; role?: string; permissionLevel?: string }
-): Promise<SendInvitationResult> => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/invitations/invite`;
-  const response = await fetch(apiUrl, {
+): Promise<SendInvitationResult> {
+  const response = await apiFetch(token, apiUrl("/api/invitations/invite"), {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify(inviteData),
   });
 
@@ -37,16 +35,11 @@ export const sendInvitation = async (
     emailError: (data as { emailError?: string | null }).emailError ?? null,
     message: String((data as { message?: string }).message ?? "Invitation sent."),
   };
-};
+}
 
-export const acceptInvitation = async (token: string, acceptData: { token: string }) => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/invitations/accept`;
-  const response = await fetch(apiUrl, {
+export async function acceptInvitation(token: string, acceptData: { token: string }) {
+  const response = await apiFetch(token, apiUrl("/api/invitations/accept"), {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify(acceptData),
   });
 
@@ -57,14 +50,13 @@ export const acceptInvitation = async (token: string, acceptData: { token: strin
     if (isJson) {
       const errorData = await response.json();
       throw new Error(errorData.message || "Failed to accept invitation.");
-    } else {
-      const errorText = await response.text();
-      throw new Error(errorText || "Failed to accept invitation.");
     }
+    const errorText = await response.text();
+    throw new Error(errorText || "Failed to accept invitation.");
   }
 
   if (isJson) {
     return response.json();
   }
   return response;
-};
+}

@@ -1,7 +1,5 @@
 import "./globals.css";
-import { AuthProvider } from "@/shared/context/AuthContext";
-import { UIProvider } from "@/shared/context/UIContext";
-import { NotificationProvider } from "@/shared/context/NotificationContext";
+import { AppProviders } from "@/shared/providers/AppProviders";
 
 export const metadata = {
   title: "MyWedding.lk — Scale your planning agency",
@@ -24,13 +22,7 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased" suppressHydrationWarning={true}>
-        <AuthProvider>
-          <NotificationProvider>
-            <UIProvider>
-              {children}
-            </UIProvider>
-          </NotificationProvider>
-        </AuthProvider>
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );

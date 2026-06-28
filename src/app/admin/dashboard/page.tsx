@@ -1,66 +1,55 @@
 "use client";
 
 import { useMemo } from "react";
-import { ArrowRight, RefreshCw, ShieldCheck, ShieldAlert, Users, Wallet } from "lucide-react";
+import { ArrowRight, RefreshCw, ShieldAlert, ShieldCheck } from "lucide-react";
 import { VendorApprovalQueue } from "@/modules/admin/VendorApprovalQueue";
-import { usePlatformAnalytics } from "@/modules/admin/hooks/usePlatformAnalytics";
+import { useAdminDashboard } from "@/modules/admin/hooks/useAdminDashboard";
+import { buildAdminAttentionItems } from "@/modules/admin/dashboard/adminDashboardHelpers";
+import { AdminAttentionPanel } from "@/modules/admin/components/AdminAttentionPanel";
 import { AdminPlatformKpis } from "@/modules/admin/components/AdminPlatformKpis";
 import { AdminGrowthChart } from "@/modules/admin/components/AdminGrowthChart";
 import { ErrorBanner, PageLoadingSkeleton } from "@/shared/components/ui";
 import {
   GlassButton,
   GlassPageHeader,
-  GlassQuickActionLink,
   GlassSectionCard,
 } from "@/modules/vendor/dashboard/glass-ui";
 import { rf } from "@/modules/design-system/regal-frost/tokens";
 import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
 import { cn } from "@/shared/lib/cn";
 
-const QUICK_LINKS = [
-  {
-    href: "/admin/vendors",
-    label: "KYB queue",
-    description: "Approve or reject vendor applications",
-    icon: <ShieldAlert size={18} aria-hidden />,
-  },
-  {
-    href: "/admin/vendors/directory",
-    label: "All vendors",
-    description: "Browse every vendor by verification status",
-    icon: <Users size={18} aria-hidden />,
-  },
-  {
-    href: "/admin/dashboard/commissions",
-    label: "Commission payouts",
-    description: "Settle vendor payouts from confirmed bookings",
-    icon: <Wallet size={18} aria-hidden />,
-  },
-  {
-    href: "/vendors",
-    label: "Public directory",
-    description: "Preview couple-facing vendor hub",
-    icon: <Users size={18} aria-hidden />,
-  },
-];
-
 export default function AdminDashboardPage() {
-  const { data, loading, refreshing, error, reload } = usePlatformAnalytics();
+  const {
+    analytics,
+    pendingVendors,
+    payoutsDue,
+    loading,
+    refreshing,
+    error,
+    reload,
+  } = useAdminDashboard();
 
-  const growthMax = useMemo(
-    () => Math.max(...(data?.plannerGrowthByMonth.map((p) => p.count) ?? [1]), 1),
-    [data]
+  const attentionItems = useMemo(
+    () => buildAdminAttentionItems(pendingVendors, payoutsDue),
+    [pendingVendors, payoutsDue]
   );
 
-  if (loading && !data) {
+  const growthMax = useMemo(
+    () => Math.max(...(analytics?.plannerGrowthByMonth.map((p) => p.count) ?? [1]), 1),
+    [analytics]
+  );
+
+  const primaryAction = attentionItems[0];
+
+  if (loading && !analytics) {
     return <PageLoadingSkeleton />;
   }
 
   return (
     <div className="space-y-8 pb-4 lg:space-y-10">
       <GlassPageHeader
-        title="Operations center"
-        description="Platform financial health, planner growth, and vendor trust & safety — live from your admin API."
+        title="Overview"
+        description="Financial health, operational queues, and planner growth — everything that needs your attention in one place."
         badge={
           <span className={cn(rf.badge, "inline-flex items-center gap-1.5")}>
             <ShieldCheck size={12} aria-hidden />
@@ -79,85 +68,60 @@ export default function AdminDashboardPage() {
               <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} aria-hidden />
               Refresh
             </GlassButton>
-            <GlassButton href="/admin/vendors" variant="primary" className="gap-1.5">
-              <ShieldAlert size={16} aria-hidden />
-              KYB queue
-            </GlassButton>
+            {primaryAction ? (
+              <GlassButton href={primaryAction.href} variant="primary" className="gap-1.5">
+                <ShieldAlert size={16} aria-hidden />
+                {primaryAction.title}
+              </GlassButton>
+            ) : null}
           </div>
         }
       />
 
       {error && <ErrorBanner message={error} />}
 
-      {data && (
+      <AdminAttentionPanel items={attentionItems} />
+
+      {analytics && (
         <>
-          <AdminPlatformKpis data={data} />
+          <AdminPlatformKpis
+            data={analytics}
+            pendingVendors={pendingVendors}
+            payoutsDue={payoutsDue}
+          />
 
-          <div className="grid gap-6 lg:grid-cols-3">
-            <GlassSectionCard
-              className="lg:col-span-2"
-              title="Planner growth"
-              subtitle="Active planners — 6 month trend"
-              action={
-                <span className={cn("text-sm font-semibold tabular-nums", vg.subtitle)}>
-                  {data.activePlanners} active
-                </span>
-              }
-            >
-              <div className="flex min-h-[280px] flex-col">
-                <AdminGrowthChart
-                  className="flex-1"
-                  points={data.plannerGrowthByMonth}
-                  max={growthMax}
-                />
-                <div
-                  className={cn(
-                    "mt-4 flex flex-wrap gap-4 border-t border-white/40 pt-4 text-sm",
-                    vg.subtitle
-                  )}
-                >
-                <span>
-                  <strong className="text-foreground">{data.totalUsers}</strong> users
-                </span>
-                <span>
-                  <strong className="text-foreground">{data.totalEvents}</strong> events
-                </span>
-                <span>
-                  <strong className="text-foreground">{data.totalBookings}</strong> bookings
-                </span>
-                </div>
-              </div>
-            </GlassSectionCard>
-
-            <GlassSectionCard title="Quick links" subtitle="Common admin workflows">
-              <div className="grid gap-3">
-                {QUICK_LINKS.map((item) => (
-                  <GlassQuickActionLink
-                    key={item.href}
-                    href={item.href}
-                    label={item.label}
-                    description={item.description}
-                    icon={item.icon}
-                  />
-                ))}
-              </div>
-            </GlassSectionCard>
-          </div>
+          <GlassSectionCard
+            title="Planner growth"
+            subtitle="Active planners over the last 6 months"
+            action={
+              <span className={cn("text-sm font-semibold tabular-nums", vg.subtitle)}>
+                {analytics.activePlanners} active now
+              </span>
+            }
+          >
+            <AdminGrowthChart
+              className="min-h-[260px]"
+              points={analytics.plannerGrowthByMonth}
+              max={growthMax}
+            />
+          </GlassSectionCard>
         </>
       )}
 
-      <GlassSectionCard
-        title="Vendor approval queue"
-        subtitle="Know-your-business review before marketplace listing"
-        action={
-          <GlassButton href="/admin/vendors" variant="ghost" className="gap-1">
-            Full queue
-            <ArrowRight size={14} aria-hidden />
-          </GlassButton>
-        }
-      >
-        <VendorApprovalQueue embedded />
-      </GlassSectionCard>
+      {pendingVendors.length > 0 && (
+        <GlassSectionCard
+          title="KYB preview"
+          subtitle="Review the oldest pending applications — full queue on KYB page"
+          action={
+            <GlassButton href="/admin/vendors" variant="ghost" className="gap-1">
+              Full queue
+              <ArrowRight size={14} aria-hidden />
+            </GlassButton>
+          }
+        >
+          <VendorApprovalQueue embedded />
+        </GlassSectionCard>
+      )}
     </div>
   );
 }

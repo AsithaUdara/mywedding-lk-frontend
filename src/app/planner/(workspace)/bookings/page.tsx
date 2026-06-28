@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   AlertTriangle,
   CalendarDays,
@@ -8,8 +8,9 @@ import {
   ClipboardCheck,
   CreditCard,
 } from "lucide-react";
-import { useAuth } from "@/shared/context/AuthContext";
-import { getPlannerBookings, getPlannerEvents, PlannerEventListItem, type PlannerBookingListItem } from "@/shared/lib/api/planner";
+import { usePlannerBookingsQuery, usePlannerEventsQuery } from "@/shared/hooks/query/usePlannerQueries";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/shared/lib/query/queryKeys";
 import { PlannerBookingCard } from "@/modules/planner/bookings/PlannerBookingCard";
 import { BookingsToolbar } from "@/modules/planner/bookings/BookingsToolbar";
 import {
@@ -36,38 +37,39 @@ type ViewTab = "bookings" | "events";
 type WeddingFilter = "all" | "attention";
 
 export default function PlannerBookingsPage() {
-  const { user } = useAuth();
-  const [bookings, setBookings] = useState<PlannerBookingListItem[]>([]);
-  const [events, setEvents] = useState<PlannerEventListItem[]>([]);
+  const queryClient = useQueryClient();
   const [view, setView] = useState<ViewTab>("bookings");
   const [bookingFilter, setBookingFilter] = useState<BookingFilter>("all");
   const [weddingFilter, setWeddingFilter] = useState<WeddingFilter>("all");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    if (!user) return;
-    try {
-      setLoading(true);
-      const token = await user.getIdToken();
-      const [bookingData, eventData] = await Promise.all([
-        getPlannerBookings(token),
-        getPlannerEvents(token),
-      ]);
-      setBookings(bookingData);
-      setEvents(eventData);
-      setError(null);
-    } catch (err) {
-      if (err instanceof Error && err.message === "Planner subscription expired.") return;
-      setError(err instanceof Error ? err.message : "Failed to load bookings.");
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
+  const {
+    data: bookings = [],
+    isLoading: bookingsLoading,
+    error: bookingsError,
+    isFetching: bookingsFetching,
+  } = usePlannerBookingsQuery();
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const {
+    data: events = [],
+    isLoading: eventsLoading,
+    error: eventsError,
+    isFetching: eventsFetching,
+  } = usePlannerEventsQuery();
+
+  const loading = bookingsLoading || eventsLoading;
+  const isFetching = bookingsFetching || eventsFetching;
+
+  const error = useMemo(() => {
+    const err = bookingsError ?? eventsError;
+    if (!err) return null;
+    if (err.message === "Planner subscription expired.") return null;
+    return err.message;
+  }, [bookingsError, eventsError]);
+
+  const refresh = () => {
+    void queryClient.invalidateQueries({ queryKey: queryKeys.planner.bookings() });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.planner.events() });
+  };
 
   const stats = useMemo(() => computeBookingStats(bookings, events), [bookings, events]);
 
@@ -176,7 +178,7 @@ export default function PlannerBookingsPage() {
           weddingsNeedingAction={allWeddingSummaries.filter((s) => s.pending > 0).length}
         />
 
-        {loading ? (
+        {isFetching ? (
           <p className={cn("py-8 text-center", vg.subtitle)}>Refreshing bookings…</p>
         ) : view === "bookings" ? (
           filteredBookings.length === 0 ? (
@@ -205,7 +207,7 @@ export default function PlannerBookingsPage() {
             <ul className="space-y-3" role="list">
               {filteredBookings.map((booking) => (
                 <li key={booking.bookingId}>
-                  <PlannerBookingCard booking={booking} onSynced={load} />
+                  <PlannerBookingCard booking={booking} onSynced={refresh} />
                 </li>
               ))}
             </ul>

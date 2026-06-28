@@ -1,7 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
+import { useQueryClient } from "@tanstack/react-query";
+import { useNotifications } from "@/shared/context/NotificationContext";
 import {
   AlertTriangle,
   ArrowRight,
@@ -11,22 +13,16 @@ import {
   ClipboardList,
   Plus,
 } from "lucide-react";
-import { useAuth } from "@/shared/context/AuthContext";
-import { useNotifications } from "@/shared/context/NotificationContext";
+import { usePlannerEventInsights } from "@/shared/hooks/query/usePlannerEventInsights";
 import {
-  getPlannerEvents,
-  getPlannerOverview,
-  PlannerEventListItem,
-  PlannerOverviewResponse,
-} from "@/shared/lib/api/planner";
-import { getTasksForEvent } from "@/shared/lib/api/tasks";
-import { getVendorShortlist } from "@/shared/lib/api/vendorShortlist";
+  usePlannerEventsQuery,
+  usePlannerOverviewQuery,
+} from "@/shared/hooks/query/usePlannerQueries";
+import { queryKeys } from "@/shared/lib/query/queryKeys";
 import { ErrorBanner } from "@/modules/planner/components/ui";
 import {
   buildAttentionItems,
-  countDraftShortlist,
   countNeedsAttention,
-  countOverdueTasks,
   daysUntilWedding,
   findNextWedding,
   formatWeddingDate,
@@ -71,66 +67,31 @@ function AttentionRow({ item }: { item: AttentionItem }) {
 }
 
 export default function PlannerDashboardPage() {
-  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { notify } = useNotifications();
   const { openCreateEventModal } = usePlannerCreateEventModal();
-  const [overview, setOverview] = useState<PlannerOverviewResponse | null>(null);
-  const [events, setEvents] = useState<PlannerEventListItem[]>([]);
-  const [overdueByEvent, setOverdueByEvent] = useState<Map<string, number>>(new Map());
-  const [draftShortlistByEvent, setDraftShortlistByEvent] = useState<Map<string, number>>(
-    new Map()
-  );
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    if (!user) return;
-    try {
-      setLoading(true);
-      const token = await user.getIdToken();
-      const [overviewData, eventsData] = await Promise.all([
-        getPlannerOverview(token),
-        getPlannerEvents(token),
-      ]);
-      setOverview(overviewData);
-      setEvents(eventsData);
+  const {
+    data: overview = null,
+    isLoading: overviewLoading,
+    error: overviewError,
+  } = usePlannerOverviewQuery();
+  const {
+    data: events = [],
+    isLoading: eventsLoading,
+    error: eventsError,
+  } = usePlannerEventsQuery();
 
-      const overdueMap = new Map<string, number>();
-      const draftMap = new Map<string, number>();
+  const eventIds = useMemo(() => events.map((e) => e.eventId), [events]);
+  const { overdueByEvent, draftShortlistByEvent, insightsLoading } =
+    usePlannerEventInsights(eventIds);
 
-      await Promise.all(
-        eventsData.map(async (event) => {
-          try {
-            const [tasks, shortlist] = await Promise.all([
-              getTasksForEvent(token, event.eventId),
-              getVendorShortlist(token, event.eventId),
-            ]);
-            const overdue = countOverdueTasks(tasks);
-            if (overdue > 0) overdueMap.set(event.eventId, overdue);
-            const drafts = countDraftShortlist(shortlist);
-            if (drafts > 0) draftMap.set(event.eventId, drafts);
-          } catch {
-            /* skip per-event insight errors */
-          }
-        })
-      );
-
-      setOverdueByEvent(overdueMap);
-      setDraftShortlistByEvent(draftMap);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load planner overview.");
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const loading = overviewLoading || eventsLoading || insightsLoading;
+  const error =
+    overviewError?.message ?? eventsError?.message ?? null;
 
   usePlannerEventCreated((detail) => {
-    void load();
+    void queryClient.invalidateQueries({ queryKey: queryKeys.planner.all });
     if (detail?.eventId) {
       const count = detail.tasksGenerated;
       const taskNote =

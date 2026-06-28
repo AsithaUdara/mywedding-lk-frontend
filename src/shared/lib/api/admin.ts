@@ -1,4 +1,5 @@
-const BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
+import { apiFetch, getApiBaseUrl } from "@/shared/lib/api/apiClient";
+import { parseApiError } from "@/shared/lib/api/parseApiError";
 
 export interface PendingVendor {
   userId: string;
@@ -64,21 +65,28 @@ export interface PayoutDueItem {
   eventId: string;
 }
 
-function authHeaders(token: string) {
-  return { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+async function adminFetch(
+  token: string,
+  path: string,
+  init?: RequestInit
+): Promise<Response> {
+  const response = await apiFetch(token, `${getApiBaseUrl()}${path}`, init);
+  if (!response.ok) {
+    throw new Error(await parseApiError(response, "Admin API request failed."));
+  }
+  return response;
 }
 
 export async function getPendingVendors(token: string): Promise<PendingVendor[]> {
-  const res = await fetch(`${BASE}/api/admin/vendors/pending`, { headers: authHeaders(token) });
-  if (!res.ok) throw new Error('Failed to fetch pending vendors');
+  const res = await adminFetch(token, "/api/admin/vendors/pending");
   const data = await res.json();
   return (Array.isArray(data) ? data : []).map((row) => mapPendingVendor(row as Record<string, unknown>));
 }
 
 function mapPendingVendor(raw: Record<string, unknown>): PendingVendor {
   return {
-    userId: String(raw.userId ?? raw.UserId ?? ''),
-    businessName: String(raw.businessName ?? raw.BusinessName ?? ''),
+    userId: String(raw.userId ?? raw.UserId ?? ""),
+    businessName: String(raw.businessName ?? raw.BusinessName ?? ""),
     businessDescription:
       raw.businessDescription != null || raw.BusinessDescription != null
         ? String(raw.businessDescription ?? raw.BusinessDescription)
@@ -96,14 +104,14 @@ function mapPendingVendor(raw: Record<string, unknown>): PendingVendor {
       raw.ownerName != null || raw.OwnerName != null
         ? String(raw.ownerName ?? raw.OwnerName)
         : null,
-    verificationStatus: String(raw.verificationStatus ?? raw.VerificationStatus ?? 'Pending'),
+    verificationStatus: String(raw.verificationStatus ?? raw.VerificationStatus ?? "Pending"),
   };
 }
 
 function mapAdminVendor(raw: Record<string, unknown>): AdminVendor {
   return {
-    userId: String(raw.userId ?? raw.UserId ?? ''),
-    businessName: String(raw.businessName ?? raw.BusinessName ?? ''),
+    userId: String(raw.userId ?? raw.UserId ?? ""),
+    businessName: String(raw.businessName ?? raw.BusinessName ?? ""),
     businessDescription:
       raw.businessDescription != null || raw.BusinessDescription != null
         ? String(raw.businessDescription ?? raw.BusinessDescription)
@@ -121,11 +129,11 @@ function mapAdminVendor(raw: Record<string, unknown>): AdminVendor {
       raw.ownerName != null || raw.OwnerName != null
         ? String(raw.ownerName ?? raw.OwnerName)
         : null,
-    verificationStatus: String(raw.verificationStatus ?? raw.VerificationStatus ?? 'Pending'),
+    verificationStatus: String(raw.verificationStatus ?? raw.VerificationStatus ?? "Pending"),
     activeServiceCount: Number(raw.activeServiceCount ?? raw.ActiveServiceCount ?? 0),
     averageRating: Number(raw.averageRating ?? raw.AverageRating ?? 0),
-    registeredAt: String(raw.registeredAt ?? raw.RegisteredAt ?? ''),
-    subscriptionTier: String(raw.subscriptionTier ?? raw.SubscriptionTier ?? 'Free'),
+    registeredAt: String(raw.registeredAt ?? raw.RegisteredAt ?? ""),
+    subscriptionTier: String(raw.subscriptionTier ?? raw.SubscriptionTier ?? "Free"),
   };
 }
 
@@ -133,38 +141,27 @@ export async function getAdminVendors(
   token: string,
   status?: AdminVendorStatusFilter
 ): Promise<AdminVendor[]> {
-  const qs = status ? `?status=${encodeURIComponent(status)}` : '';
-  const res = await fetch(`${BASE}/api/admin/vendors${qs}`, { headers: authHeaders(token) });
-  if (!res.ok) throw new Error('Failed to fetch vendors');
+  const qs = status ? `?status=${encodeURIComponent(status)}` : "";
+  const res = await adminFetch(token, `/api/admin/vendors${qs}`);
   const data = await res.json();
   return (Array.isArray(data) ? data : []).map((row) => mapAdminVendor(row as Record<string, unknown>));
 }
 
 export async function verifyVendor(token: string, vendorId: string): Promise<void> {
-  const res = await fetch(`${BASE}/api/admin/vendors/${vendorId}/verify`, {
-    method: 'PATCH',
-    headers: authHeaders(token),
-  });
-  if (!res.ok) throw new Error('Failed to verify vendor');
+  await adminFetch(token, `/api/admin/vendors/${vendorId}/verify`, { method: "PATCH" });
 }
 
 export async function rejectVendor(token: string, vendorId: string): Promise<void> {
-  const res = await fetch(`${BASE}/api/admin/vendors/${vendorId}/reject`, {
-    method: 'PATCH',
-    headers: authHeaders(token),
-  });
-  if (!res.ok) throw new Error('Failed to reject vendor');
+  await adminFetch(token, `/api/admin/vendors/${vendorId}/reject`, { method: "PATCH" });
 }
 
 export async function getPlatformStats(token: string): Promise<PlatformStats> {
-  const res = await fetch(`${BASE}/api/admin/stats`, { headers: authHeaders(token) });
-  if (!res.ok) throw new Error('Failed to fetch platform stats');
+  const res = await adminFetch(token, "/api/admin/stats");
   return res.json();
 }
 
 export async function getPlatformAnalytics(token: string): Promise<PlatformAnalytics> {
-  const res = await fetch(`${BASE}/api/admin/platform-analytics`, { headers: authHeaders(token) });
-  if (!res.ok) throw new Error('Failed to fetch platform analytics');
+  const res = await adminFetch(token, "/api/admin/platform-analytics");
   const data = await res.json();
   return {
     mrr: Number(data.mrr ?? data.Mrr ?? 0),
@@ -183,7 +180,7 @@ export async function getPlatformAnalytics(token: string): Promise<PlatformAnaly
     eventsWithBookings: Number(data.eventsWithBookings ?? data.EventsWithBookings ?? 0),
     plannerGrowthByMonth: (data.plannerGrowthByMonth ?? data.PlannerGrowthByMonth ?? []).map(
       (p: Record<string, unknown>) => ({
-        month: String(p.month ?? p.Month ?? ''),
+        month: String(p.month ?? p.Month ?? ""),
         count: Number(p.count ?? p.Count ?? 0),
       })
     ),
@@ -192,20 +189,19 @@ export async function getPlatformAnalytics(token: string): Promise<PlatformAnaly
 
 function mapPayoutDueItem(raw: Record<string, unknown>): PayoutDueItem {
   return {
-    id: String(raw.id ?? raw.Id ?? ''),
-    bookingId: String(raw.bookingId ?? raw.BookingId ?? ''),
+    id: String(raw.id ?? raw.Id ?? ""),
+    bookingId: String(raw.bookingId ?? raw.BookingId ?? ""),
     grossAmount: Number(raw.grossAmount ?? raw.GrossAmount ?? 0),
     commissionAmount: Number(raw.commissionAmount ?? raw.CommissionAmount ?? 0),
     vendorNetAmount: Number(raw.vendorNetAmount ?? raw.VendorNetAmount ?? 0),
-    createdAt: String(raw.createdAt ?? raw.CreatedAt ?? ''),
-    serviceId: String(raw.serviceId ?? raw.ServiceId ?? ''),
-    eventId: String(raw.eventId ?? raw.EventId ?? ''),
+    createdAt: String(raw.createdAt ?? raw.CreatedAt ?? ""),
+    serviceId: String(raw.serviceId ?? raw.ServiceId ?? ""),
+    eventId: String(raw.eventId ?? raw.EventId ?? ""),
   };
 }
 
 export async function getPayoutDue(token: string): Promise<PayoutDueItem[]> {
-  const res = await fetch(`${BASE}/api/admin/commissions/payout-due`, { headers: authHeaders(token) });
-  if (!res.ok) throw new Error('Failed to fetch payout due items');
+  const res = await adminFetch(token, "/api/admin/commissions/payout-due");
   const data = await res.json();
   return (Array.isArray(data) ? data : []).map((row) =>
     mapPayoutDueItem(row as Record<string, unknown>)
@@ -225,42 +221,33 @@ export interface AuditLogItem {
 
 function mapAuditLogItem(raw: Record<string, unknown>): AuditLogItem {
   return {
-    id: String(raw.id ?? raw.Id ?? ''),
-    actionType: String(raw.actionType ?? raw.ActionType ?? ''),
-    content: String(raw.content ?? raw.Content ?? ''),
+    id: String(raw.id ?? raw.Id ?? ""),
+    actionType: String(raw.actionType ?? raw.ActionType ?? ""),
+    content: String(raw.content ?? raw.Content ?? ""),
     metadataJson:
       raw.metadataJson != null || raw.MetadataJson != null
         ? String(raw.metadataJson ?? raw.MetadataJson)
         : null,
-    timestampUtc: String(raw.timestampUtc ?? raw.TimestampUtc ?? ''),
-    actorId: String(raw.actorId ?? raw.ActorId ?? ''),
-    actorFirstName: String(raw.actorFirstName ?? raw.ActorFirstName ?? ''),
-    actorLastName: String(raw.actorLastName ?? raw.ActorLastName ?? ''),
+    timestampUtc: String(raw.timestampUtc ?? raw.TimestampUtc ?? ""),
+    actorId: String(raw.actorId ?? raw.ActorId ?? ""),
+    actorFirstName: String(raw.actorFirstName ?? raw.ActorFirstName ?? ""),
+    actorLastName: String(raw.actorLastName ?? raw.ActorLastName ?? ""),
   };
 }
 
 export async function getEventAuditLog(token: string, eventId: string): Promise<AuditLogItem[]> {
-  const res = await fetch(`${BASE}/api/events/${eventId}/audit-log`, {
-    headers: authHeaders(token),
-  });
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    const message =
-      typeof body === 'object' && body !== null && 'message' in body
-        ? String((body as { message: unknown }).message)
-        : 'Failed to fetch audit log.';
-    throw new Error(message);
+  const response = await apiFetch(token, `${getApiBaseUrl()}/api/events/${eventId}/audit-log`);
+  if (!response.ok) {
+    throw new Error(await parseApiError(response, "Failed to fetch audit log."));
   }
-  const data = await res.json();
+  const data = await response.json();
   return (Array.isArray(data) ? data : []).map((row) =>
     mapAuditLogItem(row as Record<string, unknown>)
   );
 }
 
 export async function markPayoutSettled(token: string, settlementId: string): Promise<void> {
-  const res = await fetch(`${BASE}/api/admin/commissions/${settlementId}/mark-settled`, {
-    method: 'PATCH',
-    headers: authHeaders(token),
+  await adminFetch(token, `/api/admin/commissions/${settlementId}/mark-settled`, {
+    method: "PATCH",
   });
-  if (!res.ok) throw new Error('Failed to mark payout as settled');
 }

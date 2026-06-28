@@ -1,9 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useAuth } from "@/shared/context/AuthContext";
-import { getTasksForEvent, type Task } from "@/shared/lib/api/tasks";
-import { useRealTime } from "@/shared/context/RealTimeContext";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEventTasksQuery } from "@/shared/hooks/query/useEventQueries";
 import { ArrowRight } from "lucide-react";
 import TaskItem from "./TaskItem";
 import Skeleton from "@/shared/components/ui/Skeleton";
@@ -26,35 +24,16 @@ type MiniChecklistProps = {
 };
 
 const MiniChecklist = ({ eventId, className, listViewportHeight = null }: MiniChecklistProps) => {
-  const { user } = useAuth();
-  const { checklistVersion } = useRealTime();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: allTasks = [], isLoading, refetch } = useEventTasksQuery(eventId);
+  const tasks = useMemo(
+    () =>
+      sortTasksForDisplay(allTasks.filter((t) => t.status !== "Completed")).slice(0, MAX_TASKS),
+    [allTasks]
+  );
   const captionRef = useRef<HTMLParagraphElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const [captionHeight, setCaptionHeight] = useState(CAPTION_FALLBACK_PX);
   const [listOverflows, setListOverflows] = useState(false);
-
-  const fetchTasks = useCallback(async () => {
-    if (!user) return;
-    try {
-      const token = await user.getIdToken();
-      const data = await getTasksForEvent(token, eventId);
-      const pendingTasks = sortTasksForDisplay(data.filter((t) => t.status !== "Completed")).slice(
-        0,
-        MAX_TASKS
-      );
-      setTasks(pendingTasks);
-    } catch (error) {
-      console.error("Failed to fetch tasks:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user, eventId]);
-
-  useEffect(() => {
-    void fetchTasks();
-  }, [fetchTasks, checklistVersion]);
 
   useEffect(() => {
     const node = captionRef.current;
@@ -143,7 +122,7 @@ const MiniChecklist = ({ eventId, className, listViewportHeight = null }: MiniCh
               style={listMaxHeightPx != null ? { maxHeight: listMaxHeightPx } : undefined}
             >
               {tasks.map((task) => (
-                <TaskItem key={task.id} task={task} compact onStatusChange={fetchTasks} />
+                <TaskItem key={task.id} task={task} compact onStatusChange={() => void refetch()} />
               ))}
               {listOverflows ? (
                 <div

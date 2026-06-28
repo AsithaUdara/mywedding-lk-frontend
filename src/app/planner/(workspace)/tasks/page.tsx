@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+
 import {
   AlertTriangle,
   ArrowLeft,
@@ -18,49 +17,18 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import { useAuth } from "@/shared/context/AuthContext";
-import { getPlannerEvents, PlannerEventListItem } from "@/shared/lib/api/planner";
-import {
-  createTask,
-  deleteTask,
-  generateDiscoveryTasks,
-  generateFullChecklist,
-  getTasksForEvent,
-  patchTaskSchedule,
-  realignEventTaskSchedule,
-  Task,
-  updateTask,
-} from "@/shared/lib/api/tasks";
-import { TaskFormModal, type TaskFormValues } from "@/modules/planner/tasks/TaskFormModal";
+import { usePlannerCreateEventModal } from "@/modules/planner/subscription/PlannerCreateEventProvider";
+import { TaskFormModal } from "@/modules/planner/tasks/TaskFormModal";
 import { TaskIssueCard } from "@/modules/planner/tasks/TaskIssueCard";
 import { TaskIssueCell } from "@/modules/planner/tasks/TaskIssueCell";
+import { usePlannerTasksPage } from "@/modules/planner/tasks/usePlannerTasksPage";
 import { SaveTaskTemplateModal } from "@/modules/planner/templates/SaveTaskTemplateModal";
-import {
-  applyPlannerTaskTemplate,
-  getPlannerTaskTemplates,
-  type PlannerTaskTemplateListItem,
-} from "@/shared/lib/api/plannerTaskTemplates";
-import { getEventBrief, type EventBrief } from "@/shared/lib/api/eventBrief";
 import { EventBriefPanel } from "@/modules/planner/brief/EventBriefPanel";
 import { ChecklistPlanWizard } from "@/modules/planner/checklist/ChecklistPlanWizard";
-import { usePlannerCreateEventModal } from "@/modules/planner/subscription/PlannerCreateEventProvider";
-import { usePlannerBranding } from "@/modules/planner/branding/PlannerBrandingProvider";
 import { EventPickerSelect } from "@/modules/planner/planning/EventPlanningHeader";
-import { PlannerSetupFlow, type SetupStep } from "@/modules/planner/planning/PlannerSetupFlow";
+import { PlannerSetupFlow } from "@/modules/planner/planning/PlannerSetupFlow";
 import {
-  applyGanttDependencyLabels,
-  buildGanttTimeline,
-  checkDependencyViolation,
-  countScheduleHealth,
-  formatScheduleHealthSummary,
   GanttTaskView,
-  GanttTimeline,
-  getWeekLabels,
-  inferStage,
-  mapApiTaskToGanttView,
-  partitionGanttTasks,
-  sortGanttTasksForDisplay,
-  weeksToIsoRange,
 } from "@/modules/planner/gantt/ganttTimeline";
 import { ErrorBanner } from "@/modules/planner/components/ui";
 import { EmptyState, PageLoadingSkeleton, inputClass } from "@/shared/components/ui";
@@ -76,381 +44,71 @@ import { cn } from "@/shared/lib/cn";
 import { taskStatusShortLabel } from "@/modules/tasks/taskDisplay";
 
 export default function PlannerTasksPage() {
-  const { user } = useAuth();
   const { openCreateEventModal } = usePlannerCreateEventModal();
-  const { brand } = usePlannerBranding();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const eventIdFromUrl = searchParams.get("eventId");
-  const [events, setEvents] = useState<PlannerEventListItem[]>([]);
-  const [selectedEventId, setSelectedEventId] = useState<string>("");
-  const [tasks, setTasks] = useState<GanttTaskView[]>([]);
-  const [rawTasks, setRawTasks] = useState<Task[]>([]);
-  const [timeline, setTimeline] = useState<GanttTimeline>(() => buildGanttTimeline(new Date()));
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [dependencyWarning, setDependencyWarning] = useState<string | null>(null);
-  const [realignMessage, setRealignMessage] = useState<string | null>(null);
-  const [realigning, setRealigning] = useState(false);
-  const [eventBrief, setEventBrief] = useState<EventBrief | null>(null);
-  const [checklistMessage, setChecklistMessage] = useState<string | null>(null);
-  const [setupStep, setSetupStep] = useState<SetupStep>(1);
-  const [showNewEventTip, setShowNewEventTip] = useState(false);
-  const [seedingDiscovery, setSeedingDiscovery] = useState(false);
-  const [seedingMaster, setSeedingMaster] = useState(false);
-  const [showCompleted, setShowCompleted] = useState(false);
-  const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
-  const [savingTaskId, setSavingTaskId] = useState<string | null>(null);
-  const [taskModalOpen, setTaskModalOpen] = useState(false);
-  const [taskModalMode, setTaskModalMode] = useState<"add" | "edit">("add");
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [taskFormSaving, setTaskFormSaving] = useState(false);
-  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
-  const [customTemplates, setCustomTemplates] = useState<PlannerTaskTemplateListItem[]>([]);
-  const [selectedCustomTemplateId, setSelectedCustomTemplateId] = useState("");
-  const [applyingCustomTemplate, setApplyingCustomTemplate] = useState(false);
-  const dragState = useRef<{ taskId: string; startX: number; startWeek: number } | null>(null);
-  const ganttHeaderRef = useRef<HTMLDivElement>(null);
-  const [ganttHeaderHeight, setGanttHeaderHeight] = useState(56);
-
-  const weekCount = timeline.weekCount;
-
-  useEffect(() => {
-    if (!user) {
-      setCustomTemplates([]);
-      return;
-    }
-    void (async () => {
-      try {
-        const token = await user.getIdToken();
-        const data = await getPlannerTaskTemplates(token);
-        setCustomTemplates(data);
-        setSelectedCustomTemplateId((prev) => prev || data[0]?.id || "");
-      } catch {
-        setCustomTemplates([]);
-      }
-    })();
-  }, [user, saveTemplateOpen, checklistMessage]);
-
-  const handleApplyCustomTemplate = async (replaceExisting = false) => {
-    if (!user || !selectedEventId || !selectedCustomTemplateId) return;
-    try {
-      setApplyingCustomTemplate(true);
-      setError(null);
-      const token = await user.getIdToken();
-      const result = await applyPlannerTaskTemplate(
-        token,
-        selectedCustomTemplateId,
-        selectedEventId,
-        replaceExisting
-      );
-      setChecklistMessage(result.message);
-      setEvents((prev) =>
-        prev.map((ev) =>
-          ev.eventId === selectedEventId
-            ? {
-                ...ev,
-                taskPlanPhase: result.taskPlanPhase === "Full" ? "Full" : "Discovery",
-                eventLifecycleStage:
-                  result.taskPlanPhase === "Full" ? "Planning" : ev.eventLifecycleStage,
-              }
-            : ev
-        )
-      );
-      await loadTasks();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to apply your template.");
-    } finally {
-      setApplyingCustomTemplate(false);
-    }
-  };
-
-  const loadEvents = useCallback(async () => {
-    if (!user) return;
-    const token = await user.getIdToken();
-    const plannerEvents = await getPlannerEvents(token);
-    setEvents(plannerEvents);
-    setSelectedEventId((current) => {
-      const urlId =
-        eventIdFromUrl ??
-        (typeof window !== "undefined"
-          ? new URLSearchParams(window.location.search).get("eventId")
-          : null);
-      if (urlId && plannerEvents.some((e) => e.eventId === urlId)) {
-        return urlId;
-      }
-      if (current && plannerEvents.some((e) => e.eventId === current)) {
-        return current;
-      }
-      return plannerEvents[0]?.eventId || "";
-    });
-  }, [user, eventIdFromUrl]);
-
-  const handleSelectEvent = useCallback(
-    (eventId: string) => {
-      setSelectedEventId(eventId);
-      setSetupStep(1);
-      router.replace(`/planner/tasks?eventId=${encodeURIComponent(eventId)}`, { scroll: false });
-    },
-    [router]
-  );
-
-  useEffect(() => {
-    if (searchParams.get("welcome") !== "1" || !selectedEventId) return;
-    setShowNewEventTip(true);
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete("welcome");
-    const qs = params.toString();
-    router.replace(qs ? `/planner/tasks?${qs}` : "/planner/tasks", { scroll: false });
-  }, [searchParams, selectedEventId, router]);
-
-  useEffect(() => {
-    if (!user || !selectedEventId) {
-      setEventBrief(null);
-      return;
-    }
-    void (async () => {
-      try {
-        const token = await user.getIdToken();
-        const brief = await getEventBrief(token, selectedEventId);
-        setEventBrief(brief);
-      } catch {
-        setEventBrief(null);
-      }
-    })();
-  }, [user, selectedEventId, checklistMessage]);
-
-  const loadTasks = useCallback(async () => {
-    if (!user || !selectedEventId) {
-      setTasks([]);
-      setRawTasks([]);
-      setLoading(false);
-      return;
-    }
-    try {
-      setLoading(true);
-      const token = await user.getIdToken();
-      const apiTasks = await getTasksForEvent(token, selectedEventId);
-      const selectedEvent = events.find((e) => e.eventId === selectedEventId);
-      const nextTimeline = buildGanttTimeline(
-        selectedEvent ? new Date(selectedEvent.eventDate) : new Date()
-      );
-      setTimeline(nextTimeline);
-      setRawTasks(apiTasks);
-      const views = apiTasks.map((t, i) =>
-        mapApiTaskToGanttView(t, i, nextTimeline, new Map())
-      );
-      const titleByTaskId = new Map(views.map((t) => [t.id, t.title]));
-      setTasks(applyGanttDependencyLabels(views, titleByTaskId));
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load tasks.");
-    } finally {
-      setLoading(false);
-    }
-  }, [user, selectedEventId, events]);
-
-  useEffect(() => {
-    void loadEvents().catch((err) => {
-      setError(err instanceof Error ? err.message : "Failed to load events.");
-      setLoading(false);
-    });
-  }, [loadEvents]);
-
-  useEffect(() => {
-    void loadTasks();
-  }, [loadTasks]);
-
-  const tasksById = useMemo(() => new Map(tasks.map((t) => [t.id, t])), [tasks]);
-  const taskIndexById = useMemo(() => {
-    const map = new Map<string, number>();
-    rawTasks.forEach((task, index) => map.set(task.id, index));
-    return map;
-  }, [rawTasks]);
-  const partition = useMemo(() => partitionGanttTasks(tasks), [tasks]);
-  const scheduleHealth = useMemo(() => countScheduleHealth(rawTasks), [rawTasks]);
-
-  const healthSummary = useMemo(
-    () => formatScheduleHealthSummary(timeline, scheduleHealth.overdue, scheduleHealth.dueThisWeek),
-    [timeline, scheduleHealth]
-  );
-
-  const weekLabels = useMemo(() => getWeekLabels(timeline), [timeline]);
-
-  const completedCount = useMemo(
-    () => tasks.filter((t) => t.status === "Completed").length,
-    [tasks]
-  );
-
-  const activeByStage = useMemo(() => {
-    const order: GanttTaskView["stage"][] = ["Onboarding", "Planning", "Execution"];
-    const sortedActive = sortGanttTasksForDisplay(partition.active);
-    const groups = new Map<GanttTaskView["stage"], GanttTaskView[]>(
-      order.map((stage) => [stage, [] as GanttTaskView[]])
-    );
-    for (const task of sortedActive) {
-      groups.get(task.stage)!.push(task);
-    }
-    return order
-      .map((stage) => ({ stage, items: groups.get(stage)! }))
-      .filter((group) => group.items.length > 0);
-  }, [partition.active]);
-
-  useEffect(() => {
-    const el = ganttHeaderRef.current;
-    if (!el) return;
-
-    const syncHeight = () => setGanttHeaderHeight(el.offsetHeight);
-    syncHeight();
-
-    const observer = new ResizeObserver(syncHeight);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [activeByStage.length, weekCount, tasks.length]);
-
-  const handleRealign = async () => {
-    if (!user || !selectedEventId) return;
-    try {
-      setRealigning(true);
-      setError(null);
-      setRealignMessage(null);
-      const token = await user.getIdToken();
-      const result = await realignEventTaskSchedule(token, selectedEventId);
-      setRealignMessage(`${result.message} (${result.tasksUpdated} updated)`);
-      await loadTasks();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to realign schedule.");
-    } finally {
-      setRealigning(false);
-    }
-  };
-
-  const toIsoDate = (dateOnly: string): string | undefined => {
-    if (!dateOnly) return undefined;
-    return new Date(`${dateOnly}T12:00:00`).toISOString();
-  };
-
-  const openAddTask = () => {
-    setTaskModalMode("add");
-    setEditingTask(null);
-    setTaskModalOpen(true);
-  };
-
-  const openEditTask = (taskId: string) => {
-    const task = rawTasks.find((t) => t.id === taskId);
-    if (!task) return;
-    setTaskModalMode("edit");
-    setEditingTask(task);
-    setTaskModalOpen(true);
-  };
-
-  const handleTaskFormSave = async (values: TaskFormValues) => {
-    if (!user || !selectedEventId) return;
-    setTaskFormSaving(true);
-    try {
-      const token = await user.getIdToken();
-      const payload = {
-        title: values.title.trim(),
-        description: editingTask?.description ?? null,
-        status: values.status,
-        startDate: toIsoDate(values.startDate) ?? null,
-        dueDate: toIsoDate(values.dueDate) ?? null,
-        dependsOnTaskId: values.dependsOnTaskId || null,
-        updateDependency: true,
-      };
-
-      if (taskModalMode === "add") {
-        await createTask(token, selectedEventId, {
-          title: payload.title,
-          startDate: payload.startDate ?? undefined,
-          dueDate: payload.dueDate ?? undefined,
-          dependsOnTaskId: payload.dependsOnTaskId ?? undefined,
-        });
-      } else if (editingTask) {
-        await updateTask(token, selectedEventId, editingTask.id, payload);
-      }
-
-      setTaskModalOpen(false);
-      setEditingTask(null);
-      await loadTasks();
-    } finally {
-      setTaskFormSaving(false);
-    }
-  };
-
-  const handleTaskFormDelete = async () => {
-    if (!user || !selectedEventId || !editingTask) return;
-    const token = await user.getIdToken();
-    await deleteTask(token, selectedEventId, editingTask.id);
-    setTaskModalOpen(false);
-    setEditingTask(null);
-    await loadTasks();
-  };
-
-  const persistTaskWeeks = async (taskId: string, startWeek: number, duration: number) => {
-    if (!user || !selectedEventId) return;
-    const previous = tasks;
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === taskId ? { ...t, startWeek, duration, stage: inferStage(startWeek, weekCount) } : t
-      )
-    );
-
-    const { startDate, dueDate } = weeksToIsoRange(startWeek, duration, timeline.origin);
-    try {
-      setSavingTaskId(taskId);
-      const token = await user.getIdToken();
-      await patchTaskSchedule(token, selectedEventId, taskId, { startDate, dueDate });
-      setError(null);
-      void loadTasks();
-    } catch (err) {
-      setTasks(previous);
-      setError(err instanceof Error ? err.message : "Failed to save task schedule.");
-    } finally {
-      setSavingTaskId(null);
-    }
-  };
-
-  const onBarPointerDown = (e: React.PointerEvent, task: GanttTaskView) => {
-    if (savingTaskId) return;
-    e.preventDefault();
-    setDependencyWarning(null);
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    dragState.current = { taskId: task.id, startX: e.clientX, startWeek: task.startWeek };
-    setDraggingTaskId(task.id);
-  };
-
-  const onBarPointerMove = (e: React.PointerEvent, trackWidth: number) => {
-    const state = dragState.current;
-    if (!state || state.taskId !== draggingTaskId) return;
-    const weekDelta = Math.round(((e.clientX - state.startX) / trackWidth) * weekCount);
-    const nextStart = Math.max(0, Math.min(weekCount - 1, state.startWeek + weekDelta));
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === state.taskId ? { ...t, startWeek: nextStart, stage: inferStage(nextStart, weekCount) } : t
-      )
-    );
-  };
-
-  const onBarPointerUp = (e: React.PointerEvent, task: GanttTaskView) => {
-    const state = dragState.current;
-    if (!state || state.taskId !== task.id) return;
-    (e.target as HTMLElement).releasePointerCapture(e.pointerId);
-    dragState.current = null;
-    setDraggingTaskId(null);
-
-    const current = tasks.find((t) => t.id === task.id);
-    if (!current) return;
-
-    const violation = checkDependencyViolation(current, current.startWeek, tasksById, timeline);
-    if (violation) {
-      setDependencyWarning(violation);
-      void loadTasks();
-      return;
-    }
-
-    void persistTaskWeeks(task.id, current.startWeek, current.duration);
-  };
+  const {
+    brand,
+    events,
+    selectedEventId,
+    selectedEvent,
+    tasks,
+    rawTasks,
+    timeline,
+    loading,
+    error,
+    dependencyWarning,
+    realignMessage,
+    realigning,
+    eventBrief,
+    checklistMessage,
+    setupStep,
+    setSetupStep,
+    showNewEventTip,
+    setShowNewEventTip,
+    seedingDiscovery,
+    seedingMaster,
+    showCompleted,
+    setShowCompleted,
+    draggingTaskId,
+    savingTaskId,
+    taskModalOpen,
+    setTaskModalOpen,
+    taskModalMode,
+    editingTask,
+    setEditingTask,
+    taskFormSaving,
+    saveTemplateOpen,
+    setSaveTemplateOpen,
+    customTemplates,
+    selectedCustomTemplateId,
+    setSelectedCustomTemplateId,
+    applyingCustomTemplate,
+    ganttHeaderRef,
+    ganttHeaderHeight,
+    weekCount,
+    weekLabels,
+    healthSummary,
+    completedCount,
+    partition,
+    activeByStage,
+    taskIndexById,
+    isDiscoveryPhase,
+    handleSelectEvent,
+    handleApplyCustomTemplate,
+    handleRealign,
+    openAddTask,
+    openEditTask,
+    handleTaskFormSave,
+    handleTaskFormDelete,
+    onBarPointerDown,
+    onBarPointerMove,
+    onBarPointerUp,
+    handleSeedDiscoveryTasks,
+    handleSeedMasterChecklist,
+    handleChecklistApplied,
+    scheduleHealth,
+    setChecklistMessage,
+    invalidateEventBrief,
+  } = usePlannerTasksPage();
 
   const renderGanttRow = (task: GanttTaskView) => (
     <div
@@ -520,78 +178,6 @@ export default function PlannerTasksPage() {
       </div>
     </div>
   );
-
-  const selectedEvent = events.find((e) => e.eventId === selectedEventId);
-
-  const needsFullChecklist =
-    selectedEvent?.taskPlanPhase === "Discovery" ||
-    (selectedEvent?.taskPlanPhase === "None" && tasks.length > 0 && tasks.length < 35);
-
-  const isDiscoveryPhase = needsFullChecklist && selectedEvent?.taskPlanPhase !== "Full";
-
-  useEffect(() => {
-    if (!isDiscoveryPhase) return;
-    setSetupStep(eventBrief?.isBriefComplete ? 3 : 1);
-  }, [selectedEventId, eventBrief?.isBriefComplete, isDiscoveryPhase]);
-
-  const handleSeedDiscoveryTasks = async () => {
-    if (!user || !selectedEventId) return;
-    try {
-      setSeedingDiscovery(true);
-      setError(null);
-      const token = await user.getIdToken();
-      const result = await generateDiscoveryTasks(token, selectedEventId);
-      setChecklistMessage(result.message);
-      setEvents((prev) =>
-        prev.map((ev) =>
-          ev.eventId === selectedEventId
-            ? { ...ev, taskPlanPhase: "Discovery", eventLifecycleStage: "Onboarding" }
-            : ev
-        )
-      );
-      await loadTasks();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to generate discovery tasks.");
-    } finally {
-      setSeedingDiscovery(false);
-    }
-  };
-
-  const handleSeedMasterChecklist = async () => {
-    if (!user || !selectedEventId) return;
-    try {
-      setSeedingMaster(true);
-      setError(null);
-      const token = await user.getIdToken();
-      const result = await generateFullChecklist(token, selectedEventId);
-      setChecklistMessage(result.message);
-      setEvents((prev) =>
-        prev.map((ev) =>
-          ev.eventId === selectedEventId
-            ? { ...ev, taskPlanPhase: "Full", eventLifecycleStage: "Planning" }
-            : ev
-        )
-      );
-      await loadTasks();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to generate master checklist.");
-    } finally {
-      setSeedingMaster(false);
-    }
-  };
-
-  const handleChecklistApplied = useCallback(async () => {
-    setChecklistMessage("Master checklist applied. Refreshing timeline…");
-    setEvents((prev) =>
-      prev.map((ev) =>
-        ev.eventId === selectedEventId
-          ? { ...ev, taskPlanPhase: "Full", eventLifecycleStage: "Planning" }
-          : ev
-      )
-    );
-    await loadTasks();
-    await loadEvents();
-  }, [selectedEventId, loadTasks, loadEvents]);
 
   const timelineWorkspace = (
     <>
@@ -1014,7 +600,7 @@ export default function PlannerTasksPage() {
               <EventBriefPanel
                 eventId={selectedEventId}
                 eventName={selectedEvent?.eventName}
-                onBriefUpdated={setEventBrief}
+                onBriefUpdated={() => void invalidateEventBrief(selectedEventId)}
                 onMarkedComplete={() => setSetupStep(3)}
                 onContinue={() => setSetupStep(3)}
                 embedded

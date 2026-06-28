@@ -1,3 +1,7 @@
+import { apiFetch } from "@/shared/lib/api/apiClient";
+import { apiRequestJson, apiUrl } from "@/shared/lib/api/apiRequest";
+import { parseApiError } from "@/shared/lib/api/parseApiError";
+
 export interface WeddingEventSummary {
   id: string;
   eventName: string;
@@ -92,76 +96,69 @@ function mapEventSummary(raw: Record<string, unknown>): WeddingEventSummary {
 }
 
 export const getEvents = async (token: string): Promise<WeddingEventSummary[]> => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/events`;
-  const response = await fetch(apiUrl, {
-    method: 'GET',
-    headers: { 'Authorization': `Bearer ${token}` },
-  });
-  if (!response.ok) throw new Error('Failed to fetch events.');
-  const data = await response.json();
+  const data = await apiRequestJson<unknown[]>(
+    token,
+    "/api/events",
+    { method: "GET" },
+    { fallbackError: "Failed to fetch events." }
+  );
   return (Array.isArray(data) ? data : []).map((row) =>
     mapEventSummary(row as Record<string, unknown>)
   );
 };
 
-export const createEvent = async (token: string, eventData: { eventName: string; eventDate: string; }) => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/events`;
-  const response = await fetch(apiUrl, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
+export const createEvent = async (
+  token: string,
+  eventData: { eventName: string; eventDate: string }
+): Promise<{ id: string; eventId: string; eventName: string }> => {
+  const data = await apiRequestJson<Record<string, unknown>>(
+    token,
+    "/api/events",
+    {
+      method: "POST",
+      body: JSON.stringify(eventData),
     },
-    body: JSON.stringify(eventData),
-  });
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || 'Failed to create event.');
-  }
-  return response.json();
+    { fallbackError: "Failed to create event." }
+  );
+  const id = String(data.id ?? data.Id ?? data.eventId ?? data.EventId ?? "");
+  return {
+    id,
+    eventId: id,
+    eventName: String(data.eventName ?? data.EventName ?? eventData.eventName),
+  };
 };
 
 export const getEventById = async (token: string, eventId: string) => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/events/${eventId}`;
-  const response = await fetch(apiUrl, {
-    method: 'GET',
-    headers: { 'Authorization': `Bearer ${token}` },
-  });
+  const response = await apiFetch(token, apiUrl(`/api/events/${eventId}`), { method: "GET" });
+  if (response.status === 404) return null;
   if (!response.ok) {
-    if (response.status === 404) return null;
-    throw new Error('Failed to fetch event details.');
+    throw new Error(await parseApiError(response, "Failed to fetch event details."));
   }
   return response.json();
 };
 
 export const getOrganizers = async (token: string, eventId: string): Promise<Organizer[]> => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/events/${eventId}/organizers`;
-  const response = await fetch(apiUrl, {
-    method: 'GET',
-    headers: { 'Authorization': `Bearer ${token}` },
-  });
-  if (!response.ok) throw new Error('Failed to fetch event organizers.');
-  const data = await response.json();
+  const data = await apiRequestJson<unknown[]>(
+    token,
+    `/api/events/${eventId}/organizers`,
+    { method: "GET" },
+    { fallbackError: "Failed to fetch event organizers." }
+  );
   return (Array.isArray(data) ? data : []).map((row) =>
     mapOrganizer(row as Record<string, unknown>)
   );
 };
 
 export const inviteOrganizer = async (token: string, eventId: string, inviteData: InviteData) => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/events/${eventId}/organizers`;
-  const response = await fetch(apiUrl, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
+  return apiRequestJson(
+    token,
+    `/api/events/${eventId}/organizers`,
+    {
+      method: "POST",
+      body: JSON.stringify(inviteData),
     },
-    body: JSON.stringify(inviteData),
-  });
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || 'Failed to send invitation.');
-  }
-  return response.json();
+    { fallbackError: "Failed to send invitation." }
+  );
 };
 
 export interface Invitation {
@@ -174,29 +171,22 @@ export interface Invitation {
 }
 
 export const getInvitations = async (token: string, eventId: string): Promise<Invitation[]> => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/events/${eventId}/invitations`;
-  const response = await fetch(apiUrl, {
-    method: 'GET',
-    headers: { 'Authorization': `Bearer ${token}` },
-  });
-  if (!response.ok) throw new Error('Failed to fetch invitations.');
-  return response.json();
+  return apiRequestJson(
+    token,
+    `/api/events/${eventId}/invitations`,
+    { method: "GET" },
+    { fallbackError: "Failed to fetch invitations." }
+  );
 };
 
 export const updateOrganizerRole = async (token: string, eventId: string, userId: string, data: { role: string; permissionLevel: string }) => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/events/${eventId}/organizers/${userId}`;
-  const response = await fetch(apiUrl, {
-    method: 'PUT',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
+  return apiRequestJson(
+    token,
+    `/api/events/${eventId}/organizers/${userId}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(data),
     },
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || 'Failed to update member.');
-  }
-  return response.json();
+    { fallbackError: "Failed to update member." }
+  );
 };
-

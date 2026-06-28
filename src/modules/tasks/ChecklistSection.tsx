@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/shared/context/AuthContext";
-import { getTasksForEvent, type Task } from "@/shared/lib/api/tasks";
-import { useRealTime } from "@/shared/context/RealTimeContext";
+import { useEventTasksQuery } from "@/shared/hooks/query/useEventQueries";
 import { CheckSquare, ChevronDown, ListTodo, PlusCircle, TrendingUp, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEventPermission } from "@/shared/hooks/useEventPermission";
@@ -33,9 +32,7 @@ const FILTER_OPTIONS: { id: TaskFilter; label: string }[] = [
 
 const ChecklistSection = ({ eventId }: ChecklistSectionProps) => {
   const { user } = useAuth();
-  const { checklistVersion } = useRealTime();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: tasks = [], isLoading, refetch } = useEventTasksQuery(eventId);
   const { isViewer } = useEventPermission(eventId);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [filter, setFilter] = useState<TaskFilter>("active");
@@ -52,27 +49,9 @@ const ChecklistSection = ({ eventId }: ChecklistSectionProps) => {
     });
   }, [user]);
 
-  const fetchTasks = useCallback(async () => {
-    if (!user) return;
-    try {
-      setIsLoading(true);
-      const token = await user.getIdToken();
-      const data = await getTasksForEvent(token, eventId);
-      setTasks(data);
-    } catch (error) {
-      console.error("Failed to fetch tasks:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user, eventId]);
-
-  useEffect(() => {
-    void fetchTasks();
-  }, [fetchTasks, checklistVersion]);
-
   const handleTaskCreated = () => {
     setShowCreateForm(false);
-    void fetchTasks();
+    void refetch();
   };
 
   const completedCount = tasks.filter((t) => t.status === "Completed").length;
@@ -293,7 +272,7 @@ const ChecklistSection = ({ eventId }: ChecklistSectionProps) => {
                         task={task}
                         readOnly={isViewer}
                         compact
-                        onStatusChange={fetchTasks}
+                        onStatusChange={() => void refetch()}
                       />
                     </li>
                   ))}
@@ -329,7 +308,7 @@ const ChecklistSection = ({ eventId }: ChecklistSectionProps) => {
                           task={task}
                           readOnly={isViewer}
                           compact
-                          onStatusChange={fetchTasks}
+                          onStatusChange={() => void refetch()}
                         />
                       </li>
                     ))}

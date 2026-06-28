@@ -1,18 +1,8 @@
 "use client";
 
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import { useAuth } from "@/shared/context/AuthContext";
-import {
-  getVendorBusinessProfile,
-  VendorBusinessProfile,
-} from "@/shared/lib/api/vendors";
+import React, { createContext, useCallback, useContext, useMemo } from "react";
+import { useVendorBusinessProfileQuery } from "@/shared/hooks/query/useVendorQueries";
+import type { VendorBusinessProfile } from "@/shared/lib/api/vendors";
 
 export type VendorVerificationStatus = "Pending" | "Verified" | "Rejected";
 
@@ -37,32 +27,11 @@ function normalizeStatus(status: string | undefined): VendorVerificationStatus {
 }
 
 export function VendorVerificationProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
-  const [profile, setProfile] = useState<VendorBusinessProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: profile = null, isLoading: loading, refetch } = useVendorBusinessProfileQuery();
 
   const refreshProfile = useCallback(async () => {
-    if (!user) {
-      setProfile(null);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const token = await user.getIdToken();
-      const data = await getVendorBusinessProfile(token);
-      setProfile(data);
-    } catch {
-      setProfile(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    setLoading(true);
-    void refreshProfile();
-  }, [refreshProfile]);
+    await refetch();
+  }, [refetch]);
 
   const verificationStatus = normalizeStatus(profile?.verificationStatus);
   const isVerified = verificationStatus === "Verified";

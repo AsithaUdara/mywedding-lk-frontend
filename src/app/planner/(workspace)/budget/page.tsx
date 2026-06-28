@@ -1,9 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { AlertTriangle, ClipboardCheck, PiggyBank, TrendingDown, Wallet } from "lucide-react";
-import { useAuth } from "@/shared/context/AuthContext";
-import { getPlannerEvents } from "@/shared/lib/api/planner";
+import { usePlannerEventsQuery } from "@/shared/hooks/query/usePlannerQueries";
 import { BudgetToolbar } from "@/modules/planner/budget/BudgetToolbar";
 import { PlannerBudgetEventCard } from "@/modules/planner/budget/PlannerBudgetEventCard";
 import {
@@ -34,31 +33,16 @@ const FILTER_LABELS: Record<BudgetFilter, string> = {
 };
 
 export default function PlannerBudgetPage() {
-  const { user } = useAuth();
   const { openCreateEventModal } = usePlannerCreateEventModal();
+  const {
+    data: events = [],
+    isLoading: loading,
+    error: queryError,
+  } = usePlannerEventsQuery();
   const [budgetFilter, setBudgetFilter] = useState<BudgetFilter>("all");
-  const [summaries, setSummaries] = useState<ReturnType<typeof mapEventToBudgetSummary>[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    if (!user) return;
-    try {
-      setLoading(true);
-      const token = await user.getIdToken();
-      const events = await getPlannerEvents(token);
-      setSummaries(events.map(mapEventToBudgetSummary));
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load budget data.");
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const summaries = useMemo(() => events.map(mapEventToBudgetSummary), [events]);
+  const error = queryError?.message ?? null;
 
   const stats = useMemo(
     () => computeBudgetPortfolioStats(summaries.map((summary) => summary.event)),

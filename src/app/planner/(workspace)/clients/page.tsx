@@ -1,17 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CalendarClock, Plus, Users } from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
-import {
-  EventLifecycleStage,
-  getPlannerEvents,
-  updatePlannerEventStage,
-} from "@/shared/lib/api/planner";
-import { getTasksForEvent } from "@/shared/lib/api/tasks";
+import { EventLifecycleStage, updatePlannerEventStage } from "@/shared/lib/api/planner";
+import { usePlannerClientsPipelineQuery } from "@/shared/hooks/query/usePlannerClientsPipelineQuery";
+import { usePlannerQueryInvalidation } from "@/shared/hooks/query/useQueryInvalidation";
 import { ClientKanbanCard } from "@/modules/planner/clients/ClientKanbanCard";
 import {
-  mapEventToPipelineCard,
   PIPELINE_STAGES,
   STAGE_HINTS,
   type ClientPipelineCard,
@@ -31,42 +27,26 @@ import { cn } from "@/shared/lib/cn";
 export default function PlannerClientsPage() {
   const { user } = useAuth();
   const { openCreateEventModal } = usePlannerCreateEventModal();
+  const { invalidatePlannerEvents } = usePlannerQueryInvalidation();
+  const {
+    clients: serverClients,
+    isLoading,
+    error: queryError,
+  } = usePlannerClientsPipelineQuery();
   const [clients, setClients] = useState<ClientPipelineCard[]>([]);
   const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    if (!user) return;
-    try {
-      setLoading(true);
-      const token = await user.getIdToken();
-      const events = await getPlannerEvents(token);
-
-      const cards = await Promise.all(
-        events.map(async (event) => {
-          try {
-            const tasks = await getTasksForEvent(token, event.eventId);
-            return mapEventToPipelineCard(event, tasks);
-          } catch {
-            return mapEventToPipelineCard(event, []);
-          }
-        })
-      );
-
-      setClients(cards);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load clients.");
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
+  useEffect(() => {
+    setClients(serverClients);
+  }, [serverClients]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (queryError) {
+      setError(queryError.message);
+    }
+  }, [queryError]);
 
   const setupCount = useMemo(() => clients.filter((c) => c.needsSetup).length, [clients]);
   const nextWedding = useMemo(() => {
@@ -93,6 +73,7 @@ export default function PlannerClientsPage() {
       const token = await user.getIdToken();
       await updatePlannerEventStage(token, cardId, targetStage);
       setError(null);
+      void invalidatePlannerEvents();
     } catch (err) {
       setClients(previous);
       setError(err instanceof Error ? err.message : "Failed to update stage.");
@@ -101,7 +82,7 @@ export default function PlannerClientsPage() {
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return <PageLoadingSkeleton />;
   }
 

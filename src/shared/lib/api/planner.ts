@@ -1,5 +1,8 @@
 import { parsePlannerApiError, PlannerSubscriptionLimitError } from "@/modules/planner/subscription/errors";
+import { apiUrl } from "@/shared/lib/api/apiRequest";
+import { parseApiError } from "@/shared/lib/api/parseApiError";
 import { plannerFetch } from "@/shared/lib/api/plannerHttp";
+import { plannerEventsSchema } from "@/shared/lib/api/schemas/planner";
 
 export interface PlannerSignupPayload {
   businessName: string;
@@ -125,21 +128,18 @@ export interface PlannerBookingListItem {
   createdAt: string;
 }
 
-const BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
-
 function authHeaders(token: string): HeadersInit {
   return { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
 }
 
 export async function signupPlanner(token: string, payload: PlannerSignupPayload): Promise<void> {
-  const res = await fetch(`${BASE}/api/planner/signup`, {
+  const res = await fetch(apiUrl("/api/planner/signup"), {
     method: "POST",
     headers: authHeaders(token),
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || "Failed to create planner profile.");
+    throw new Error(await parseApiError(res, "Failed to create planner profile."));
   }
 }
 
@@ -186,31 +186,6 @@ function mapPlannerOverview(raw: Record<string, unknown>): PlannerOverviewRespon
       raw.subscriptionStartsAt != null || raw.SubscriptionStartsAt != null
         ? String(raw.subscriptionStartsAt ?? raw.SubscriptionStartsAt)
         : null,
-  };
-}
-
-function mapPlannerEventListItem(raw: Record<string, unknown>): PlannerEventListItem {
-  const stage = String(
-    raw.eventLifecycleStage ?? raw.EventLifecycleStage ?? "Planning"
-  ) as EventLifecycleStage;
-  const taskPlanPhase = String(
-    raw.taskPlanPhase ?? raw.TaskPlanPhase ?? "None"
-  ) as TaskPlanPhase;
-  return {
-    plannerClientEventId: String(raw.plannerClientEventId ?? raw.PlannerClientEventId ?? ""),
-    eventId: String(raw.eventId ?? raw.EventId ?? ""),
-    eventName: String(raw.eventName ?? raw.EventName ?? ""),
-    eventDate: String(raw.eventDate ?? raw.EventDate ?? ""),
-    clientUserId: String(raw.clientUserId ?? raw.ClientUserId ?? ""),
-    clientEmail: String(raw.clientEmail ?? raw.ClientEmail ?? ""),
-    status: String(raw.status ?? raw.Status ?? ""),
-    totalBudget: Number(raw.totalBudget ?? raw.TotalBudget ?? 0),
-    spentBudget: Number(raw.spentBudget ?? raw.SpentBudget ?? 0),
-    requestedBookings: Number(raw.requestedBookings ?? raw.RequestedBookings ?? 0),
-    confirmedBookings: Number(raw.confirmedBookings ?? raw.ConfirmedBookings ?? 0),
-    completedBookings: Number(raw.completedBookings ?? raw.CompletedBookings ?? 0),
-    eventLifecycleStage: stage,
-    taskPlanPhase,
   };
 }
 
@@ -265,12 +240,9 @@ function mapPlannerDashboard(raw: Record<string, unknown>): PlannerDashboardResp
 }
 
 export async function getPlannerDashboard(token: string): Promise<PlannerDashboardResponse> {
-  const res = await fetch(`${BASE}/api/planner/dashboard`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const res = await plannerFetch(token, apiUrl("/api/planner/dashboard"));
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || "Failed to load planner dashboard.");
+    throw new Error(await parseApiError(res, "Failed to load planner dashboard."));
   }
   const data = await res.json();
   return mapPlannerDashboard(data as Record<string, unknown>);
@@ -280,16 +252,12 @@ export async function updatePlannerAgencyLogo(
   token: string,
   agencyLogoUrl: string
 ): Promise<{ agencyLogoUrl: string }> {
-  const res = await fetch(`${BASE}/api/planner/profile/agency-logo`, {
+  const res = await plannerFetch(token, apiUrl("/api/planner/profile/agency-logo"), {
     method: "PUT",
-    headers: authHeaders(token),
     body: JSON.stringify({ agencyLogoUrl }),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(
-      String((err as { message?: string }).message ?? "Failed to save agency logo.")
-    );
+    throw new Error(await parseApiError(res, "Failed to save agency logo."));
   }
   return res.json();
 }
@@ -298,7 +266,7 @@ export async function createPlannerEvent(
   token: string,
   payload: CreatePlannerEventPayload
 ): Promise<CreatePlannerEventResult> {
-  const res = await plannerFetch(token, `${BASE}/api/planner/events`, {
+  const res = await plannerFetch(token, apiUrl("/api/planner/events"), {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -323,38 +291,33 @@ export async function createPlannerSubscriptionCheckout(
   token: string,
   payload: { tier: "PlannerPro"; monthlyFee: number }
 ) {
-  const res = await fetch(`${BASE}/api/payments/planner-subscription/checkout`, {
+  const res = await fetch(apiUrl("/api/payments/planner-subscription/checkout"), {
     method: "POST",
     headers: authHeaders(token),
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || "Failed to start planner subscription checkout.");
+    throw new Error(await parseApiError(res, "Failed to start planner subscription checkout."));
   }
   return res.json();
 }
 
 export async function updatePlannerSubscription(token: string, payload: { tier: "Free" | "PlannerPro"; monthlyFee: number }) {
-  const res = await fetch(`${BASE}/api/planner/subscription`, {
+  const res = await fetch(apiUrl("/api/planner/subscription"), {
     method: "POST",
     headers: authHeaders(token),
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || "Failed to update planner subscription.");
+    throw new Error(await parseApiError(res, "Failed to update planner subscription."));
   }
   return res.json();
 }
 
 export async function getPlannerBillingProfile(token: string): Promise<PlannerBillingProfile> {
-  const res = await fetch(`${BASE}/api/planner/billing-profile`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const res = await plannerFetch(token, apiUrl("/api/planner/billing-profile"));
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || "Failed to load billing profile.");
+    throw new Error(await parseApiError(res, "Failed to load billing profile."));
   }
   const data = (await res.json()) as Record<string, unknown>;
   return {
@@ -396,35 +359,31 @@ export async function savePlannerBillingProfile(
     expiryYear?: number;
   }
 ) {
-  const res = await fetch(`${BASE}/api/planner/billing-profile`, {
+  const res = await plannerFetch(token, apiUrl("/api/planner/billing-profile"), {
     method: "PUT",
-    headers: authHeaders(token),
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || "Failed to save billing profile.");
+    throw new Error(await parseApiError(res, "Failed to save billing profile."));
   }
   return res.json();
 }
 
 export async function getPlannerOverview(token: string): Promise<PlannerOverviewResponse> {
-  const res = await fetch(`${BASE}/api/planner/overview`, {
+  const res = await fetch(apiUrl("/api/planner/overview"), {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || "Failed to load planner overview.");
+    throw new Error(await parseApiError(res, "Failed to load planner overview."));
   }
   const data = await res.json();
   return mapPlannerOverview(data as Record<string, unknown>);
 }
 
 export async function getPlannerClients(token: string): Promise<PlannerClientItem[]> {
-  const res = await plannerFetch(token, `${BASE}/api/planner/clients`);
+  const res = await plannerFetch(token, apiUrl("/api/planner/clients"));
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || "Failed to load planner clients.");
+    throw new Error(await parseApiError(res, "Failed to load planner clients."));
   }
   const data = await res.json();
   return (Array.isArray(data) ? data : []).map((row) =>
@@ -434,17 +393,12 @@ export async function getPlannerClients(token: string): Promise<PlannerClientIte
 
 export async function getPlannerEvents(token: string, status?: string): Promise<PlannerEventListItem[]> {
   const query = status ? `?status=${encodeURIComponent(status)}` : "";
-  const res = await fetch(`${BASE}/api/planner/events${query}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const res = await plannerFetch(token, apiUrl(`/api/planner/events${query}`));
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || "Failed to load planner events.");
+    throw new Error(await parseApiError(res, "Failed to load planner events."));
   }
   const data = await res.json();
-  return (Array.isArray(data) ? data : []).map((row) =>
-    mapPlannerEventListItem(row as Record<string, unknown>)
-  );
+  return plannerEventsSchema.parse(data);
 }
 
 export async function updatePlannerEventStage(
@@ -452,7 +406,7 @@ export async function updatePlannerEventStage(
   eventId: string,
   stage: EventLifecycleStage
 ): Promise<void> {
-  const res = await plannerFetch(token, `${BASE}/api/planner/events/${eventId}/stage`, {
+  const res = await plannerFetch(token, apiUrl(`/api/planner/events/${eventId}/stage`), {
     method: "PATCH",
     body: JSON.stringify({ stage }),
   });
@@ -466,13 +420,12 @@ export async function updatePlannerProfile(
   token: string,
   payload: { businessName: string; businessDescription?: string; contactPhone?: string; city?: string }
 ) {
-  const res = await plannerFetch(token, `${BASE}/api/planner/profile`, {
+  const res = await plannerFetch(token, apiUrl("/api/planner/profile"), {
     method: "PUT",
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || "Failed to update planner profile.");
+    throw new Error(await parseApiError(res, "Failed to update planner profile."));
   }
   return res.json();
 }
@@ -492,7 +445,7 @@ function mapPlannerBooking(raw: Record<string, unknown>): PlannerBookingListItem
 }
 
 export async function getPlannerBookings(token: string): Promise<PlannerBookingListItem[]> {
-  const res = await plannerFetch(token, `${BASE}/api/planner/bookings`);
+  const res = await plannerFetch(token, apiUrl("/api/planner/bookings"));
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(

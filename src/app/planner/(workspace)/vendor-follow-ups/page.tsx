@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -8,8 +8,7 @@ import {
   Sparkles,
   Store,
 } from "lucide-react";
-import { useAuth } from "@/shared/context/AuthContext";
-import { getPlannerEvents } from "@/shared/lib/api/planner";
+import { usePlannerEventsQuery } from "@/shared/hooks/query/usePlannerQueries";
 import { InboxToolbar } from "@/modules/planner/inbox/InboxToolbar";
 import { PlannerInboxEventCard } from "@/modules/planner/inbox/PlannerInboxEventCard";
 import {
@@ -39,31 +38,16 @@ const FILTER_LABELS: Record<InboxFilter, string> = {
 };
 
 export default function PlannerVendorFollowUpsPage() {
-  const { user } = useAuth();
   const { openCreateEventModal } = usePlannerCreateEventModal();
+  const {
+    data: events = [],
+    isLoading: loading,
+    error: queryError,
+  } = usePlannerEventsQuery();
   const [inboxFilter, setInboxFilter] = useState<InboxFilter>("all");
-  const [summaries, setSummaries] = useState<ReturnType<typeof mapEventToInboxSummary>[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    if (!user) return;
-    try {
-      setLoading(true);
-      const token = await user.getIdToken();
-      const events = await getPlannerEvents(token);
-      setSummaries(events.map(mapEventToInboxSummary));
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load vendor follow-ups.");
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const summaries = useMemo(() => events.map(mapEventToInboxSummary), [events]);
+  const error = queryError?.message ?? null;
 
   const stats = useMemo(() => computeInboxStats(summaries.map((s) => s.event)), [summaries]);
 

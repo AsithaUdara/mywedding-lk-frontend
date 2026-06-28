@@ -88,17 +88,12 @@ export function VendorApprovalQueue({
     try {
       const token = await user.getIdToken();
       const data = await getPendingVendors(token);
-      if (data.length === 0) {
-        setVendors(MOCK_PENDING);
-        setUseMock(true);
-      } else {
-        setVendors(data);
-        setUseMock(false);
-      }
+      setVendors(data);
+      setUseMock(false);
     } catch {
-      setVendors(MOCK_PENDING);
-      setUseMock(true);
-      setError("Live API unavailable — showing mock KYB queue.");
+      setVendors([]);
+      setUseMock(false);
+      setError("Failed to load KYB queue.");
     } finally {
       setLoading(false);
     }
@@ -113,7 +108,7 @@ export function VendorApprovalQueue({
   }, [vendors.length, onPendingCount]);
 
   const displayVendors = useMemo(() => {
-    return isEmbedded ? vendors.slice(0, 4) : vendors;
+    return isEmbedded ? vendors.slice(0, 3) : vendors;
   }, [vendors, isEmbedded]);
 
   const removeVendor = (vendorId: string) => {
@@ -264,9 +259,9 @@ export function VendorApprovalQueue({
         </ul>
       )}
 
-      {isEmbedded && vendors.length > 4 && (
+      {isEmbedded && vendors.length > 3 && (
         <p className={cn("text-center text-sm", vg.subtitle)}>
-          Showing 4 of {vendors.length} pending — open the full queue to review all.
+          Showing 3 of {vendors.length} pending — open the full queue to review all.
         </p>
       )}
     </div>

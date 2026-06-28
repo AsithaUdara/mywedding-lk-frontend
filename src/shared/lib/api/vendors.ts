@@ -1,6 +1,8 @@
 // File: src/lib/api/vendors.ts
 
 import { parseApiError } from '@/shared/lib/api/parseApiError';
+import { getApiBaseUrl } from '@/shared/lib/api/apiClient';
+import { vendorAuthedJson } from '@/shared/lib/api/vendors/http';
 import { submitPayHereCheckout } from '@/shared/lib/payhereCheckout';
 import { resolveBookedByDisplayName } from '@/shared/lib/userDisplay';
 
@@ -108,7 +110,7 @@ export interface VendorDashboardService {
 // --- API Functions ---
 
 export const getVendorCategories = async (): Promise<VendorCategory[]> => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendors/categories`;
+  const apiUrl = `${getApiBaseUrl()}/api/vendors/categories`;
   const response = await fetch(apiUrl, { method: "GET", next: { revalidate: 3600 } });
   if (!response.ok) {
     throw new Error("Failed to fetch vendor categories.");
@@ -122,7 +124,7 @@ export const getVendorCategories = async (): Promise<VendorCategory[]> => {
 
 // 1. Get a list of vendors, with optional filtering
 export const getVendors = async (filters: VendorFilters = {}): Promise<Vendor[]> => {
-  const baseUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendors`;
+  const baseUrl = `${getApiBaseUrl()}/api/vendors`;
 
   // Build query string from filters
   const queryParams = new URLSearchParams();
@@ -149,7 +151,7 @@ export const getVendors = async (filters: VendorFilters = {}): Promise<Vendor[]>
 
 // 2. Get a single vendor by their ID
 export const getVendorById = async (vendorId: string): Promise<VendorDetail | null> => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendors/${vendorId}`;
+  const apiUrl = `${getApiBaseUrl()}/api/vendors/${vendorId}`;
 
   const response = await fetch(apiUrl, {
     method: 'GET',
@@ -175,7 +177,7 @@ export interface BookingData {
 
 // --- NEW FUNCTION: Create a new booking ---
 export const createBooking = async (token: string, bookingData: BookingData) => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/bookings`;
+  const apiUrl = `${getApiBaseUrl()}/api/bookings`;
   const response = await fetch(apiUrl, {
     method: 'POST',
     headers: {
@@ -192,7 +194,7 @@ export const createBooking = async (token: string, bookingData: BookingData) => 
 };
 
 export const createDepositCheckout = async (token: string, bookingId: string) => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/payments/bookings/${bookingId}/deposit-checkout`;
+  const apiUrl = `${getApiBaseUrl()}/api/payments/bookings/${bookingId}/deposit-checkout`;
   const response = await fetch(apiUrl, {
     method: 'POST',
     headers: {
@@ -216,7 +218,7 @@ export const getBookingPaymentStatus = async (
   token: string,
   bookingId: string
 ): Promise<BookingPaymentStatus> => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/payments/bookings/${bookingId}/status`;
+  const apiUrl = `${getApiBaseUrl()}/api/payments/bookings/${bookingId}/status`;
   const response = await fetch(apiUrl, {
     method: 'GET',
     headers: {
@@ -249,7 +251,7 @@ export const registerVendor = async (
     contactPhone?: string;
   }
 ) => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendors/register`;
+  const apiUrl = `${getApiBaseUrl()}/api/vendors/register`;
   const response = await fetch(apiUrl, {
     method: 'POST',
     headers: {
@@ -267,16 +269,7 @@ export const registerVendor = async (
 };
 
 export const getVendorAnalytics = async (token: string): Promise<VendorAnalytics> => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/dashboard/analytics`;
-  const response = await fetch(apiUrl, {
-    method: "GET",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || "Failed to load vendor analytics.");
-  }
-  const data = await response.json();
+  const data = await vendorAuthedJson<Record<string, unknown>>(token, "/api/vendor/dashboard/analytics");
   const monthlyRaw = data.monthlyEarnings ?? data.MonthlyEarnings ?? [];
   return {
     totalServices: Number(data.totalServices ?? data.TotalServices ?? 0),
@@ -301,17 +294,8 @@ export const getVendorAnalytics = async (token: string): Promise<VendorAnalytics
 };
 
 export const getVendorDashboardServices = async (token: string): Promise<VendorDashboardService[]> => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/dashboard/services`;
-  const response = await fetch(apiUrl, {
-    method: "GET",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || "Failed to fetch vendor services.");
-  }
-  const data = await response.json();
-  return (Array.isArray(data) ? data : []).map((item: Record<string, unknown>) => ({
+  const data = await vendorAuthedJson<unknown[]>(token, "/api/vendor/dashboard/services");
+  return ((Array.isArray(data) ? data : []) as Record<string, unknown>[]).map((item) => ({
     id: String(item.id ?? item.Id ?? ""),
     serviceName: String(item.serviceName ?? item.ServiceName ?? ""),
     serviceDescription:
@@ -355,7 +339,7 @@ export const createVendorDashboardService = async (
     listingDetailsJson?: string;
   }
 ) => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/dashboard/services`;
+  const apiUrl = `${getApiBaseUrl()}/api/vendor/dashboard/services`;
   const response = await fetch(apiUrl, {
     method: "POST",
     headers: {
@@ -387,7 +371,7 @@ export const updateVendorDashboardService = async (
     listingDetailsJson?: string;
   }
 ) => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/dashboard/services/${serviceId}`;
+  const apiUrl = `${getApiBaseUrl()}/api/vendor/dashboard/services/${serviceId}`;
   const response = await fetch(apiUrl, {
     method: "PUT",
     headers: {
@@ -403,7 +387,7 @@ export const updateVendorDashboardService = async (
 };
 
 export const deleteVendorDashboardService = async (token: string, serviceId: string) => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/dashboard/services/${serviceId}`;
+  const apiUrl = `${getApiBaseUrl()}/api/vendor/dashboard/services/${serviceId}`;
   const response = await fetch(apiUrl, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
@@ -448,17 +432,8 @@ function normalizeBookingStatus(raw: unknown): string {
 }
 
 export const getVendorBookings = async (token: string): Promise<VendorBookingItem[]> => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/bookings/vendor`;
-  const response = await fetch(apiUrl, {
-    method: 'GET',
-    headers: { 'Authorization': `Bearer ${token}` },
-  });
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || 'Failed to fetch bookings.');
-  }
-  const data = await response.json();
-  return (Array.isArray(data) ? data : []).map((item: Record<string, unknown>) => {
+  const data = await vendorAuthedJson<unknown[]>(token, "/api/bookings/vendor");
+  return ((Array.isArray(data) ? data : []) as Record<string, unknown>[]).map((item) => {
     const coupleName = String(item.coupleName ?? item.CoupleName ?? "Unknown");
     const bookedByEmail =
       item.bookedByEmail != null || item.BookedByEmail != null
@@ -492,7 +467,7 @@ export const getVendorBookings = async (token: string): Promise<VendorBookingIte
 };
 
 export const updateBookingStatus = async (token: string, bookingId: string, status: string) => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/bookings/${bookingId}/status`;
+  const apiUrl = `${getApiBaseUrl()}/api/bookings/${bookingId}/status`;
   const response = await fetch(apiUrl, {
     method: 'PATCH',
     headers: {
@@ -510,7 +485,7 @@ export const updateBookingStatus = async (token: string, bookingId: string, stat
 
 // --- NEW FUNCTIONS FOR INQUIRIES ---
 export const sendInquiry = async (token: string, vendorId: string, message: string) => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendors/${vendorId}/inquiries`;
+  const apiUrl = `${getApiBaseUrl()}/api/vendors/${vendorId}/inquiries`;
   const response = await fetch(apiUrl, {
     method: 'POST',
     headers: {
@@ -575,19 +550,8 @@ export interface WinRateSummary {
 }
 
 export const getVendorInquiries = async (token: string): Promise<VendorInquiryItem[]> => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/inquiries`;
-  const response = await fetch(apiUrl, {
-    method: 'GET',
-    headers: { 'Authorization': `Bearer ${token}` },
-  });
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(
-      errorData.message || errorData.detail || errorData.title || 'Failed to fetch inquiries.'
-    );
-  }
-  const data = await response.json();
-  return (Array.isArray(data) ? data : []).map((item: Record<string, unknown>) => ({
+  const data = await vendorAuthedJson<unknown[]>(token, "/api/vendor/inquiries");
+  return ((Array.isArray(data) ? data : []) as Record<string, unknown>[]).map((item) => ({
     id: String(item.id ?? item.Id ?? ''),
     message: String(item.message ?? item.Message ?? ''),
     subject: item.subject != null ? String(item.subject ?? item.Subject) : undefined,
@@ -610,7 +574,7 @@ export const generateInquiryQuote = async (
   inquiryId: string,
   proposedAmount?: number
 ): Promise<InquiryQuoteResult> => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/inquiries/${inquiryId}/quote`;
+  const apiUrl = `${getApiBaseUrl()}/api/vendor/inquiries/${inquiryId}/quote`;
   const response = await fetch(apiUrl, {
     method: 'POST',
     headers: {
@@ -635,15 +599,10 @@ export const generateInquiryQuote = async (
 };
 
 export const getVendorAvailability = async (token: string, month: string): Promise<VendorAvailabilityMonth> => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/availability?month=${encodeURIComponent(month)}`;
-  const response = await fetch(apiUrl, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || 'Failed to load availability.');
-  }
-  const data = await response.json();
+  const data = await vendorAuthedJson<Record<string, unknown>>(
+    token,
+    `/api/vendor/availability?month=${encodeURIComponent(month)}`
+  );
   const rawDetails = (data.blockedDateDetails ?? data.BlockedDateDetails ?? []) as Record<string, unknown>[];
   return {
     bookedDates: (data.bookedDates ?? data.BookedDates ?? []) as number[],
@@ -658,7 +617,7 @@ export const getVendorAvailability = async (token: string, month: string): Promi
 };
 
 export const blockVendorDate = async (token: string, date: string, reason?: string) => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/availability/block`;
+  const apiUrl = `${getApiBaseUrl()}/api/vendor/availability/block`;
   const response = await fetch(apiUrl, {
     method: 'POST',
     headers: {
@@ -674,7 +633,7 @@ export const blockVendorDate = async (token: string, date: string, reason?: stri
 };
 
 export const unblockVendorDate = async (token: string, date: string) => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/availability/block/${date}`;
+  const apiUrl = `${getApiBaseUrl()}/api/vendor/availability/block/${date}`;
   const response = await fetch(apiUrl, {
     method: 'DELETE',
     headers: { Authorization: `Bearer ${token}` },
@@ -686,32 +645,29 @@ export const unblockVendorDate = async (token: string, date: string) => {
 };
 
 export const getVendorProfileViews = async (token: string, weeks = 6): Promise<WeeklyViewPoint[]> => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/analytics/profile-views?weeks=${weeks}`;
-  const response = await fetch(apiUrl, { headers: { Authorization: `Bearer ${token}` } });
-  if (!response.ok) throw new Error('Failed to load profile views.');
-  const data = await response.json();
-  return (Array.isArray(data) ? data : []).map((item: Record<string, unknown>) => ({
+  const data = await vendorAuthedJson<unknown[]>(
+    token,
+    `/api/vendor/analytics/profile-views?weeks=${weeks}`
+  );
+  return ((Array.isArray(data) ? data : []) as Record<string, unknown>[]).map((item) => ({
     week: String(item.week ?? item.Week ?? ''),
     views: Number(item.views ?? item.Views ?? 0),
   }));
 };
 
 export const getVendorInquiryTrend = async (token: string, months = 6): Promise<MonthlyCountPoint[]> => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/analytics/inquiries?months=${months}`;
-  const response = await fetch(apiUrl, { headers: { Authorization: `Bearer ${token}` } });
-  if (!response.ok) throw new Error('Failed to load inquiry trend.');
-  const data = await response.json();
-  return (Array.isArray(data) ? data : []).map((item: Record<string, unknown>) => ({
+  const data = await vendorAuthedJson<unknown[]>(
+    token,
+    `/api/vendor/analytics/inquiries?months=${months}`
+  );
+  return ((Array.isArray(data) ? data : []) as Record<string, unknown>[]).map((item) => ({
     month: String(item.month ?? item.Month ?? ''),
     count: Number(item.count ?? item.Count ?? 0),
   }));
 };
 
 export const getVendorWinRate = async (token: string): Promise<WinRateSummary> => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/analytics/win-rate`;
-  const response = await fetch(apiUrl, { headers: { Authorization: `Bearer ${token}` } });
-  if (!response.ok) throw new Error('Failed to load win rate.');
-  const data = await response.json();
+  const data = await vendorAuthedJson<Record<string, unknown>>(token, "/api/vendor/analytics/win-rate");
   return {
     won: Number(data.won ?? data.Won ?? 0),
     pending: Number(data.pending ?? data.Pending ?? 0),
@@ -720,7 +676,7 @@ export const getVendorWinRate = async (token: string): Promise<WinRateSummary> =
 };
 
 export const markInquiryAsRead = async (token: string, inquiryId: string) => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/dashboard/inquiries/${inquiryId}/read`;
+  const apiUrl = `${getApiBaseUrl()}/api/vendor/dashboard/inquiries/${inquiryId}/read`;
   const response = await fetch(apiUrl, {
     method: 'PATCH',
     headers: { 'Authorization': `Bearer ${token}` },
@@ -739,16 +695,7 @@ export interface VendorSubscriptionInfo {
 }
 
 export const getVendorSubscription = async (token: string): Promise<VendorSubscriptionInfo> => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/dashboard/subscription`;
-  const response = await fetch(apiUrl, {
-    method: 'GET',
-    headers: { 'Authorization': `Bearer ${token}` },
-  });
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || 'Failed to load subscription.');
-  }
-  const data = await response.json();
+  const data = await vendorAuthedJson<Record<string, unknown>>(token, "/api/vendor/dashboard/subscription");
   return {
     tier: String(data.tier ?? data.Tier ?? 'Free'),
     monthlyFee: Number(data.monthlyFee ?? data.MonthlyFee ?? 0),
@@ -766,16 +713,7 @@ export interface VendorBillingProfile {
 }
 
 export const getVendorBillingProfile = async (token: string): Promise<VendorBillingProfile> => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/dashboard/billing-profile`;
-  const response = await fetch(apiUrl, {
-    method: 'GET',
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || 'Failed to load payment method.');
-  }
-  const data = await response.json();
+  const data = await vendorAuthedJson<Record<string, unknown>>(token, "/api/vendor/dashboard/billing-profile");
   return {
     hasPaymentMethod: Boolean(data.hasPaymentMethod ?? data.HasPaymentMethod),
     cardholderName:
@@ -811,7 +749,7 @@ export const saveVendorBillingProfile = async (
     expiryYear: number;
   }
 ) => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/dashboard/billing-profile`;
+  const apiUrl = `${getApiBaseUrl()}/api/vendor/dashboard/billing-profile`;
   const response = await fetch(apiUrl, {
     method: 'PUT',
     headers: {
@@ -831,7 +769,7 @@ export const createVendorSubscriptionCheckout = async (
   token: string,
   payload: { tier: 'Free' | 'Featured' | 'Sponsored'; monthlyFee: number }
 ) => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/dashboard/subscription/checkout`;
+  const apiUrl = `${getApiBaseUrl()}/api/vendor/dashboard/subscription/checkout`;
   const response = await fetch(apiUrl, {
     method: 'POST',
     headers: {
@@ -855,7 +793,7 @@ export const setVendorSubscription = async (
   token: string,
   payload: { tier: 'Free' | 'Featured' | 'Sponsored'; monthlyFee: number }
 ) => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/dashboard/subscription`;
+  const apiUrl = `${getApiBaseUrl()}/api/vendor/dashboard/subscription`;
   const response = await fetch(apiUrl, {
     method: 'POST',
     headers: {
@@ -883,16 +821,7 @@ export interface VendorBusinessProfile {
 }
 
 export const getVendorBusinessProfile = async (token: string): Promise<VendorBusinessProfile> => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/dashboard/profile`;
-  const response = await fetch(apiUrl, {
-    method: "GET",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || "Failed to load business profile.");
-  }
-  const data = await response.json();
+  const data = await vendorAuthedJson<Record<string, unknown>>(token, "/api/vendor/dashboard/profile");
   return {
     userId: String(data.userId ?? data.UserId ?? ""),
     businessName: String(data.businessName ?? data.BusinessName ?? ""),
@@ -928,7 +857,7 @@ export const updateVendorBusinessProfile = async (
     province?: string;
   }
 ) => {
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/vendor/dashboard/profile`;
+  const apiUrl = `${getApiBaseUrl()}/api/vendor/dashboard/profile`;
   const response = await fetch(apiUrl, {
     method: "PUT",
     headers: {

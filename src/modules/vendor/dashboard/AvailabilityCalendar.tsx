@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CalendarDays,
   CalendarOff,
@@ -11,7 +11,10 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
-import { blockVendorDate, getVendorAvailability, unblockVendorDate } from "@/shared/lib/api/vendors";
+import { blockVendorDate, unblockVendorDate } from "@/shared/lib/api/vendors";
+import { useVendorAvailabilityQuery } from "@/shared/hooks/query/useVendorQueries";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/shared/lib/query/queryKeys";
 import { ErrorBanner, PageLoadingSkeleton } from "@/shared/components/ui";
 import { cn } from "@/shared/lib/cn";
 import {
@@ -156,53 +159,38 @@ function CalendarGrid({
 
 export function AvailabilityCalendar({ embedded = false, fullPage = false }: AvailabilityCalendarProps) {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [cursor, setCursor] = useState(() => new Date());
-  const [booked, setBooked] = useState<number[]>([]);
-  const [blocked, setBlocked] = useState<number[]>([]);
-  const [blockedDetails, setBlockedDetails] = useState<Array<{ date: string; reason?: string | null }>>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
   const monthLabel = cursor.toLocaleString(undefined, { month: "long", year: "numeric" });
+  const monthQueryKey = monthKey(cursor);
 
-  const load = useCallback(async () => {
-    if (!user) return;
-    try {
-      setError(null);
-      const token = await user.getIdToken();
-      const data = await getVendorAvailability(token, monthKey(cursor));
-      setBooked(data.bookedDates);
-      setBlocked(data.blockedDates);
-      setBlockedDetails(data.blockedDateDetails);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load availability.");
-    }
-  }, [user, cursor]);
+  const {
+    data: availability,
+    isLoading: loading,
+    isFetching,
+    error: queryError,
+  } = useVendorAvailabilityQuery(monthQueryKey);
+
+  const booked = useMemo(() => availability?.bookedDates ?? [], [availability?.bookedDates]);
+  const blocked = useMemo(() => availability?.blockedDates ?? [], [availability?.blockedDates]);
+  const blockedDetails = useMemo(
+    () => availability?.blockedDateDetails ?? [],
+    [availability?.blockedDateDetails]
+  );
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (!user) return;
-      try {
-        setLoading(true);
-        await load();
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [load, user]);
+    if (queryError) setError(queryError.message);
+  }, [queryError]);
+
+  const refreshing = isFetching && !loading;
 
   const handleRefresh = async () => {
-    setRefreshing(true);
-    await load();
-    setRefreshing(false);
+    await queryClient.invalidateQueries({ queryKey: queryKeys.vendor.availability(monthQueryKey) });
   };
 
   const blockedReasons = useMemo(() => {
@@ -231,7 +219,7 @@ export function AvailabilityCalendar({ embedded = false, fullPage = false }: Ava
       } else {
         await blockVendorDate(token, iso);
       }
-      await load();
+      await queryClient.invalidateQueries({ queryKey: queryKeys.vendor.availability(monthQueryKey) });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update availability.");
     } finally {

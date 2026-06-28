@@ -28,6 +28,10 @@ import {
 import { PlannerBrandingProvider, usePlannerBranding } from "@/modules/planner/branding/PlannerBrandingProvider";
 import { GlassButton } from "@/modules/vendor/dashboard/glass-ui";
 import { WorkspacePlanBadge } from "@/shared/components/layout/WorkspacePlanBadge";
+import { RoleGuard } from "@/shared/components/auth/RoleGuard";
+import type { AppRole } from "@/shared/lib/auth/postLoginRedirect";
+
+const PLANNER_ROLES: AppRole[] = ["planner"];
 
 const NAV_GROUPS: PlannerNavGroup[] = [
   {
@@ -60,11 +64,18 @@ const NAV_GROUPS: PlannerNavGroup[] = [
 
 export default function PlannerWorkspaceLayout({ children }: { children: React.ReactNode }) {
   return (
-    <PlannerBrandingProvider>
-      <PlannerCreateEventProvider>
-        <PlannerWorkspaceLayoutInner>{children}</PlannerWorkspaceLayoutInner>
-      </PlannerCreateEventProvider>
-    </PlannerBrandingProvider>
+    <RoleGuard
+      allowedRoles={PLANNER_ROLES}
+      loginPath="/planner/login"
+      deniedPath="/dashboard"
+      loadingClassName="min-h-screen bg-background p-8 font-glass-body"
+    >
+      <PlannerBrandingProvider>
+        <PlannerCreateEventProvider>
+          <PlannerWorkspaceLayoutInner>{children}</PlannerWorkspaceLayoutInner>
+        </PlannerCreateEventProvider>
+      </PlannerBrandingProvider>
+    </RoleGuard>
   );
 }
 

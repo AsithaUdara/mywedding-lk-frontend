@@ -14,7 +14,8 @@ import {
   XCircle,
 } from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
-import { getVendorBookings, VendorBookingItem } from "@/shared/lib/api/vendors";
+import { VendorBookingItem } from "@/shared/lib/api/vendors";
+import { useVendorBookingsQuery } from "@/shared/hooks/query/useVendorQueries";
 import { updateBookingStatus } from "@/shared/lib/api/bookings";
 import { acceptVendorBooking, declineVendorBooking } from "@/shared/lib/api/vendorShortlist";
 import { dispatchVendorBookingsUpdated, VENDOR_BOOKINGS_UPDATED } from "@/shared/lib/vendorBookingEvents";
@@ -230,51 +231,45 @@ function BookingQueueList({
 
 export default function VendorBookingsPage() {
   const { user } = useAuth();
-  const [bookings, setBookings] = useState<VendorBookingItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const {
+    data: rawBookings = [],
+    isLoading: loading,
+    isFetching,
+    error: queryError,
+    refetch,
+  } = useVendorBookingsQuery();
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [filter, setFilter] = useState<BookingFilter>("all");
   const [search, setSearch] = useState("");
 
-  const fetchBookings = useCallback(async (notifyOthers = false) => {
-    if (!user) return;
-    try {
-      setError(null);
-      const token = await user.getIdToken();
-      const data = await getVendorBookings(token);
+  const bookings = useMemo(() => {
+    const data = [...rawBookings];
+    data.sort((a, b) => {
+      if (a.status === "Requested" && b.status !== "Requested") return -1;
+      if (a.status !== "Requested" && b.status === "Requested") return 1;
+      return new Date(a.serviceDate).getTime() - new Date(b.serviceDate).getTime();
+    });
+    return data;
+  }, [rawBookings]);
 
-      data.sort((a, b) => {
-        if (a.status === "Requested" && b.status !== "Requested") return -1;
-        if (a.status !== "Requested" && b.status === "Requested") return 1;
-        return new Date(a.serviceDate).getTime() - new Date(b.serviceDate).getTime();
-      });
+  useEffect(() => {
+    if (queryError) {
+      setError(queryError.message);
+    }
+  }, [queryError]);
 
-      setBookings(data);
+  const fetchBookings = useCallback(
+    async (notifyOthers = false) => {
+      await refetch();
       if (notifyOthers) {
         dispatchVendorBookingsUpdated();
       }
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to load bookings.");
-    }
-  }, [user]);
+    },
+    [refetch]
+  );
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (!user) return;
-      try {
-        setLoading(true);
-        await fetchBookings();
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [fetchBookings, user]);
+  const refreshing = isFetching && !loading;
 
   useEffect(() => {
     const handleUpdate = () => {
@@ -286,9 +281,7 @@ export default function VendorBookingsPage() {
   }, [fetchBookings]);
 
   const handleRefresh = async () => {
-    setRefreshing(true);
     await fetchBookings();
-    setRefreshing(false);
   };
 
   const handleAcceptBooking = async (bookingId: string) => {

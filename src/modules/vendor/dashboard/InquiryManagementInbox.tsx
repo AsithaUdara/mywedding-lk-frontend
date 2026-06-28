@@ -18,11 +18,13 @@ import {
 import { useAuth } from "@/shared/context/AuthContext";
 import {
   generateInquiryQuote,
-  getVendorInquiries,
   InquiryQuoteResult,
   markInquiryAsRead,
   VendorInquiryItem,
 } from "@/shared/lib/api/vendors";
+import { useVendorInquiriesQuery } from "@/shared/hooks/query/useVendorQueries";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/shared/lib/query/queryKeys";
 import {
   EmptyState,
   ErrorBanner,
@@ -56,53 +58,36 @@ type InquiryManagementInboxProps = {
 
 export function InquiryManagementInbox({ embedded = false, fullPage = false }: InquiryManagementInboxProps) {
   const { user } = useAuth();
-  const [inquiries, setInquiries] = useState<VendorInquiryItem[]>([]);
+  const queryClient = useQueryClient();
+  const {
+    data: inquiries = [],
+    isLoading: loading,
+    isFetching,
+    error: queryError,
+  } = useVendorInquiriesQuery();
   const [selectedId, setSelectedId] = useState<string>("");
   const [inboxFilter, setInboxFilter] = useState<InboxFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [quoteResult, setQuoteResult] = useState<InquiryQuoteResult | null>(null);
   const [replyDraft, setReplyDraft] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    if (!user) return;
-    try {
-      setError(null);
-      const token = await user.getIdToken();
-      const data = await getVendorInquiries(token);
-      setInquiries(data);
-      setSelectedId((current) => {
-        if (current && data.some((i) => i.id === current)) return current;
-        return data[0]?.id ?? "";
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load inquiries.");
-    }
-  }, [user]);
+  useEffect(() => {
+    setSelectedId((current) => {
+      if (current && inquiries.some((i) => i.id === current)) return current;
+      return inquiries[0]?.id ?? "";
+    });
+  }, [inquiries]);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (!user) return;
-      try {
-        setLoading(true);
-        await load();
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [load, user]);
+    if (queryError) setError(queryError.message);
+  }, [queryError]);
+
+  const refreshing = isFetching && !loading;
 
   const handleRefresh = async () => {
-    setRefreshing(true);
-    await load();
-    setRefreshing(false);
+    await queryClient.invalidateQueries({ queryKey: queryKeys.vendor.inquiries() });
   };
 
   const stats = useMemo(
@@ -153,15 +138,14 @@ export function InquiryManagementInbox({ embedded = false, fullPage = false }: I
         try {
           const token = await user.getIdToken();
           await markInquiryAsRead(token, inq.id);
-          setInquiries((prev) =>
-            prev.map((item) => (item.id === inq.id ? { ...item, isRead: true } : item))
-          );
+          void queryClient.invalidateQueries({ queryKey: queryKeys.vendor.inquiries() });
+          void queryClient.invalidateQueries({ queryKey: queryKeys.vendor.analytics() });
         } catch {
           /* non-blocking */
         }
       }
     },
-    [user]
+    [user, queryClient]
   );
 
   const handleGenerateQuote = async () => {

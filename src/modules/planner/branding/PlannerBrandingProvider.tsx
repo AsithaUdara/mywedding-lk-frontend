@@ -1,8 +1,10 @@
 "use client";
 
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { useAuth } from "@/shared/context/AuthContext";
-import { getPlannerDashboard, type PlannerDashboardResponse } from "@/shared/lib/api/planner";
+import React, { createContext, useCallback, useContext, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { usePlannerDashboardQuery } from "@/shared/hooks/query/usePlannerQueries";
+import { queryKeys } from "@/shared/lib/query/queryKeys";
+import type { PlannerDashboardResponse } from "@/shared/lib/api/planner";
 
 export type PlannerWorkspaceBrand = {
   businessName: string;
@@ -20,32 +22,8 @@ type PlannerBrandingContextValue = {
 const PlannerBrandingContext = createContext<PlannerBrandingContextValue | null>(null);
 
 export function PlannerBrandingProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
-  const [profile, setProfile] = useState<PlannerDashboardResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const refresh = useCallback(async () => {
-    if (!user) {
-      setProfile(null);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const token = await user.getIdToken();
-      const data = await getPlannerDashboard(token);
-      setProfile(data);
-    } catch {
-      setProfile(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
+  const queryClient = useQueryClient();
+  const { data: profile = null, isLoading, refetch } = usePlannerDashboardQuery();
 
   const brand = useMemo<PlannerWorkspaceBrand | null>(() => {
     if (!profile || profile.activePlanTier !== "PlannerPro") return null;
@@ -57,9 +35,14 @@ export function PlannerBrandingProvider({ children }: { children: React.ReactNod
     };
   }, [profile]);
 
+  const refresh = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: queryKeys.planner.dashboard() });
+    await refetch();
+  }, [queryClient, refetch]);
+
   const value = useMemo(
-    () => ({ profile, brand, loading, refresh }),
-    [profile, brand, loading, refresh]
+    () => ({ profile, brand, loading: isLoading, refresh }),
+    [profile, brand, isLoading, refresh]
   );
 
   return (

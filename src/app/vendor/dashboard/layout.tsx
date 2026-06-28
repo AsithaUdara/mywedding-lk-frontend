@@ -18,16 +18,19 @@ import {
   VendorWorkspaceShell,
 } from "@/shared/components/layout/VendorWorkspaceShell";
 import { Button } from "@/shared/components/ui";
-import { useAuth } from "@/shared/context/AuthContext";
 import { RegalFrostShell } from "@/modules/design-system/regal-frost/RegalFrostShell";
-import { getVendorAnalytics, getVendorSubscription } from "@/shared/lib/api/vendors";
-import { useEffect, useState } from "react";
+import { useVendorAnalyticsQuery, useVendorSubscriptionQuery } from "@/shared/hooks/query/useVendorQueries";
+import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { VendorVerificationProvider } from "@/modules/vendor/dashboard/VendorVerificationContext";
 import { VendorVerificationBanner } from "@/modules/vendor/dashboard/VendorVerificationBanner";
 import { VendorBookingActionBanner } from "@/modules/vendor/dashboard/VendorBookingActionBanner";
 import { WorkspacePlanBadge } from "@/shared/components/layout/WorkspacePlanBadge";
 import { useVendorPendingBookings } from "@/shared/hooks/useVendorPendingBookings";
+import { RoleGuard } from "@/shared/components/auth/RoleGuard";
+import type { AppRole } from "@/shared/lib/auth/postLoginRedirect";
+
+const VENDOR_ROLES: AppRole[] = ["vendor"];
 
 const NAV_GROUPS: VendorNavGroup[] = [
   {
@@ -56,38 +59,36 @@ const NAV_GROUPS: VendorNavGroup[] = [
 ];
 
 export default function VendorDashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <RoleGuard
+      allowedRoles={VENDOR_ROLES}
+      loginPath="/vendor/login"
+      deniedPath="/"
+      loadingClassName="min-h-screen p-8"
+    >
+      <VendorDashboardLayoutInner>{children}</VendorDashboardLayoutInner>
+    </RoleGuard>
+  );
+}
+
+function VendorDashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { user } = useAuth();
-  const [unreadInquiries, setUnreadInquiries] = useState(0);
-  const [planLabel, setPlanLabel] = useState<"FREE" | "PRO">("FREE");
+  const { data: analytics } = useVendorAnalyticsQuery();
+  const { data: subscription } = useVendorSubscriptionQuery();
   const { requestedCount, loading: pendingBookingsLoading } = useVendorPendingBookings();
+
+  const unreadInquiries = analytics?.unreadInquiries ?? 0;
+  const planLabel = useMemo(
+    () => (subscription?.tier === "Free" ? "FREE" : "PRO") as "FREE" | "PRO",
+    [subscription?.tier]
+  );
+  const notificationCount = unreadInquiries + requestedCount;
+  const notificationHref =
+    requestedCount > 0 ? "/vendor/dashboard/bookings" : "/vendor/dashboard/inquiries";
 
   const isListingEditor =
     pathname === "/vendor/dashboard/services/new" ||
     /^\/vendor\/dashboard\/services\/[^/]+\/edit$/.test(pathname);
-
-  useEffect(() => {
-    const load = async () => {
-      if (!user) return;
-      try {
-        const token = await user.getIdToken();
-        const [analytics, subscription] = await Promise.all([
-          getVendorAnalytics(token),
-          getVendorSubscription(token),
-        ]);
-        setUnreadInquiries(analytics.unreadInquiries ?? 0);
-        setPlanLabel(subscription?.tier === "Free" ? "FREE" : "PRO");
-      } catch {
-        setUnreadInquiries(0);
-        setPlanLabel("FREE");
-      }
-    };
-    void load();
-  }, [user, pathname]);
-
-  const notificationCount = unreadInquiries + requestedCount;
-  const notificationHref =
-    requestedCount > 0 ? "/vendor/dashboard/bookings" : "/vendor/dashboard/inquiries";
 
   if (isListingEditor) {
     return (
