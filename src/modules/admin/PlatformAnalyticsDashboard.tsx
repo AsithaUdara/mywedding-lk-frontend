@@ -10,7 +10,7 @@ import { AdminGrowthChart } from "@/modules/admin/components/AdminGrowthChart";
 import { SectionCard, ErrorBanner, PageLoadingSkeleton } from "@/shared/components/ui";
 
 export function PlatformAnalyticsDashboard({ compact = false }: { compact?: boolean }) {
-  const { analytics, pendingVendors, payoutsDue, loading, error } = useAdminDashboard();
+  const { analytics, pendingVendors, payoutSummary, loading, error } = useAdminDashboard();
   const growthMax = useMemo(
     () => Math.max(...(analytics?.plannerGrowthByMonth.map((p) => p.count) ?? [1]), 1),
     [analytics]
@@ -30,7 +30,7 @@ export function PlatformAnalyticsDashboard({ compact = false }: { compact?: bool
         <AdminPlatformKpis
           data={analytics}
           pendingVendors={pendingVendors}
-          payoutsDue={payoutsDue}
+          payoutSummary={payoutSummary}
         />
         <AdminGrowthChart points={analytics.plannerGrowthByMonth} max={growthMax} />
       </div>
@@ -42,7 +42,7 @@ export function PlatformAnalyticsDashboard({ compact = false }: { compact?: bool
       <AdminPlatformKpis
         data={analytics}
         pendingVendors={pendingVendors}
-        payoutsDue={payoutsDue}
+        payoutSummary={payoutSummary}
       />
       <SectionCard title="Planner growth" subtitle="Active planners — 6 month trend">
         <AdminGrowthChart points={analytics.plannerGrowthByMonth} max={growthMax} />

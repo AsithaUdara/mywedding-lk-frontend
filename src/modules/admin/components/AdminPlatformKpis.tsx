@@ -1,7 +1,7 @@
 "use client";
 
 import { ClipboardList, ShieldAlert, TrendingUp, Users, Wallet } from "lucide-react";
-import type { PayoutDueItem, PendingVendor, PlatformAnalytics } from "@/shared/lib/api/admin";
+import type { PayoutDueSummary, PendingVendor, PlatformAnalytics } from "@/shared/lib/api/admin";
 import { GlassStatCard } from "@/modules/vendor/dashboard/glass-ui";
 import { formatLKR } from "@/shared/components/ui";
 
@@ -18,11 +18,10 @@ function kpiSub(base: string, delta: number | undefined) {
 type AdminPlatformKpisProps = {
   data: PlatformAnalytics;
   pendingVendors: PendingVendor[];
-  payoutsDue: PayoutDueItem[];
+  payoutSummary: PayoutDueSummary;
 };
 
-export function AdminPlatformKpis({ data, pendingVendors, payoutsDue }: AdminPlatformKpisProps) {
-  const payoutCommission = payoutsDue.reduce((sum, row) => sum + row.commissionAmount, 0);
+export function AdminPlatformKpis({ data, pendingVendors, payoutSummary }: AdminPlatformKpisProps) {
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -56,14 +55,14 @@ export function AdminPlatformKpis({ data, pendingVendors, payoutsDue }: AdminPla
       />
       <GlassStatCard
         label="Unsettled payouts"
-        value={payoutsDue.length}
+        value={payoutSummary.count}
         sub={
-          payoutsDue.length > 0
-            ? `${formatLKR(payoutCommission)} commission`
+          payoutSummary.count > 0
+            ? `${formatLKR(payoutSummary.totalCommission)} commission`
             : "Nothing due"
         }
         icon={Wallet}
-        iconTheme={payoutsDue.length > 0 ? "warning" : "success"}
+        iconTheme={payoutSummary.count > 0 ? "warning" : "success"}
       />
       <GlassStatCard
         label="Active planners"

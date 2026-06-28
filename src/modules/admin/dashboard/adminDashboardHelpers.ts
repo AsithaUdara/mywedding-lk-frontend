@@ -1,4 +1,4 @@
-import type { PendingVendor, PayoutDueItem, PlatformAnalytics } from "@/shared/lib/api/admin";
+import type { PendingVendor, PayoutDueSummary, PlatformAnalytics } from "@/shared/lib/api/admin";
 import { formatLKR } from "@/shared/components/ui";
 
 export type AdminAttentionItem = {
@@ -11,7 +11,7 @@ export type AdminAttentionItem = {
 
 export function buildAdminAttentionItems(
   pendingVendors: PendingVendor[],
-  payoutsDue: PayoutDueItem[]
+  payoutSummary: PayoutDueSummary
 ): AdminAttentionItem[] {
   const items: AdminAttentionItem[] = [];
 
@@ -30,12 +30,11 @@ export function buildAdminAttentionItems(
     });
   }
 
-  if (payoutsDue.length > 0) {
-    const totalCommission = payoutsDue.reduce((sum, row) => sum + row.commissionAmount, 0);
+  if (payoutSummary.count > 0) {
     items.push({
       id: "payouts-due",
-      title: `${payoutsDue.length} unsettled vendor payout${payoutsDue.length === 1 ? "" : "s"}`,
-      description: `${formatLKR(totalCommission)} platform commission ready to settle`,
+      title: `${payoutSummary.count} unsettled vendor payout${payoutSummary.count === 1 ? "" : "s"}`,
+      description: `${formatLKR(payoutSummary.totalCommission)} platform commission ready to settle`,
       href: "/admin/dashboard/commissions",
       priority: "high",
     });

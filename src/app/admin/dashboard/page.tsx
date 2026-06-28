@@ -22,7 +22,7 @@ export default function AdminDashboardPage() {
   const {
     analytics,
     pendingVendors,
-    payoutsDue,
+    payoutSummary,
     loading,
     refreshing,
     error,
@@ -30,8 +30,8 @@ export default function AdminDashboardPage() {
   } = useAdminDashboard();
 
   const attentionItems = useMemo(
-    () => buildAdminAttentionItems(pendingVendors, payoutsDue),
-    [pendingVendors, payoutsDue]
+    () => buildAdminAttentionItems(pendingVendors, payoutSummary),
+    [pendingVendors, payoutSummary]
   );
 
   const growthMax = useMemo(
@@ -87,7 +87,7 @@ export default function AdminDashboardPage() {
           <AdminPlatformKpis
             data={analytics}
             pendingVendors={pendingVendors}
-            payoutsDue={payoutsDue}
+            payoutSummary={payoutSummary}
           />
 
           <GlassSectionCard

@@ -89,6 +89,19 @@ export interface PayoutDueItem {
   eventId: string;
 }
 
+export interface PayoutDueSummary {
+  count: number;
+  totalGross: number;
+  totalCommission: number;
+  totalVendorNet: number;
+}
+
+export type PayoutDueParams = {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+};
+
 async function adminFetch(
   token: string,
   path: string,
@@ -281,12 +294,39 @@ function mapPayoutDueItem(raw: Record<string, unknown>): PayoutDueItem {
   };
 }
 
-export async function getPayoutDue(token: string): Promise<PayoutDueItem[]> {
-  const res = await adminFetch(token, "/api/admin/commissions/payout-due");
+export async function getPayoutDueSummary(token: string): Promise<PayoutDueSummary> {
+  const res = await adminFetch(token, "/api/admin/commissions/payout-due/summary");
   const data = await res.json();
-  return (Array.isArray(data) ? data : []).map((row) =>
-    mapPayoutDueItem(row as Record<string, unknown>)
-  );
+  return {
+    count: Number(data.count ?? data.Count ?? 0),
+    totalGross: Number(data.totalGross ?? data.TotalGross ?? 0),
+    totalCommission: Number(data.totalCommission ?? data.TotalCommission ?? 0),
+    totalVendorNet: Number(data.totalVendorNet ?? data.TotalVendorNet ?? 0),
+  };
+}
+
+export async function getPayoutDuePage(
+  token: string,
+  params: PayoutDueParams = {}
+): Promise<PagedResult<PayoutDueItem>> {
+  const search = new URLSearchParams();
+  const page = params.page ?? 1;
+  const pageSize = params.pageSize ?? 10;
+  search.set("page", String(page));
+  search.set("pageSize", String(pageSize));
+  if (params.search?.trim()) {
+    search.set("search", params.search.trim());
+  }
+
+  const res = await adminFetch(token, `/api/admin/commissions/payout-due?${search.toString()}`);
+  const data = await res.json();
+  return mapPagedResult(data as Record<string, unknown>, mapPayoutDueItem);
+}
+
+/** @deprecated Use getPayoutDuePage or getPayoutDueSummary. */
+export async function getPayoutDue(token: string): Promise<PayoutDueItem[]> {
+  const result = await getPayoutDuePage(token, { page: 1, pageSize: 50 });
+  return result.items;
 }
 
 export interface AuditLogItem {
