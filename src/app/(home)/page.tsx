@@ -1,37 +1,40 @@
-// src/app/page.tsx
-"use client"; // This directive MUST be at the very top
+"use client";
 
-import React, { useState } from 'react'; // Import useState
-import Header from "@/components/layout/Header";
-import Hero from "@/app/(home)/components/Hero";
-import BrowseByCategory from "@/app/(home)/components/BrowseByCategory";
+import { useState } from "react";
+import Header from "@/shared/components/layout/Header";
+import Footer from "@/shared/components/layout/Footer";
+import ConsumerHero from "@/app/(home)/components/ConsumerHero";
+import SocialProof from "@/app/(home)/components/SocialProof";
 import HowItWorks from "@/app/(home)/components/HowItWorks";
-import FeaturedVenues from "@/features/vendor-discovery/components/FeaturedVenues";
-import Testimonials from "@/features/vendor-discovery/components/Testimonials";
-import Footer from "@/components/layout/Footer";
-import AuthModal from '@/features/authentication/AuthModal'; 
+import PricingTiers from "@/app/(home)/components/PricingTiers";
+import VendorCTA from "@/app/(home)/components/VendorCTA";
+import BrowseByCategory from "@/app/(home)/components/BrowseByCategory";
+import FeaturedVenues from "@/modules/vendors/components/FeaturedVenues";
+import Testimonials from "@/modules/vendors/components/Testimonials";
+import AuthModal from "@/modules/identity/AuthModal";
+import { RegalFrostShell } from "@/modules/design-system/regal-frost/RegalFrostShell";
 
 export default function Home() {
-  // State to control the modal's visibility
   const [isAuthModalOpen, setAuthModalOpen] = useState(false);
 
   return (
-    <main>
-      {/* We pass a function to the Header to open the modal */}
+    <RegalFrostShell className="marketing-page marketing-regal-frost">
       <Header onLoginClick={() => setAuthModalOpen(true)} />
-      
-      <Hero />
-      <BrowseByCategory />
-      <HowItWorks /> 
-      <FeaturedVenues />
-      <Testimonials />
+
+      <main>
+        <ConsumerHero />
+        <SocialProof />
+        <BrowseByCategory />
+        <FeaturedVenues />
+        <Testimonials />
+        <HowItWorks />
+        <PricingTiers />
+        <VendorCTA />
+      </main>
+
       <Footer />
 
-      {/* The Modal component itself */}
-      <AuthModal 
-        isOpen={isAuthModalOpen} 
-        onClose={() => setAuthModalOpen(false)} 
-      />
-    </main>
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setAuthModalOpen(false)} />
+    </RegalFrostShell>
   );
 }

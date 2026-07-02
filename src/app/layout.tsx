@@ -1,25 +1,9 @@
-import { Roboto, Playfair_Display } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "@/context/AuthContext";
-import { UIProvider } from "@/context/UIContext";
-
-
-const roboto = Roboto({
-  weight: ['400', '500', '700'],
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-roboto',
-});
-
-const playfairDisplay = Playfair_Display({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-playfair',
-});
+import { AppProviders } from "@/shared/providers/AppProviders";
 
 export const metadata = {
-  title: "MyWedding.lk - Your Dream Wedding, Simplified",
-  description: "Discover the best vendors, venues, and inspiration for your perfect day in Sri Lanka.",
+  title: "MyWedding.lk — Scale your planning agency",
+  description: "B2B wedding planning SaaS for Sri Lankan agencies. Manage clients, vendors, timelines, and payments in one workspace.",
 };
 
 export default function RootLayout({
@@ -29,13 +13,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning={true}>
-      <body className={`${roboto.variable} ${playfairDisplay.variable} antialiased`} suppressHydrationWarning={true}>
-        <AuthProvider>
-          <UIProvider>
-            {children}
-
-          </UIProvider>
-        </AuthProvider>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="antialiased" suppressHydrationWarning={true}>
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );

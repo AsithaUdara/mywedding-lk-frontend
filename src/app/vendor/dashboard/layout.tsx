@@ -1,112 +1,183 @@
-// src/app/vendor/dashboard/layout.tsx
 "use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import Link from "next/link";
 import {
-    BarChart3,
-    Package,
-    Settings,
-    User,
-    MessageSquare,
-    LogOut,
-    Menu,
-    X,
-    Briefcase,
-    Bell
-} from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
+  BarChart3,
+  Briefcase,
+  CalendarDays,
+  LineChart,
+  MessageSquare,
+  Package,
+  Settings,
+  Sparkles,
+  User,
+  Bell,
+} from "lucide-react";
+import {
+  VendorNavGroup,
+  VendorWorkspaceShell,
+} from "@/shared/components/layout/VendorWorkspaceShell";
+import { Button } from "@/shared/components/ui";
+import { RegalFrostShell } from "@/modules/design-system/regal-frost/RegalFrostShell";
+import { useVendorAnalyticsQuery, useVendorSubscriptionQuery } from "@/shared/hooks/query/useVendorQueries";
+import { useMemo } from "react";
+import { usePathname } from "next/navigation";
+import { VendorVerificationProvider } from "@/modules/vendor/dashboard/VendorVerificationContext";
+import { VendorVerificationBanner } from "@/modules/vendor/dashboard/VendorVerificationBanner";
+import { VendorBookingActionBanner } from "@/modules/vendor/dashboard/VendorBookingActionBanner";
+import { WorkspacePlanBadge } from "@/shared/components/layout/WorkspacePlanBadge";
+import { useVendorPendingBookings } from "@/shared/hooks/useVendorPendingBookings";
+import { RoleGuard } from "@/shared/components/auth/RoleGuard";
+import type { AppRole } from "@/shared/lib/auth/postLoginRedirect";
 
-export default function VendorDashboardLayout({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
-    const [isSidebarOpen, setSidebarOpen] = useState(true);
-    const pathname = usePathname();
-    const { logOut, user } = useAuth();
+const VENDOR_ROLES: AppRole[] = ["vendor"];
 
-    const navItems = [
-        { label: 'Overview', icon: <BarChart3 size={20} />, href: '/vendor/dashboard' },
-        { label: 'My Services', icon: <Package size={20} />, href: '/vendor/dashboard/services' },
-        { label: 'Inquiries', icon: <MessageSquare size={20} />, href: '/vendor/dashboard/inquiries' },
-        { label: 'Profile', icon: <User size={20} />, href: '/vendor/dashboard/profile' },
-        { label: 'Settings', icon: <Settings size={20} />, href: '/vendor/dashboard/settings' },
-    ];
+const NAV_GROUPS: VendorNavGroup[] = [
+  {
+    label: "Workspace",
+    items: [
+      { label: "Overview", icon: <BarChart3 size={18} />, href: "/vendor/dashboard", exact: true },
+      { label: "Analytics", icon: <LineChart size={18} />, href: "/vendor/dashboard/analytics" },
+    ],
+  },
+  {
+    label: "Storefront",
+    items: [
+      { label: "Inquiries", icon: <MessageSquare size={18} />, href: "/vendor/dashboard/inquiries" },
+      { label: "Availability", icon: <CalendarDays size={18} />, href: "/vendor/dashboard/availability" },
+      { label: "My services", icon: <Package size={18} />, href: "/vendor/dashboard/services" },
+      { label: "Bookings", icon: <Briefcase size={18} />, href: "/vendor/dashboard/bookings" },
+    ],
+  },
+  {
+    label: "Account",
+    items: [
+      { label: "Profile", icon: <User size={18} />, href: "/vendor/dashboard/profile" },
+      { label: "Settings", icon: <Settings size={18} />, href: "/vendor/dashboard/settings" },
+    ],
+  },
+];
 
+export default function VendorDashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <RoleGuard
+      allowedRoles={VENDOR_ROLES}
+      loginPath="/vendor/login"
+      deniedPath="/"
+      loadingClassName="min-h-screen p-8"
+    >
+      <VendorDashboardLayoutInner>{children}</VendorDashboardLayoutInner>
+    </RoleGuard>
+  );
+}
+
+function VendorDashboardLayoutInner({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const { data: analytics } = useVendorAnalyticsQuery();
+  const { data: subscription } = useVendorSubscriptionQuery();
+  const { requestedCount, loading: pendingBookingsLoading } = useVendorPendingBookings();
+
+  const unreadInquiries = analytics?.unreadInquiries ?? 0;
+  const planLabel = useMemo(
+    () => (subscription?.tier === "Free" ? "FREE" : "PRO") as "FREE" | "PRO",
+    [subscription?.tier]
+  );
+  const notificationCount = unreadInquiries + requestedCount;
+  const notificationHref =
+    requestedCount > 0 ? "/vendor/dashboard/bookings" : "/vendor/dashboard/inquiries";
+
+  const isListingEditor =
+    pathname === "/vendor/dashboard/services/new" ||
+    /^\/vendor\/dashboard\/services\/[^/]+\/edit$/.test(pathname);
+
+  if (isListingEditor) {
     return (
-        <div className="min-h-screen bg-cream flex font-roboto">
-            {/* Sidebar */}
-            <aside className={`${isSidebarOpen ? 'w-64' : 'w-20'} bg-white border-r border-slate-200 transition-all duration-300 flex flex-col fixed h-full z-40`}>
-                <div className="h-20 flex items-center px-6 border-b border-slate-100">
-                    <Link href="/" className="flex items-center gap-3 overflow-hidden">
-                        <div className="w-9 h-9 bg-primary text-white rounded-lg flex-shrink-0 flex items-center justify-center">
-                            <Briefcase size={20} />
-                        </div>
-                        {isSidebarOpen && (
-                            <span className="font-playfair font-bold text-lg text-charcoal whitespace-nowrap">Vendor Pro</span>
-                        )}
-                    </Link>
-                </div>
-
-                <nav className="flex-grow py-6 px-4 space-y-2 overflow-y-auto">
-                    {navItems.map((item) => {
-                        const isActive = pathname === item.href;
-                        return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all ${isActive ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'text-slate-500 hover:bg-slate-50 hover:text-charcoal'}`}
-                            >
-                                <div className="flex-shrink-0">{item.icon}</div>
-                                {isSidebarOpen && <span className="font-medium text-sm">{item.label}</span>}
-                            </Link>
-                        );
-                    })}
-                </nav>
-
-                <div className="p-4 border-t border-slate-100 mt-auto">
-                    <button
-                        onClick={logOut}
-                        className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-red-500 hover:bg-red-50 transition-all group"
-                        title="Log Out"
-                    >
-                        <div className="flex-shrink-0">
-                            <LogOut size={20} className="group-hover:rotate-12 transition-transform" />
-                        </div>
-                        {isSidebarOpen && <span className="font-semibold text-sm">Log Out</span>}
-                    </button>
-                </div>
-            </aside>
-
-            {/* Main Content */}
-            <div className={`flex-grow transition-all duration-300 ${isSidebarOpen ? 'ml-64' : 'ml-20'}`}>
-                <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-30 px-8 flex items-center justify-between">
-                    <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors">
-                        {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
-                    </button>
-
-                    <div className="flex items-center gap-6">
-                        <button className="relative p-2 text-slate-400 hover:text-primary transition-colors">
-                            <Bell size={22} />
-                            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
-                        </button>
-                        <div className="h-8 w-px bg-slate-200" />
-                        <div className="flex items-center gap-3 px-2 py-1.5 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer">
-                            <div className="text-right hidden sm:block">
-                                <p className="text-sm font-bold text-charcoal">{user?.displayName || 'Business Owner'}</p>
-                                <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Verified Partner</p>
-                            </div>
-                            <div className="w-10 h-10 bg-gradient-to-tr from-primary to-accent rounded-xl shadow-inner shadow-black/10" />
-                        </div>
-                    </div>
-                </header>
-
-                <main className="p-8 max-w-7xl mx-auto">
-                    {children}
-                </main>
-            </div>
-        </div>
+      <VendorVerificationProvider>
+        <RegalFrostShell mesh className="!flex-col">
+          <VendorVerificationBanner compact />
+          {children}
+        </RegalFrostShell>
+      </VendorVerificationProvider>
     );
+  }
+
+  const navGroups = NAV_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.map((item) => {
+      if (item.href === "/vendor/dashboard/inquiries") {
+        return { ...item, badge: unreadInquiries };
+      }
+      if (item.href === "/vendor/dashboard/bookings") {
+        return { ...item, badge: requestedCount };
+      }
+      return item;
+    }),
+  }));
+
+  return (
+    <VendorVerificationProvider>
+    <VendorWorkspaceShell
+      navGroups={navGroups}
+      sidebarFooter={
+        <div className="vgo-pro-card mx-3 mb-2 rounded-xl border p-3.5">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            Growth
+          </p>
+          <p className="mt-1 text-sm font-semibold text-foreground">Vendor Pro</p>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            More visibility and priority placement in search.
+          </p>
+          <Link
+            href="/vendor/dashboard/settings"
+            className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90"
+          >
+            View plans
+            <Sparkles size={12} aria-hidden />
+          </Link>
+        </div>
+      }
+      topBarActions={
+        <>
+          <Button
+            href="/vendor/dashboard/settings"
+            variant="ghost"
+            size="sm"
+            className="vgo-upgrade-btn hidden rounded-xl sm:inline-flex"
+          >
+            <Sparkles size={14} aria-hidden />
+            Upgrade
+          </Button>
+          <Link
+            href={notificationHref}
+            className="vgo-topbar-btn relative rounded-xl border p-2 text-muted-foreground transition-all duration-200 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label={
+              requestedCount > 0
+                ? `${requestedCount} booking request${requestedCount === 1 ? "" : "s"}`
+                : "Inquiries"
+            }
+          >
+            <Bell size={20} />
+            {notificationCount > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                {notificationCount > 9 ? "9+" : notificationCount}
+              </span>
+            )}
+          </Link>
+          <WorkspacePlanBadge
+            tier={planLabel}
+            href="/vendor/dashboard/settings"
+            title="Subscription & settings"
+          />
+        </>
+      }
+    >
+      <VendorVerificationBanner />
+      <VendorBookingActionBanner
+        requestedCount={requestedCount}
+        loading={pendingBookingsLoading}
+      />
+      {children}
+    </VendorWorkspaceShell>
+    </VendorVerificationProvider>
+  );
 }

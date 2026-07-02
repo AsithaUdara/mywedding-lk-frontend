@@ -1,29 +1,397 @@
-/* src/app/globals.css */
+/* Regal Frost design system — global tokens */
 
 @import "tailwindcss";
 
-@theme {
-  --color-primary: #6a040f;        /* Kandyan Royal Deep Maroon */
-  --color-accent: #daa520;         /* Royal Gold */
-  --color-cream: #fffaf0;          /* Ivory Cream */
-  --color-charcoal: #343a40;       /* Text */
-  --color-accent-light: #f4e4bc;   /* Light Royal Gold */
-  --color-gold-bright: #daa520;    /* Royal Gold Bright */
-  --color-gold-dark: #b8860b;      /* Royal Gold Dark */
-  --color-royal-burgundy: #8b0000; /* Deep Royal Red */
-  --color-royal-cream: #faf0e6;    /* Royal Cream */
+/* === Semantic HSL tokens (canonical palette) === */
+@layer base {
+  :root {
+    --font-glass-body: "DM Sans";
+    --font-luxury-display: "Cinzel";
+    --font-luxury-section: "Cormorant Garamond";
+
+    --background: 220 14% 95%; /* porcelain frost */
+    --foreground: 220 25% 18%;
+
+    --sidebar: 220 20% 16%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-muted: 220 8% 62%;
+    --sidebar-border: 220 14% 22%;
+
+    --primary: 345 100% 25%; /* #800020 deep maroon */
+    --primary-foreground: 0 0% 100%;
+
+    --accent: 42 48% 52%; /* antique gold */
+    --accent-foreground: 0 0% 100%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 25% 18%;
+
+    --muted: 220 14% 92%;
+    --muted-foreground: 220 10% 42%;
+
+    --workspace-sidebar: 220 14% 92%;
+    --workspace-sidebar-border: 220 14% 86%;
+
+    --border: 220 14% 88%;
+    --input: 220 14% 90%;
+    --ring: 345 100% 25%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 45% 32%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 40%;
+    --warning-foreground: 240 5.9% 10%;
+
+    --radius: 1.5rem;
+
+    /* Legacy aliases — prefer semantic tokens in new code */
+    --color-primary: #800020;
+    --color-accent: #d4af37;
+    --color-cream: #eef0f4;
+    --color-charcoal: #18181b;
+    --color-accent-light: #f4e8c8;
+    --color-gold-bright: #d4af37;
+    --color-gold-dark: #b8962e;
+    --color-royal-burgundy: #800020;
+    --color-royal-cream: #fcfaf8;
+
+    /* Self-hosted stacks — no build-time fetch (avoids Google Fonts SSL errors). */
+    --font-roboto: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, Roboto,
+      "Helvetica Neue", Arial, sans-serif;
+    --font-playfair: "Playfair Display", Georgia, "Palatino Linotype", "Book Antiqua",
+      Palatino, "Times New Roman", Times, serif;
+  }
 }
 
-/* === MAGICAL GOLD GRADIENT === */
-.magical-text-gold {
+@theme {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+
+  --color-sidebar: hsl(var(--sidebar));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-muted: hsl(var(--sidebar-muted));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+
+  --color-workspace-sidebar: hsl(var(--workspace-sidebar));
+  --color-workspace-sidebar-border: hsl(var(--workspace-sidebar-border));
+
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+
+  --color-success: hsl(var(--success));
+  --color-success-foreground: hsl(var(--success-foreground));
+
+  --color-warning: hsl(var(--warning));
+  --color-warning-foreground: hsl(var(--warning-foreground));
+
+  /* Back-compat utility names used across the codebase */
+  --color-cream: hsl(var(--background));
+  --color-charcoal: hsl(var(--foreground));
+  --color-accent-light: #f4e8c8;
+  --color-gold-bright: hsl(var(--accent));
+  --color-gold-dark: #b8962e;
+  --color-royal-burgundy: hsl(var(--primary));
+  --color-royal-cream: hsl(var(--background));
+
+  --radius-3xl: 1.5rem;
+  --radius-2xl: 1rem;
+  --radius-xl: 0.75rem;
+
+  --font-family-playfair: var(--font-playfair), serif;
+  --font-family-roboto: var(--font-roboto), sans-serif;
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    font-family: var(--font-roboto), sans-serif;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-glass-body), "DM Sans", system-ui, sans-serif;
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+}
+
+/* B2B workspace — light sidebar nav scrollbar */
+.workspace-shell-nav,
+.planner-shell-nav {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--primary) / 0.25) transparent;
+}
+.workspace-shell-nav::-webkit-scrollbar,
+.planner-shell-nav::-webkit-scrollbar {
+  width: 5px;
+}
+.workspace-shell-nav::-webkit-scrollbar-thumb,
+.planner-shell-nav::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary) / 0.2);
+  border-radius: 999px;
+}
+.workspace-shell-nav::-webkit-scrollbar-thumb:hover,
+.planner-shell-nav::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.35);
+}
+
+/* Subtle Kandyan motif for marketing sections only */
+.marketing-hero {
+  --marketing-pattern: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23800020' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+.marketing-hero--pattern {
+  background-image: var(--marketing-pattern);
+  background-size: 60px 60px;
+}
+
+/* Bright marketing landing — Regal Frost porcelain base */
+.marketing-page {
+  --mk-porcelain: 220 14% 95%;
+  --mk-maroon: 345 100% 25%;
+  --mk-gold: 42 48% 52%;
+  --mk-slate: 220 25% 18%;
+
+  background: linear-gradient(
+    180deg,
+    hsl(var(--mk-porcelain)) 0%,
+    hsl(220 16% 93%) 40%,
+    hsl(220 16% 92%) 100%
+  );
+  min-height: 100vh;
+}
+
+.marketing-regal-frost,
+.regal-frost-shell {
+  position: relative;
+  isolation: isolate;
+}
+
+.marketing-regal-frost .mk-glass-panel {
+  border: 1px solid hsl(220 14% 88% / 0.85);
+  background: hsl(0 0% 100% / 0.62);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow:
+    0 4px 24px hsl(var(--mk-slate) / 0.07),
+    inset 0 1px 0 hsl(0 0% 100% / 0.85);
+}
+
+.marketing-regal-frost .mk-glass-subtle {
+  border: 1px solid hsl(220 14% 88% / 0.65);
+  background: hsl(0 0% 100% / 0.42);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.marketing-regal-frost .mk-section-alt {
+  background: hsl(0 0% 100% / 0.35);
+  border-top: 1px solid hsl(220 14% 88% / 0.5);
+  border-bottom: 1px solid hsl(220 14% 88% / 0.5);
+}
+
+.marketing-regal-frost .mk-pricing-pro {
+  border-color: hsl(var(--mk-maroon));
+  background: hsl(var(--mk-maroon));
+  color: hsl(0 0% 100%);
+  box-shadow: 0 8px 32px hsl(var(--mk-maroon) / 0.25);
+}
+
+.marketing-regal-frost .mk-badge-gold {
+  background: hsl(var(--mk-gold) / 0.2);
+  color: hsl(0 0% 100%);
+  border: 1px solid hsl(var(--mk-gold) / 0.45);
+}
+
+.consumer-hero {
+  padding-bottom: 2.5rem;
+}
+
+.consumer-hero-bg {
+  background-color: hsl(345 30% 28%);
+  background-image: url("https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=1920&q=80");
+  background-size: cover;
+  background-position: center;
+}
+
+.consumer-hero-curve {
+  line-height: 0;
+}
+
+@media (min-width: 768px) {
+  .consumer-hero {
+    padding-bottom: 3rem;
+  }
+}
+
+/* Playfair hero — match prior Cinzel optical size (wider tracking + scale) */
+.consumer-hero .consumer-hero-title {
+  font-family: var(--font-playfair), Georgia, serif;
+  font-weight: 500;
+  letter-spacing: 0.045em;
+  font-size: clamp(2.5rem, 6.2vw, 4.25rem);
+  line-height: 1.1;
+}
+
+.consumer-hero .consumer-hero-title .simplified-enhanced {
+  font-size: clamp(2.65rem, 6.8vw, 4.5rem);
+  letter-spacing: 0.04em;
+  font-weight: 500;
+}
+
+.marketing-page .marketing-section-alt {
+  background-color: hsl(0 0% 100% / 0.35);
+}
+
+/* Editorial hero — arched “glass” columns */
+.hero-arch-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.hero-arch-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 5;
+  min-height: 260px;
+  border-radius: 50% 50% 42% 42% / 10% 10% 90% 90%;
+  overflow: hidden;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--primary) / 0.06);
+  box-shadow: 0 8px 32px hsl(var(--primary) / 0.08);
+}
+
+/* Slightly oversized so cover fills the pointed bottom of the arch */
+.hero-arch-img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  min-width: 100%;
+  min-height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  transform: translate(-50%, -50%) scale(1.18);
+  filter: grayscale(55%) contrast(1.08);
+  transition: filter 0.35s ease, transform 0.35s ease;
+}
+
+.hero-arch-column:hover .hero-arch-img {
+  filter: grayscale(15%) contrast(1.05);
+  transform: translate(-50%, -50%) scale(1.22);
+}
+
+/* Light vignette only — must not hide the image */
+.hero-arch-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    to top,
+    hsl(var(--foreground) / 0.35) 0%,
+    transparent 28%
+  );
+  pointer-events: none;
+}
+
+/* Step numbers — brand maroon, always above image + vignette */
+.hero-arch-num {
+  position: absolute;
+  bottom: 1rem;
+  right: 0.65rem;
+  z-index: 20;
+  font-family: var(--font-playfair), serif;
+  font-size: clamp(2.5rem, 5.5vw, 4rem);
+  font-weight: 400;
+  line-height: 0.9;
+  color: #800020;
+  letter-spacing: -0.02em;
+  pointer-events: none;
+  text-shadow:
+    0 0 12px rgba(255, 255, 255, 0.95),
+    0 2px 4px rgba(255, 255, 255, 0.8);
+}
+
+.hero-editorial-stem {
+  width: 1px;
+  height: 2.5rem;
+  margin: 0.75rem auto 0;
+  background: linear-gradient(
+    to bottom,
+    hsl(var(--foreground) / 0.35),
+    hsl(var(--foreground) / 0.08)
+  );
+}
+
+.hero-invite-stamp {
+  width: 7.5rem;
+  height: 7.5rem;
+  border: 1px solid hsl(var(--primary) / 0.35);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: hsl(var(--primary));
+  background: hsl(var(--card) / 0.6);
+}
+
+@media (min-width: 1024px) {
+  .hero-editorial-title {
+    font-size: clamp(3.25rem, 5.5vw, 5.5rem);
+    line-height: 0.92;
+    letter-spacing: -0.02em;
+  }
+}
+
+/* === Marketing-only animations (scoped — not on dashboards) === */
+.marketing-hero .magical-text-gold {
   background: linear-gradient(
     45deg,
-    #ffd700,     /* Bright Gold */
-    #ffed4e,     /* Light Gold */
-    #daa520,     /* Classic Gold */
-    #b8860b,     /* Dark Gold */
-    #ffd700,     /* Back to Bright Gold */
-    #ffffff      /* White highlight */
+    #ffd700,
+    #ffed4e,
+    #d4af37,
+    #b8962e,
+    #ffd700,
+    #ffffff
   );
   background-size: 400% 400%;
   -webkit-background-clip: text;
@@ -33,30 +401,25 @@
 }
 
 @keyframes goldShimmer {
-  0%, 100% { 
-    background-position: 0% 50%; 
-    filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.3));
+  0%,
+  100% {
+    background-position: 0% 50%;
   }
-  50% { 
-    background-position: 100% 50%; 
-    filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.6));
+  50% {
+    background-position: 100% 50%;
   }
 }
 
-/* === LEFT-TO-RIGHT WHITE TO GOLD ANIMATION === */
-.left-to-right-gold-animation {
-  position: relative;
-  color: white;
-  /* Create a mask for the reveal effect */
+.marketing-hero .left-to-right-gold-animation {
   background: linear-gradient(
     90deg,
     white 0%,
     white 50%,
-    #ffd700 50%,
-    #ffed4e 60%,
-    #daa520 70%,
-    #b8860b 80%,
-    #ffd700 90%,
+    #d4af37 50%,
+    #e8c96a 60%,
+    #d4af37 70%,
+    #b8962e 80%,
+    #d4af37 90%,
     #ffffff 100%
   );
   background-size: 200% 100%;
@@ -70,43 +433,20 @@
 @keyframes leftToRightReveal {
   0% {
     background-position: 100% 0;
-    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
   }
   100% {
     background-position: 0% 0;
-    filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.4));
   }
 }
 
-/* === FINAL GRADIENT STATE === */
-.final-gold-gradient {
-  background: linear-gradient(
-    90deg,
-    #ffffff 0%,
-    #ffed4e 20%,
-    #ffd700 40%,
-    #daa520 60%,
-    #b8860b 80%,
-    #ffd700 100%
-  );
+.marketing-hero .final-gold-gradient {
+  background: linear-gradient(90deg, #ffffff 0%, #e8c96a 20%, #d4af37 40%, #b8962e 80%, #d4af37 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.4));
-  animation: subtleGoldShimmer 4s ease-in-out infinite;
 }
 
-@keyframes subtleGoldShimmer {
-  0%, 100% { 
-    filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.4));
-  }
-  50% { 
-    filter: drop-shadow(0 0 25px rgba(255, 215, 0, 0.7));
-  }
-}
-
-/* === NO BACKGROUND - PURE COLOR ANIMATION === */
-.wedding-title-animation {
+.marketing-hero .wedding-title-animation {
   color: white;
   animation: textColorPaint 4s ease-in-out 0.3s forwards;
 }
@@ -114,16 +454,13 @@
 @keyframes textColorPaint {
   0% {
     color: white;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
   }
   100% {
-    color: #daa520;
-    text-shadow: 0 0 15px rgba(218, 165, 32, 0.4);
+    color: #d4af37;
   }
 }
 
-/* === NO BACKGROUND FOR "SIMPLIFIED" === */
-.simplified-enhanced {
+.marketing-hero .simplified-enhanced {
   color: white;
   animation: simplifiedColorPaint 4s ease-in-out 0.3s forwards;
 }
@@ -131,16 +468,13 @@
 @keyframes simplifiedColorPaint {
   0% {
     color: white;
-    text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
   }
   100% {
-    color: #e6d7a3;
-    text-shadow: 0 0 12px rgba(230, 215, 163, 0.3);
+    color: #e8dcc0;
   }
 }
 
-/* === SUBTITLE ANIMATION === */
-.animate-subtitle-appear {
+.marketing-hero .animate-subtitle-appear {
   animation: subtitleAppear 1.2s ease-out 2.8s both;
 }
 
@@ -155,8 +489,7 @@
   }
 }
 
-/* === SEARCH BAR ANIMATION === */
-.animate-search-appear {
+.marketing-hero .animate-search-appear {
   animation: searchAppear 1s ease-out 4s both;
 }
 
@@ -171,42 +504,43 @@
   }
 }
 
-/* === ALWAYS VISIBLE SEARCH BAR === */
-.search-bar-always-visible {
+.marketing-hero .search-bar-always-visible {
   opacity: 1;
   transform: translateY(0) scale(1);
 }
 
-/* === MAGICAL PARTICLES BACKGROUND === */
-.magical-particles {
-  background: 
-    radial-gradient(2px 2px at 20px 30px, rgba(255, 215, 0, 0.3), transparent),
-    radial-gradient(2px 2px at 40px 70px, rgba(255, 215, 0, 0.2), transparent),
-    radial-gradient(1px 1px at 90px 40px, rgba(255, 215, 0, 0.4), transparent),
-    radial-gradient(1px 1px at 130px 80px, rgba(255, 215, 0, 0.2), transparent),
-    radial-gradient(2px 2px at 160px 30px, rgba(255, 215, 0, 0.3), transparent);
+.marketing-hero .magical-particles {
+  background:
+    radial-gradient(2px 2px at 20px 30px, rgba(212, 175, 55, 0.25), transparent),
+    radial-gradient(2px 2px at 40px 70px, rgba(212, 175, 55, 0.15), transparent),
+    radial-gradient(1px 1px at 90px 40px, rgba(212, 175, 55, 0.3), transparent);
   background-repeat: repeat;
   background-size: 200px 100px;
   animation: sparkleMove 8s linear infinite;
 }
 
 @keyframes sparkleMove {
-  0% { transform: translateY(0px); }
-  100% { transform: translateY(-100px); }
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-100px);
+  }
 }
 
-/* === ELEGANT SEARCH BAR WITH SOPHISTICATED SHINE === */
-.search-bar-enhanced {
-  background: linear-gradient(145deg, #ffffff, #fefefe);
-  border: 2px solid rgba(248, 246, 240, 0.3);
-  transition: all 0.4s ease;
+.marketing-hero .search-bar-enhanced {
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px hsl(345 100% 25% / 0.08);
 }
 
-.search-bar-enhanced::before {
-  content: '';
+.marketing-hero .search-bar-enhanced::before {
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
@@ -215,11 +549,7 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(255, 250, 240, 0.3) 20%,
-    rgba(248, 246, 240, 0.6) 40%,
-    rgba(255, 255, 255, 0.9) 50%,
-    rgba(248, 246, 240, 0.6) 60%,
-    rgba(255, 250, 240, 0.3) 80%,
+    rgba(252, 250, 248, 0.4) 50%,
     transparent 100%
   );
   animation: elegantShineMove 2.5s ease-in-out 3s forwards;
@@ -231,40 +561,22 @@
     left: -100%;
     opacity: 0;
   }
-  10% {
-    opacity: 0.8;
-  }
-  90% {
-    opacity: 0.8;
-  }
   100% {
     left: 100%;
     opacity: 0;
   }
 }
 
-.search-bar-enhanced:hover {
-  border-color: rgba(240, 230, 210, 0.5);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-}
-
-.search-bar-enhanced input {
+.marketing-hero .sword-button-enhanced {
   position: relative;
-  z-index: 2;
-}
-
-/* === ELEGANT SEARCH BUTTON === */
-.sword-button-enhanced {
-  position: relative;
-  background: linear-gradient(145deg, var(--color-primary), #8b0513) !important;
-  transition: all 0.4s ease;
+  background: hsl(var(--primary)) !important;
+  transition: all 0.2s ease;
   overflow: hidden;
   z-index: 3;
-  box-shadow: 0 4px 20px rgba(106, 4, 15, 0.3);
 }
 
-.sword-button-enhanced::before {
-  content: '';
+.marketing-hero .sword-button-enhanced::before {
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
@@ -290,49 +602,19 @@
   }
 }
 
-.sword-button-enhanced:hover {
-  background: linear-gradient(145deg, #8b0513, var(--color-primary)) !important;
-  box-shadow: 0 6px 25px rgba(106, 4, 15, 0.4);
+.marketing-hero .sword-button-enhanced:hover {
+  opacity: 0.92;
   transform: translateY(-1px);
 }
 
-.sword-button-enhanced:active {
-  animation: elegantPress 0.2s ease-out;
+/* === App utilities === */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
-
-@keyframes elegantPress {
-  0% { transform: scale(1) translateY(-1px); }
-  50% { transform: scale(0.98) translateY(0px); }
-  100% { transform: scale(1) translateY(-1px); }
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
-
-/* === EXISTING STYLES === */
-body {
-  font-family: var(--font-roboto), sans-serif;
-  background-color: var(--color-cream);
-  color: var(--color-charcoal);        
-}
-
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-playfair), serif;
-}
-
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-
-/* Add this to your globals.css for the testimonials scrolling animation */
-
-@keyframes scroll-left {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-100%);
-  }
-}
-
-/* Add this to your globals.css for the testimonials scrolling animation */
 
 @keyframes scroll-left {
   from {
@@ -344,25 +626,21 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .animate-scroll-left {
-  /* The animation will run for 40 seconds, be linear, and loop forever */
   animation: scroll-left 40s linear infinite;
 }
 
-/* Pause animation on hover */
 .hover\:pause:hover {
   animation-play-state: paused;
 }
 
-/* === SMOOTH SCALE UP HOVER EFFECT FOR AUTH BUTTONS === */
 .smooth-scale-button {
-  transition: transform 0.3s ease-out;
+  transition: transform 0.2s ease-out;
 }
 
 .smooth-scale-button:hover {
-  transform: scale(1.05);
+  transform: scale(1.03);
 }
 
-/* Modal open: lock background scroll */
 .modal-open {
   overflow: hidden;
 }
@@ -371,10 +649,9 @@ h1, h2, h3, h4, h5, h6 {
   filter: none;
 }
 
-/* Simple pulse animation for loading skeletons */
 @keyframes pulse {
   50% {
-    opacity: .5;
+    opacity: 0.5;
   }
 }
 
@@ -387,3 +664,546 @@ h1, h2, h3, h4, h5, h6 {
     transform: translateX(-100%);
   }
 }
+
+/* Vendor listing editor — Regal Frost glass panels */
+.listing-editor-page {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  flex: 1 1 auto;
+  min-height: 100vh;
+  color: hsl(var(--foreground));
+}
+
+.listing-editor-header {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 4px 24px hsl(345 100% 25% / 0.06);
+}
+
+.listing-editor-header::after {
+  content: "";
+  display: block;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    hsl(var(--accent)) 20%,
+    hsl(var(--primary)) 50%,
+    hsl(var(--accent)) 80%,
+    transparent
+  );
+  opacity: 0.35;
+}
+
+.listing-editor-card {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 1rem;
+  box-shadow: 0 8px 32px hsl(345 100% 25% / 0.08);
+}
+
+.listing-editor-preview-card {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 1rem;
+}
+
+.listing-editor-input {
+  background-color: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(8px);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.listing-editor-input:focus {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 4px hsl(var(--primary) / 0.08);
+  outline: none;
+}
+
+.listing-editor-upload-zone {
+  background: rgba(255, 255, 255, 0.35);
+  border: 2px dashed hsl(var(--accent) / 0.45);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.listing-editor-upload-zone:hover {
+  border-color: hsl(var(--primary));
+}
+
+.listing-editor-chip-inactive {
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.listing-editor-surface-muted {
+  background: rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+}
+
+.listing-editor-step-done {
+  background: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+  border: 1px solid hsl(var(--primary) / 0.2);
+}
+
+.listing-editor-step-pending {
+  background: hsl(0 0% 100% / 0.45);
+  color: hsl(220 10% 42%);
+  border: 1px solid hsl(0 0% 100% / 0.55);
+}
+
+.regal-frost-shell .listing-editor-step-pending:hover,
+.listing-editor-page .listing-editor-step-pending:hover {
+  background: hsl(0 0% 100% / 0.55);
+  color: hsl(var(--vgo-maroon));
+}
+
+/* === Vendor dashboard overview — Regal Frost glassmorphism === */
+@layer utilities {
+  .font-glass-body {
+    font-family: var(--font-glass-body), "DM Sans", system-ui, sans-serif;
+  }
+
+  .font-luxury-display {
+    font-family: var(--font-luxury-display), "Cinzel", Georgia, serif;
+    letter-spacing: 0.06em;
+  }
+
+  .font-luxury-section {
+    font-family: var(--font-luxury-section), "Cormorant Garamond", Georgia, serif;
+    letter-spacing: -0.01em;
+  }
+
+  .font-playfair {
+    font-family: var(--font-playfair), Georgia, "Times New Roman", serif;
+  }
+}
+
+/* Landing / marketing — Playfair for hero + section headings */
+.marketing-page .marketing-hero h1,
+.marketing-page .marketing-hero h2 {
+  font-family: var(--font-playfair), Georgia, serif;
+}
+
+/* Dashboard workspaces — DM Sans titles (not marketing serif) */
+.dashboard-workspace-ui :is(.font-luxury-display, .font-luxury-section, .font-playfair),
+.planner-workspace-ui :is(.font-luxury-display, .font-luxury-section, .font-playfair) {
+  font-family: var(--font-glass-body), "DM Sans", system-ui, sans-serif;
+  font-style: normal;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.dashboard-workspace-ui .font-luxury-display,
+.planner-workspace-ui .font-luxury-display {
+  font-weight: 600;
+}
+
+.dashboard-workspace-ui :is(h1, h2, h3).font-luxury-display,
+.dashboard-workspace-ui :is(h1, h2, h3).font-luxury-section,
+.planner-workspace-ui :is(h1, h2, h3).font-luxury-display,
+.planner-workspace-ui :is(h1, h2, h3).font-luxury-section {
+  font-family: var(--font-glass-body), "DM Sans", system-ui, sans-serif;
+}
+
+/* Palette: Porcelain Frost · Royal Maroon · Antique Gold */
+.regal-frost-shell,
+.vendor-glass-overview {
+  --vgo-porcelain: 220 14% 95%;
+  --vgo-maroon: 345 100% 25%;
+  --vgo-gold: 42 48% 52%;
+  --vgo-slate: 220 25% 18%;
+
+  font-family: var(--font-glass-body), "DM Sans", system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+/* Frosted glass surfaces — cool tint, stronger depth */
+.regal-frost-shell .rf-glass-panel,
+.regal-frost-shell .vgo-glass-panel,
+.vendor-glass-overview .vgo-glass-panel {
+  border: 1px solid hsl(220 14% 88% / 0.85);
+  background: hsl(0 0% 100% / 0.62);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow:
+    0 4px 24px hsl(var(--vgo-slate) / 0.07),
+    0 1px 0 hsl(var(--vgo-gold) / 0.12) inset,
+    inset 0 1px 0 hsl(0 0% 100% / 0.85);
+}
+
+.regal-frost-shell .rf-glass-subtle,
+.regal-frost-shell .vgo-glass-subtle,
+.vendor-glass-overview .vgo-glass-subtle {
+  border: 1px solid hsl(220 14% 88% / 0.65);
+  background: hsl(0 0% 100% / 0.42);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Cool mesh canvas — no warm blush tones */
+.regal-frost-shell.vgo-flex-shell,
+.vendor-glass-overview.vgo-flex-shell {
+  position: relative;
+  display: flex;
+  min-height: 100vh;
+  isolation: isolate;
+  overflow: visible;
+  background: linear-gradient(
+    155deg,
+    hsl(var(--vgo-porcelain)) 0%,
+    hsl(220 16% 92%) 45%,
+    hsl(220 18% 88%) 100%
+  );
+}
+
+.regal-frost-shell .vgo-mesh-orb,
+.vendor-glass-overview .vgo-mesh-orb {
+  position: fixed;
+  z-index: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(90px);
+}
+
+.regal-frost-shell .vgo-mesh-orb--gold,
+.vendor-glass-overview .vgo-mesh-orb--gold {
+  top: -6%;
+  right: 8%;
+  width: 26rem;
+  height: 26rem;
+  background: hsl(var(--vgo-gold) / 0.35);
+}
+
+.regal-frost-shell .vgo-mesh-orb--maroon,
+.vendor-glass-overview .vgo-mesh-orb--maroon {
+  bottom: 0;
+  left: 10%;
+  width: 24rem;
+  height: 24rem;
+  background: hsl(var(--vgo-maroon) / 0.18);
+}
+
+.regal-frost-shell .vgo-mesh-orb--slate,
+.vendor-glass-overview .vgo-mesh-orb--slate {
+  top: 35%;
+  right: 25%;
+  width: 20rem;
+  height: 20rem;
+  background: hsl(var(--vgo-slate) / 0.08);
+}
+
+/* Floating glass sidebar */
+.regal-frost-shell .vgo-sidebar,
+.vendor-glass-overview .vgo-sidebar {
+  position: sticky;
+  top: 0.75rem;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 1.5rem);
+  margin: 0.75rem 0 0.75rem 0.75rem;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  border: 1px solid hsl(220 14% 88% / 0.9);
+  background: hsl(0 0% 100% / 0.62);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow:
+    0 8px 40px hsl(var(--vgo-slate) / 0.1),
+    0 1px 0 hsl(var(--vgo-gold) / 0.15) inset,
+    inset 0 1px 0 hsl(0 0% 100% / 0.9);
+}
+
+.regal-frost-shell .vgo-sidebar.vgo-sidebar--animated,
+.vendor-glass-overview .vgo-sidebar.vgo-sidebar--animated {
+  transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.regal-frost-shell .vgo-sidebar-nav,
+.vendor-glass-overview .vgo-sidebar-nav {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.regal-frost-shell .vgo-sidebar-brand,
+.vendor-glass-overview .vgo-sidebar-brand {
+  flex-shrink: 0;
+  border-color: hsl(220 14% 88% / 0.5);
+}
+
+.regal-frost-shell .vgo-sidebar-footer,
+.vendor-glass-overview .vgo-sidebar-footer {
+  flex-shrink: 0;
+  border-color: hsl(220 14% 88% / 0.5);
+}
+
+.regal-frost-shell .vgo-sidebar-group-label,
+.vendor-glass-overview .vgo-sidebar-group-label {
+  color: hsl(220 10% 42%);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* Nav — bold maroon pill active state */
+.regal-frost-shell .vgo-nav-active,
+.vendor-glass-overview .vgo-nav-active {
+  background: hsl(var(--vgo-maroon));
+  color: hsl(0 0% 100%);
+  border: 1px solid hsl(var(--vgo-maroon));
+  box-shadow: 0 4px 16px hsl(var(--vgo-maroon) / 0.35);
+}
+
+.regal-frost-shell .vgo-nav-active .vgo-nav-icon,
+.vendor-glass-overview .vgo-nav-active .vgo-nav-icon {
+  background: hsl(0 0% 100% / 0.18);
+  color: hsl(0 0% 100%);
+}
+
+.regal-frost-shell .vgo-sidebar[data-collapsed] .vgo-sidebar-nav,
+.vendor-glass-overview .vgo-sidebar[data-collapsed] .vgo-sidebar-nav {
+  overflow-x: hidden;
+  overflow-y: hidden;
+  overscroll-behavior: contain;
+}
+
+.regal-frost-shell .vgo-sidebar[data-collapsed] .vgo-nav-active,
+.vendor-glass-overview .vgo-sidebar[data-collapsed] .vgo-nav-active {
+  box-shadow: none;
+}
+
+.regal-frost-shell .vgo-sidebar[data-collapsed] .vgo-nav-active .vgo-nav-icon,
+.vendor-glass-overview .vgo-sidebar[data-collapsed] .vgo-nav-active .vgo-nav-icon {
+  background: transparent;
+}
+
+.regal-frost-shell .vgo-sidebar[data-collapsed] .vgo-nav-idle:hover,
+.vendor-glass-overview .vgo-sidebar[data-collapsed] .vgo-nav-idle:hover {
+  box-shadow: none;
+}
+
+.regal-frost-shell .vgo-sidebar[data-collapsed] .vgo-nav-icon svg,
+.vendor-glass-overview .vgo-sidebar[data-collapsed] .vgo-nav-icon svg {
+  display: block;
+}
+
+.regal-frost-shell .vgo-nav-idle,
+.vendor-glass-overview .vgo-nav-idle {
+  color: hsl(220 10% 42%);
+}
+
+.regal-frost-shell .vgo-nav-idle:hover,
+.vendor-glass-overview .vgo-nav-idle:hover{
+  background: hsl(0 0% 100% / 0.55);
+  color: hsl(var(--vgo-maroon));
+}
+
+.regal-frost-shell .vgo-nav-idle:hover .vgo-nav-icon,
+.vendor-glass-overview .vgo-nav-idle:hover .vgo-nav-icon{
+  background: hsl(var(--vgo-maroon) / 0.08);
+  color: hsl(var(--vgo-maroon));
+}
+
+.regal-frost-shell .vgo-sidebar .vgo-user-card,
+.vendor-glass-overview .vgo-sidebar .vgo-user-card {
+  border-color: hsl(220 14% 88% / 0.65);
+  background: hsl(0 0% 100% / 0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.regal-frost-shell .vgo-sidebar-toggle,
+.vendor-glass-overview .vgo-sidebar-toggle {
+  border: 1px solid hsl(0 0% 100% / 0.95);
+  background: hsl(0 0% 100% / 0.96);
+  color: hsl(var(--vgo-maroon));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow:
+    0 2px 8px hsl(var(--vgo-slate) / 0.1),
+    0 0 0 1px hsl(220 14% 88% / 0.5),
+    inset 0 1px 0 hsl(0 0% 100%);
+  transition: background 200ms, color 200ms, box-shadow 200ms, border-color 200ms;
+}
+
+.regal-frost-shell .vgo-sidebar-toggle:hover,
+.vendor-glass-overview .vgo-sidebar-toggle:hover{
+  background: hsl(0 0% 100%);
+  color: hsl(var(--vgo-maroon));
+  border-color: hsl(0 0% 100%);
+  box-shadow:
+    0 4px 16px hsl(var(--vgo-slate) / 0.14),
+    0 0 0 1px hsl(var(--vgo-maroon) / 0.15),
+    inset 0 1px 0 hsl(0 0% 100%);
+}
+
+.regal-frost-shell .vgo-upgrade-btn,
+.vendor-glass-overview .vgo-upgrade-btn {
+  border: none;
+  background: hsl(var(--vgo-gold));
+  color: hsl(0 0% 100%);
+  box-shadow: 0 4px 16px hsl(var(--vgo-gold) / 0.4);
+}
+
+.regal-frost-shell .vgo-upgrade-btn:hover,
+.vendor-glass-overview .vgo-upgrade-btn:hover{
+  opacity: 0.92;
+  box-shadow: 0 6px 20px hsl(var(--vgo-gold) / 0.45);
+}
+
+/* Main canvas */
+.regal-frost-shell .vgo-canvas,
+.vendor-glass-overview .vgo-canvas {
+  position: relative;
+  z-index: 10;
+  flex: 1;
+  min-width: 0;
+  min-height: 100vh;
+  background: transparent;
+}
+
+.regal-frost-shell .vgo-topbar,
+.vendor-glass-overview .vgo-topbar {
+  border: 1px solid hsl(220 14% 88% / 0.85);
+  background: hsl(0 0% 100% / 0.62);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow:
+    0 4px 24px hsl(var(--vgo-slate) / 0.07),
+    0 1px 0 hsl(var(--vgo-gold) / 0.12) inset,
+    inset 0 1px 0 hsl(0 0% 100% / 0.85);
+}
+
+.regal-frost-shell .vgo-search,
+.vendor-glass-overview .vgo-search {
+  border-color: hsl(220 14% 88% / 0.7);
+  background: hsl(0 0% 100% / 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.regal-frost-shell .vgo-search:focus,
+.vendor-glass-overview .vgo-search:focus{
+  border-color: hsl(var(--vgo-maroon) / 0.45);
+  background: hsl(0 0% 100% / 0.72);
+  box-shadow: 0 0 0 3px hsl(var(--vgo-maroon) / 0.12);
+}
+
+.regal-frost-shell .vgo-bar-primary,
+.vendor-glass-overview .vgo-bar-primary {
+  background: hsl(var(--vgo-maroon));
+}
+
+.regal-frost-shell .vgo-bar-accent,
+.vendor-glass-overview .vgo-bar-accent {
+  background: hsl(var(--vgo-gold));
+}
+
+/* Workspace plan tier badges — separate from vgo-topbar-btn so PRO gold is not overridden */
+.regal-frost-shell .vgo-plan-pro-badge,
+.vendor-glass-overview .vgo-plan-pro-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 9999px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border: 1px solid hsl(42 55% 38% / 0.55);
+  background: linear-gradient(
+    180deg,
+    hsl(42 52% 62%) 0%,
+    hsl(var(--vgo-gold)) 48%,
+    hsl(42 42% 42%) 100%
+  );
+  color: hsl(0 0% 100%);
+  box-shadow:
+    0 1px 2px hsl(42 40% 28% / 0.4),
+    0 4px 14px hsl(var(--vgo-gold) / 0.45),
+    inset 0 1px 0 hsl(0 0% 100% / 0.35);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.regal-frost-shell a.vgo-plan-pro-badge:hover,
+.vendor-glass-overview a.vgo-plan-pro-badge:hover {
+  color: hsl(0 0% 100%);
+  transform: translateY(-1px);
+  box-shadow:
+    0 2px 4px hsl(42 40% 28% / 0.4),
+    0 6px 18px hsl(var(--vgo-gold) / 0.52),
+    inset 0 1px 0 hsl(0 0% 100% / 0.35);
+}
+
+.regal-frost-shell .vgo-plan-free-badge,
+.vendor-glass-overview .vgo-plan-free-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 9999px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border: 1px solid hsl(220 14% 88% / 0.85);
+  background: hsl(0 0% 100% / 0.55);
+  color: hsl(var(--vgo-slate) / 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.regal-frost-shell a.vgo-plan-free-badge:hover,
+.vendor-glass-overview a.vgo-plan-free-badge:hover {
+  color: hsl(var(--vgo-maroon));
+  border-color: hsl(var(--vgo-maroon) / 0.22);
+  background: hsl(0 0% 100% / 0.82);
+}
+
+.regal-frost-shell .vgo-topbar-btn,
+.vendor-glass-overview .vgo-topbar-btn {
+  border-color: hsl(220 14% 88% / 0.7);
+  background: hsl(0 0% 100% / 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.regal-frost-shell .vgo-topbar-btn:hover,
+.vendor-glass-overview .vgo-topbar-btn:hover{
+  background: hsl(0 0% 100% / 0.78);
+  color: hsl(var(--vgo-maroon));
+  border-color: hsl(var(--vgo-maroon) / 0.2);
+}
+
+.regal-frost-shell .vgo-pro-card,
+.vendor-glass-overview .vgo-pro-card {
+  border-color: hsl(220 14% 88% / 0.65);
+  background: hsl(0 0% 100% / 0.42);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: inset 0 1px 0 hsl(var(--vgo-gold) / 0.1);
+}
+

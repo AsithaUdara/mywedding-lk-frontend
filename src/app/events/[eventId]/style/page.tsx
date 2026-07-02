@@ -1,16 +1,28 @@
 "use client";
 
-import React from 'react';
-import MyStyleSection from '@/features/event-planning/components/MyStyleSection';
+import React, { use } from "react";
+import { EmptyState } from "@/shared/components/ui";
+import { Palette } from "lucide-react";
+import { GlassSectionCard } from "@/modules/vendor/dashboard/glass-ui";
+import { eventWorkspace } from "@/modules/events/event-workspace";
 
-export default function StylePage() {
+export default function DesignBoardPage({
+  params,
+}: {
+  params: Promise<{ eventId: string }>;
+}) {
+  const { eventId } = use(params);
+  void eventId;
+
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto">
-      {/* Passing dummy data for now, as the real data fetch was not fully implemented in the original file anyway */}
-      <MyStyleSection 
-        preferences={{ Style: 'Traditional', Photography: 'Candid', Priority: 'Food' }} 
-        onOpenQuiz={() => {}} 
-      />
+    <div className={eventWorkspace.pageEnter}>
+      <GlassSectionCard title="Design board" subtitle="Inspiration and mood boards from your planner">
+        <EmptyState
+          title="Design board coming soon"
+          description="Your planner will share inspiration boards and mood imagery here. Upload Pinterest saves and photos when this feature launches."
+          icon={Palette}
+        />
+      </GlassSectionCard>
     </div>
   );
 }

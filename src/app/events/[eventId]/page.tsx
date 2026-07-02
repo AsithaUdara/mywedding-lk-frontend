@@ -1,7 +1,9 @@
 import React from 'react';
-import MiniChecklist from '@/features/event-planning/components/MiniChecklist';
-import MiniBudget from '@/features/event-planning/components/MiniBudget';
-import RecentActivitiesHub from '@/features/event-planning/components/RecentActivitiesHub';
+import MiniBudget from '@/modules/budget/MiniBudget';
+import RecentActivitiesHub from '@/modules/collaboration/RecentActivitiesHub';
+import { EventHomeOverviewRow } from '@/modules/events/EventHomeOverviewRow';
+import { eventWorkspace } from '@/modules/events/event-workspace';
+import { cn } from '@/shared/lib/cn';
 
 export default async function EventOverviewPage({
   params,
@@ -11,17 +13,17 @@ export default async function EventOverviewPage({
   const { eventId } = await params;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:items-stretch">
-      {/* Primary Column - 8/12 span */}
-      <div className="lg:col-span-8 space-y-6">
-        <MiniChecklist eventId={eventId} />
-        <MiniBudget eventId={eventId} />
-      </div>
-
-      {/* Sidebar Column - 4/12 span */}
-      <div className="lg:col-span-4 h-full min-h-0">
-        {/* We keep Recent Activities on the dashboard to make it feel alive */}
-        <RecentActivitiesHub eventId={eventId} />
+    <div className={eventWorkspace.pageEnter}>
+      <div className={eventWorkspace.homeOverviewGrid}>
+        <EventHomeOverviewRow eventId={eventId} />
+        <MiniBudget
+          eventId={eventId}
+          className={cn(eventWorkspace.homeOverviewBudget, eventWorkspace.homeOverviewCard)}
+        />
+        <RecentActivitiesHub
+          eventId={eventId}
+          className={cn(eventWorkspace.homeOverviewActivity, eventWorkspace.homeOverviewCard)}
+        />
       </div>
     </div>
   );

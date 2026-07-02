@@ -1,56 +1,59 @@
-// src/components/BrowseByCategory.tsx
-import React from 'react';
-import { Camera, MapPin, Utensils, Music, Flower2, Clapperboard } from 'lucide-react';
+import Link from "next/link";
+import { Camera, Clapperboard, Flower2, MapPin, Music, Utensils } from "lucide-react";
+import { MkSection, MkSectionHeader } from "@/modules/marketing/marketing-glass-ui";
+import { mk } from "@/modules/marketing/marketing-theme";
+import { cn } from "@/shared/lib/cn";
 
-// Data for our categories - easy to add or change later
 const categories = [
-  { name: 'Photographers', icon: <Camera size={32} /> },
-  { name: 'Venues', icon: <MapPin size={32} /> },
-  { name: 'Caterers', icon: <Utensils size={32} /> },
-  { name: 'Music Bands', icon: <Music size={32} /> },
-  { name: 'Florists', icon: <Flower2 size={32} /> },
-  { name: 'Videographers', icon: <Clapperboard size={32} /> },
+  { name: "Photographers", slug: "photographers", icon: Camera },
+  { name: "Venues", slug: "venues", icon: MapPin, href: "/venues" },
+  { name: "Caterers", slug: "caterers", icon: Utensils },
+  { name: "Music", slug: "music", icon: Music },
+  { name: "Florists", slug: "florists", icon: Flower2 },
+  { name: "Videographers", slug: "videographers", icon: Clapperboard },
 ];
 
-const BrowseByCategory = () => {
+export default function BrowseByCategory() {
   return (
-    <section style={{ backgroundColor: 'var(--color-cream)' }} className="py-24">
-      <div className="container mx-auto px-4">
-        {/* Section Title */}
-        <div className="text-center mb-16">
-          <h2 className="text-5xl font-bold" style={{ color: 'var(--color-charcoal)' }}>
-            Everything You Need
-          </h2>
-          <p className="text-lg mt-3 text-gray-600">
-            Find the best vendors for every aspect of your wedding.
-          </p>
-        </div>
+    <MkSection id="directory" alt>
+      <MkSectionHeader
+        eyebrow="Vendor directory"
+        title="Browse by category"
+        subtitle="Planners shortlist from verified vendors — couples can explore the same curated network."
+      />
 
-        {/* Category Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8">
-          {categories.map((category) => (
-            <div 
+      <div className="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6 lg:gap-5">
+        {categories.map((category) => {
+          const Icon = category.icon;
+          const href = category.href ?? `/vendors/search?category=${category.slug}`;
+          return (
+            <Link
               key={category.name}
-              className="group flex flex-col items-center justify-center p-6 bg-white rounded-xl shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 ease-in-out cursor-pointer"
+              href={href}
+              className={cn(
+                mk.glass,
+                "group flex flex-col items-center rounded-2xl p-5 text-center transition-all duration-200 hover:border-[hsl(42_48%_52%/0.3)] hover:shadow-[0_6px_24px_hsl(345_100%_25%/0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              )}
             >
-              <div 
-                className="text-primary group-hover:scale-110 transition-transform duration-300"
-                style={{ color: 'var(--color-primary)' }}
-              >
-                {category.icon}
+              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/10 transition-colors duration-200 group-hover:bg-primary group-hover:text-primary-foreground">
+                <Icon size={26} strokeWidth={1.75} aria-hidden />
               </div>
-              <h3 
-                className="mt-4 text-lg font-semibold text-center group-hover:text-accent transition-colors duration-300" 
-                style={{ color: 'var(--color-charcoal)' }}
-              >
+              <h3 className="font-glass-body mt-4 text-sm font-medium text-foreground transition-colors group-hover:text-primary">
                 {category.name}
               </h3>
-            </div>
-          ))}
-        </div>
+            </Link>
+          );
+        })}
       </div>
-    </section>
-  );
-};
 
-export default BrowseByCategory;
+      <p className="mt-10 text-center">
+        <Link
+          href="/vendors"
+          className="font-glass-body text-sm font-medium text-primary underline-offset-4 hover:underline"
+        >
+          View full vendor directory →
+        </Link>
+      </p>
+    </MkSection>
+  );
+}

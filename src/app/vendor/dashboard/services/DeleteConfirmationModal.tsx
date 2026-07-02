@@ -1,60 +1,68 @@
 "use client";
 
-import React from 'react';
-import { X, AlertTriangle, Trash2 } from 'lucide-react';
+import { AlertTriangle, Trash2, X } from "lucide-react";
+import { GlassButton } from "@/modules/vendor/dashboard/glass-ui";
+import { rf } from "@/modules/design-system/regal-frost/tokens";
+import { cn } from "@/shared/lib/cn";
 
 interface DeleteConfirmationModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onConfirm: () => void;
-    title: string;
-    message: string;
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title: string;
+  message: string;
 }
 
 export default function DeleteConfirmationModal({
-    isOpen,
-    onClose,
-    onConfirm,
-    title,
-    message
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
+  message,
 }: DeleteConfirmationModalProps) {
-    if (!isOpen) return null;
+  if (!isOpen) return null;
 
-    return (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-                <div className="p-6 text-center">
-                    <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <AlertTriangle size={32} />
-                    </div>
-                    <h3 className="text-xl font-bold text-charcoal mb-2">{title}</h3>
-                    <p className="text-slate-500 text-sm leading-relaxed mb-8">
-                        {message}
-                    </p>
+  return (
+    <div
+      className="fixed inset-0 z-[110] flex items-center justify-center bg-foreground/30 p-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="delete-listing-title"
+    >
+      <div className={cn(rf.panel, "relative w-full max-w-md overflow-hidden")}>
+        <button
+          type="button"
+          onClick={onClose}
+          className={cn(rf.navBtn, "absolute right-3 top-3")}
+          aria-label="Close"
+        >
+          <X size={20} />
+        </button>
 
-                    <div className="flex gap-3">
-                        <button
-                            onClick={onClose}
-                            className="flex-1 px-6 py-3 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-all"
-                        >
-                            No, Cancel
-                        </button>
-                        <button
-                            onClick={onConfirm}
-                            className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-red-500 text-white font-bold rounded-xl shadow-lg shadow-red-200 hover:bg-red-600 transition-all active:scale-95"
-                        >
-                            <Trash2 size={18} /> Yes, Delete
-                        </button>
-                    </div>
-                </div>
+        <div className="p-6 pt-8 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+            <AlertTriangle size={32} strokeWidth={2} aria-hidden />
+          </div>
+          <h3 id="delete-listing-title" className={rf.sectionTitle}>
+            {title}
+          </h3>
+          <p className={cn("mb-8 mt-2 leading-relaxed", rf.subtitle)}>{message}</p>
 
-                <button
-                    onClick={onClose}
-                    className="absolute top-4 right-4 p-2 text-slate-400 hover:text-charcoal hover:bg-slate-100 rounded-lg transition-all"
-                >
-                    <X size={20} />
-                </button>
-            </div>
+          <div className="flex gap-3">
+            <GlassButton variant="ghost" className="flex-1 justify-center" onClick={onClose}>
+              Cancel
+            </GlassButton>
+            <button
+              type="button"
+              className="font-glass-body inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-destructive px-3.5 py-1.5 text-xs font-medium text-destructive-foreground shadow-sm transition-opacity hover:opacity-90"
+              onClick={onConfirm}
+            >
+              <Trash2 size={18} aria-hidden />
+              Delete
+            </button>
+          </div>
         </div>
-    );
+      </div>
+    </div>
+  );
 }

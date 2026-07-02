@@ -1,5 +1,6 @@
 import React from 'react';
-import ChecklistSection from '@/features/event-planning/components/ChecklistSection';
+import ChecklistSection from '@/modules/tasks/ChecklistSection';
+import { eventWorkspace } from '@/modules/events/event-workspace';
 
 export default async function ChecklistPage({
   params,
@@ -9,7 +10,7 @@ export default async function ChecklistPage({
   const { eventId } = await params;
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto">
+    <div className={eventWorkspace.pageEnter}>
       <ChecklistSection eventId={eventId} />
     </div>
   );

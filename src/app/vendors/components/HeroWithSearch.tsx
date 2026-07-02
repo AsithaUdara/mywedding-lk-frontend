@@ -1,35 +1,32 @@
-// src/app/vendors/components/HeroWithSearch.tsx
-import React from 'react';
-import Image from 'next/image';
-import SearchForm from '@/features/vendor-discovery/components/SearchForm';
+import React from "react";
+import Image from "next/image";
+import SearchForm from "@/modules/vendors/components/SearchForm";
 
-// Define the props this component will receive
 interface HeroWithSearchProps {
   imageUrl: string;
-  searchType: 'vendor' | 'venue';
+  searchType: "vendor" | "venue";
 }
 
 const HeroWithSearch = ({ imageUrl, searchType }: HeroWithSearchProps) => {
   return (
-    <section className="relative" style={{ height: '550px' }}>
+    <section className="relative min-h-[420px] sm:min-h-[520px] lg:min-h-[550px]">
       <div className="absolute inset-0 z-0 flex">
-        <div className="w-5/12" style={{ backgroundColor: 'var(--color-cream)' }}></div>
-        <div className="w-7/12 relative rounded-bl-2xl overflow-hidden">
-          {/* Use the imageUrl from props */}
+        <div className="hidden w-5/12 bg-background sm:block" />
+        <div className="relative w-full overflow-hidden rounded-bl-3xl sm:w-7/12">
           <Image
             src={imageUrl}
-            alt="Beautiful Wedding Venue in Sri Lanka"
+            alt="Beautiful wedding venue in Sri Lanka"
             fill
             priority
             sizes="(max-width: 768px) 100vw, 60vw"
-            style={{ objectFit: 'cover' }}
+            className="object-cover"
           />
+          <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-background/20 to-transparent sm:from-background/60" />
         </div>
       </div>
-      <div className="absolute inset-0 z-10 flex items-center">
-        <div className="container mx-auto px-4">
-          <div className="ml-auto md:ml-32 lg:ml-48">
-            {/* Pass the searchType down to the form */}
+      <div className="relative z-10 flex min-h-[inherit] items-center">
+        <div className="container mx-auto px-4 py-12 sm:py-16">
+          <div className="mx-auto max-w-lg sm:mx-0 sm:ml-8 lg:ml-16">
             <SearchForm type={searchType} />
           </div>
         </div>
