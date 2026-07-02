@@ -8,12 +8,12 @@ export const STATUS_BADGE_STYLES: Record<string, string> = {
   Pending: "bg-warning/15 text-warning border border-warning/25",
   Approved: "bg-primary/10 text-primary border border-primary/20",
   Rejected: "bg-destructive/10 text-destructive border border-destructive/20",
-  Paid: "bg-accent/15 text-accent-foreground border border-accent/30",
+  Paid: "bg-accent/20 text-[hsl(42_40%_32%)] border border-accent/40",
   Draft: "bg-muted text-muted-foreground border border-border",
   Confirmed: "bg-success/10 text-success border border-success/25",
   Cancelled: "bg-destructive/10 text-destructive border border-destructive/20",
   Requested: "bg-warning/15 text-warning border border-warning/25",
-  AwaitingPayment: "bg-accent/15 text-accent-foreground border border-accent/30",
+  AwaitingPayment: "bg-accent/20 text-[hsl(42_40%_32%)] border border-accent/40",
   ContractSigned: "bg-primary/10 text-primary border border-primary/20",
 };
 

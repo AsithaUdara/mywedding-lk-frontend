@@ -1,32 +1,20 @@
 "use client";
 
-import { useMemo } from "react";
 import {
   Briefcase,
-  Eye,
-  Inbox,
-  Loader2,
-  MessageSquare,
+  CalendarCheck,
   RefreshCw,
-  Star,
-  Store,
   TrendingUp,
-  Trophy,
   Wallet,
 } from "lucide-react";
+import { useVendorAnalyticsPage } from "@/modules/vendor/dashboard/hooks/useVendorAnalyticsPage";
 import {
-  MonthlyCountPoint,
-  WeeklyViewPoint,
-  WinRateSummary,
-} from "@/shared/lib/api/vendors";
-import {
-  useVendorAnalyticsQuery,
-  useVendorInquiryTrendQuery,
-  useVendorProfileViewsQuery,
-  useVendorWinRateQuery,
-} from "@/shared/hooks/query/useVendorQueries";
-import { useQueryClient } from "@tanstack/react-query";
-import { queryKeys } from "@/shared/lib/query/queryKeys";
+  BookingFunnelChart,
+  BookingStatusChart,
+  MonthlyEarningsChart,
+} from "@/modules/vendor/dashboard/VendorAnalyticsCharts";
+import { VendorServicePerformanceList } from "@/modules/vendor/dashboard/VendorServicePerformanceList";
+import { VendorUpcomingBookingsList } from "@/modules/vendor/dashboard/VendorUpcomingBookingsList";
 import {
   EmptyState,
   ErrorBanner,
@@ -38,486 +26,165 @@ import {
   GlassButton,
   GlassChartCard,
   GlassPageHeader,
-  GlassQuickActionLink,
+  GlassSectionCard,
   GlassStatCard,
-  GlassWinRatePipeline,
 } from "./glass-ui";
-import { vg } from "./vendor-glass-theme";
 
-type AnalyticsDashboardProps = {
-  /** Overview embed — KPIs + charts only */
-  compact?: boolean;
-  /** Dedicated /vendor/dashboard/analytics page */
-  fullPage?: boolean;
-};
+export function AnalyticsDashboard() {
+  const {
+    winRate,
+    earningsData,
+    kpis,
+    statusBreakdown,
+    servicePerformance,
+    upcomingBookings,
+    isEmpty,
+    showInitialSkeleton,
+    refreshing,
+    error,
+    reload,
+  } = useVendorAnalyticsPage();
 
-const WIN_SEGMENT_CLASS = {
-  won: "bg-primary",
-  pending: "bg-warning",
-  lost: "bg-muted",
-} as const;
-
-function buildWinConic(win: WinRateSummary, total: number): string {
-  if (total <= 0) return "hsl(var(--muted))";
-  const wonEnd = (win.won / total) * 100;
-  const pendingEnd = ((win.won + win.pending) / total) * 100;
-  return `conic-gradient(
-    hsl(var(--primary)) 0 ${wonEnd}%,
-    hsl(var(--warning)) ${wonEnd}% ${pendingEnd}%,
-    hsl(var(--muted)) ${pendingEnd}% 100%
-  )`;
-}
-
-function WeeklyViewsChart({ data, max }: { data: WeeklyViewPoint[]; max: number }) {
-  if (data.length === 0) {
-    return <p className={vg.subtitle}>No profile views recorded yet.</p>;
+  if (showInitialSkeleton) {
+    return <PageLoadingSkeleton />;
   }
-
   return (
-    <div
-      className="flex h-40 items-end gap-2"
-      role="img"
-      aria-label="Weekly profile views for the last six weeks"
-    >
-      {data.map((point) => (
-        <div key={point.week} className="flex flex-1 flex-col items-center gap-2">
-          <span className={cn(vg.caption, "font-medium tabular-nums text-primary")}>{point.views}</span>
-          <div
-            className="w-full min-h-[4px] rounded-t-lg transition-colors duration-300 vgo-bar-primary hover:opacity-90"
-            style={{ height: `${Math.max(8, Math.round((point.views / max) * 128))}px` }}
-            title={`${point.views} views`}
-          />
-          <span className={vg.caption}>{point.week}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function MonthlyCountChart({
-  data,
-  max,
-  emptyLabel,
-  valueClassName = "text-primary",
-}: {
-  data: MonthlyCountPoint[];
-  max: number;
-  emptyLabel: string;
-  valueClassName?: string;
-}) {
-  if (data.length === 0) {
-    return <p className={vg.subtitle}>{emptyLabel}</p>;
-  }
-
-  return (
-    <div className="flex h-36 items-end gap-3" role="img" aria-label="Monthly counts">
-      {data.map((row) => (
-        <div key={row.month} className="flex flex-1 flex-col items-center gap-2">
-          <span className={cn(vg.caption, "font-medium tabular-nums", valueClassName)}>{row.count}</span>
-          <div
-            className="w-full min-h-[4px] rounded-t-xl transition-colors vgo-bar-primary hover:opacity-90"
-            style={{ height: `${Math.max(8, Math.round((row.count / max) * 100))}px` }}
-          />
-          <span className={vg.caption}>{row.month}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function MonthlyEarningsChart({
-  data,
-  max,
-}: {
-  data: { month: string; amount: number }[];
-  max: number;
-}) {
-  if (data.length === 0) {
-    return <p className="text-sm text-muted-foreground">No confirmed or completed bookings yet.</p>;
-  }
-
-  return (
-    <div
-      className="flex h-36 items-end gap-3"
-      role="img"
-      aria-label="Monthly earnings from confirmed and completed bookings"
-    >
-      {data.map((row) => (
-        <div key={row.month} className="flex flex-1 flex-col items-center gap-2">
-          <span className="text-[9px] font-bold tabular-nums text-accent sm:text-xs">
-            {row.amount > 0 ? formatLKR(row.amount) : "—"}
-          </span>
-          <div
-            className="w-full min-h-[4px] rounded-t-xl transition-colors vgo-bar-accent hover:opacity-90"
-            style={{ height: `${Math.max(8, Math.round((row.amount / max) * 100))}px` }}
-            title={formatLKR(row.amount)}
-          />
-          <span className="max-w-full truncate text-[9px] font-medium text-muted-foreground sm:text-[10px]">
-            {row.month}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-export function AnalyticsDashboard({ compact = false, fullPage = false }: AnalyticsDashboardProps) {
-  const queryClient = useQueryClient();
-  const {
-    data: profileViews = [],
-    isLoading: viewsLoading,
-    isFetching: viewsFetching,
-    error: viewsError,
-  } = useVendorProfileViewsQuery(6);
-  const {
-    data: inquiryTrend = [],
-    isLoading: trendLoading,
-    isFetching: trendFetching,
-    error: trendError,
-  } = useVendorInquiryTrendQuery(6);
-  const {
-    data: winRate = { won: 0, pending: 0, lost: 0 },
-    isLoading: winLoading,
-    isFetching: winFetching,
-    error: winError,
-  } = useVendorWinRateQuery();
-  const {
-    data: summary = null,
-    isLoading: summaryLoading,
-    isFetching: summaryFetching,
-    error: summaryError,
-  } = useVendorAnalyticsQuery(fullPage);
-
-  const loading = viewsLoading || trendLoading || winLoading || (fullPage && summaryLoading);
-  const refreshing = viewsFetching || trendFetching || winFetching || (fullPage && summaryFetching);
-  const error = useMemo(() => {
-    const err = viewsError ?? trendError ?? winError ?? (fullPage ? summaryError : null);
-    return err?.message ?? null;
-  }, [viewsError, trendError, winError, summaryError, fullPage]);
-
-  const handleRefresh = async () => {
-    await queryClient.invalidateQueries({ queryKey: queryKeys.vendor.all });
-  };
-
-  const viewsMax = useMemo(() => Math.max(...profileViews.map((d) => d.views), 1), [profileViews]);
-  const inquiriesMax = useMemo(() => Math.max(...inquiryTrend.map((d) => d.count), 1), [inquiryTrend]);
-  const totalViews = useMemo(() => profileViews.reduce((s, p) => s + p.views, 0), [profileViews]);
-  const totalInquiries = useMemo(() => inquiryTrend.reduce((s, p) => s + p.count, 0), [inquiryTrend]);
-  const thisWeekViews = profileViews.length > 0 ? (profileViews[profileViews.length - 1]?.views ?? 0) : 0;
-  const thisMonthInquiries =
-    inquiryTrend.length > 0 ? (inquiryTrend[inquiryTrend.length - 1]?.count ?? 0) : 0;
-  const winTotal = winRate.won + winRate.pending + winRate.lost;
-  const winPct = winTotal > 0 ? Math.round((winRate.won / winTotal) * 100) : 0;
-
-  const earningsData = useMemo(
-    () =>
-      (summary?.monthlyEarnings ?? []).map((m) => ({
-        month: m.month,
-        amount: Number(m.amount),
-      })),
-    [summary]
-  );
-  const earningsMax = useMemo(
-    () => Math.max(...earningsData.map((d) => d.amount), 1),
-    [earningsData]
-  );
-
-  const isEmpty =
-    !loading &&
-    totalViews === 0 &&
-    totalInquiries === 0 &&
-    winTotal === 0 &&
-    (summary == null ||
-      (summary.totalBookings === 0 && summary.totalRevenue === 0 && summary.totalInquiries === 0));
-
-  const winSegments = [
-    { label: "Won", value: winRate.won, color: WIN_SEGMENT_CLASS.won },
-    { label: "Pending", value: winRate.pending, color: WIN_SEGMENT_CLASS.pending },
-    { label: "Lost", value: winRate.lost, color: WIN_SEGMENT_CLASS.lost },
-  ];
-
-  if (loading && !refreshing) {
-    if (fullPage) return <PageLoadingSkeleton />;
-    return (
-      <div className="flex items-center justify-center py-16 text-muted-foreground">
-        <Loader2 className="mr-2 animate-spin text-primary" size={20} aria-hidden />
-        Loading analytics…
-      </div>
-    );
-  }
-
-  const chartsBlock = (
-    <div className="grid gap-4 lg:grid-cols-12">
-      {fullPage ? (
-        <>
-          <GlassChartCard
-            label="Profile views"
-            sublabel="Weekly trend — last 6 weeks"
-            className="lg:col-span-7"
+    <div className="space-y-6 pb-4 md:space-y-8">
+      <GlassPageHeader
+        title="Business analytics"
+        description="Revenue earned, confirmed pipeline, booking workload, and performance by service."
+        badge="Revenue & bookings"
+        action={
+          <GlassButton
+            variant="ghost"
+            onClick={() => void reload()}
+            disabled={refreshing}
+            className="gap-1.5"
           >
-            <WeeklyViewsChart data={profileViews} max={viewsMax} />
-          </GlassChartCard>
+            <RefreshCw size={16} className={cn(refreshing && "animate-spin")} aria-hidden />
+            Refresh
+          </GlassButton>
+        }
+      />
 
-          <div className={cn(vg.panel, "lg:col-span-5")}>
-            <div className={vg.panelHeader}>
-              <div>
-                <h3 className={vg.sectionTitle}>Lead pipeline</h3>
-                <p className={cn(vg.caption, "mt-0.5")}>Leads converted to confirmed bookings</p>
-              </div>
-            </div>
-            <div className={vg.panelBody}>
-              <GlassWinRatePipeline winRate={winRate} winPct={winPct} winTotal={winTotal} />
-            </div>
-          </div>
-
-          <GlassChartCard
-            label="Inquiry volume"
-            sublabel="Messages received per month"
-            className="lg:col-span-6"
-          >
-            <MonthlyCountChart
-              data={inquiryTrend}
-              max={inquiriesMax}
-              emptyLabel="No inquiries in this period."
-            />
-          </GlassChartCard>
-
-          <GlassChartCard
-            label="Earnings"
-            sublabel="Confirmed + completed bookings by service month"
-            className="lg:col-span-6"
-          >
-            <MonthlyEarningsChart data={earningsData} max={earningsMax} />
-          </GlassChartCard>
-        </>
-      ) : (
-        <>
-          {!compact && (
-            <>
-              <GlassChartCard label="Profile views" sublabel="Weekly trend" className="lg:col-span-7">
-                <WeeklyViewsChart data={profileViews} max={viewsMax} />
-              </GlassChartCard>
-
-              <GlassChartCard label="Win rate breakdown" className="lg:col-span-5">
-                <WinRateDonut winPct={winPct} winTotal={winTotal} winRate={winRate} segments={winSegments} />
-              </GlassChartCard>
-
-              <GlassChartCard label="Inquiries received" sublabel="Last 6 months" className="col-span-12 lg:col-span-12">
-                <MonthlyCountChart
-                  data={inquiryTrend}
-                  max={inquiriesMax}
-                  emptyLabel="No inquiries in this period."
-                />
-              </GlassChartCard>
-            </>
-          )}
-
-          {compact && (
-            <div className={cn(vg.panel, "col-span-12")}>
-              <div className={vg.panelHeader}>
-                <div>
-                  <h3 className={vg.sectionTitle}>Lead pipeline</h3>
-                  <p className={cn(vg.caption, "mt-0.5")}>How inquiries convert to confirmed bookings</p>
-                </div>
-              </div>
-              <div className={vg.panelBody}>
-                <GlassWinRatePipeline winRate={winRate} winPct={winPct} winTotal={winTotal} />
-              </div>
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  );
-
-  const body = (
-    <div className={cn(compact ? "space-y-6" : "space-y-8")}>
       {error && <ErrorBanner message={error} />}
 
-      {isEmpty && fullPage ? (
+      {isEmpty ? (
         <EmptyState
-          title="No analytics yet"
-          description="Complete your storefront profile, publish services, and respond to inquiries — activity will appear here."
+          title="No business activity yet"
+          description="Publish services and respond to booking requests — earnings and pipeline metrics will show up here."
           icon={TrendingUp}
           action={
             <div className="flex flex-wrap justify-center gap-2">
-              <GlassButton href="/vendor/dashboard/profile" variant="primary">
-                Complete profile
-              </GlassButton>
-              <GlassButton href="/vendor/dashboard/services" variant="ghost">
+              <GlassButton href="/vendor/dashboard/services" variant="primary">
                 Add services
+              </GlassButton>
+              <GlassButton href="/vendor/dashboard/bookings" variant="ghost">
+                View bookings
               </GlassButton>
             </div>
           }
         />
       ) : (
         <>
-          <div className={cn("grid gap-4", fullPage ? "sm:grid-cols-2 lg:grid-cols-3" : "sm:grid-cols-3")}>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <GlassStatCard
-              label="Profile views"
-              value={compact ? thisWeekViews.toLocaleString() : totalViews.toLocaleString()}
-              sub={compact ? "This week" : "Last 6 weeks"}
-              icon={Eye}
+              label="Earned revenue"
+              value={formatLKR(kpis.earnedRevenue)}
+              sub={
+                kpis.earnedRevenue > 0
+                  ? `${kpis.completedBookings} completed`
+                  : "No completed bookings yet"
+              }
+              icon={Wallet}
               iconTheme="primary"
-              index={0}
             />
             <GlassStatCard
-              label="Inquiries received"
-              value={compact ? thisMonthInquiries : totalInquiries}
-              sub={compact ? "This month" : "Last 6 months"}
-              icon={MessageSquare}
+              label="Pipeline value"
+              value={formatLKR(kpis.pipelineRevenue)}
+              sub={
+                kpis.pipelineRevenue > 0
+                  ? `${kpis.confirmedBookings} confirmed`
+                  : "Nothing confirmed yet"
+              }
+              icon={Briefcase}
               iconTheme="accent"
-              index={1}
             />
             <GlassStatCard
-              label="Win rate"
-              value={`${winPct}%`}
-              sub="Leads → confirmed"
-              icon={Trophy}
+              label="Open bookings"
+              value={kpis.openBookings}
+              sub={
+                kpis.requestedCount > 0
+                  ? `${kpis.requestedCount} need accept/decline`
+                  : kpis.openBookings > 0
+                    ? "Awaiting payment or contract"
+                    : "Queue clear"
+              }
+              icon={CalendarCheck}
+              iconTheme={kpis.requestedCount > 0 ? "warning" : "success"}
+            />
+            <GlassStatCard
+              label={kpis.closeRate.label}
+              value={kpis.closeRate.value}
+              sub={kpis.closeRate.hint}
+              icon={TrendingUp}
               iconTheme="success"
-              index={2}
             />
           </div>
 
-          {fullPage && summary && (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <GlassStatCard
-                label="Total revenue"
-                value={formatLKR(summary.totalRevenue)}
-                sub={
-                  summary.pendingRevenue > 0
-                    ? `${formatLKR(summary.pendingRevenue)} pending`
-                    : "Completed bookings"
-                }
-                icon={Wallet}
-                iconTheme="accent"
-                index={3}
-              />
-              <GlassStatCard
-                label="Confirmed bookings"
-                value={summary.confirmedBookings}
-                sub={`${summary.completedBookings} completed`}
-                icon={Briefcase}
-                iconTheme="primary"
-                index={4}
-              />
-              <GlassStatCard
-                label="Average rating"
-                value={summary.totalReviews > 0 ? summary.averageRating.toFixed(1) : "—"}
-                sub={
-                  summary.totalReviews > 0
-                    ? `${summary.totalReviews} reviews`
-                    : "No reviews yet"
-                }
-                icon={Star}
-                iconTheme="warning"
-                index={5}
-              />
-              <GlassStatCard
-                label="Active listings"
-                value={summary.activeServices}
-                sub={`${summary.totalServices} total services`}
-                icon={Store}
-                iconTheme="muted"
-                index={6}
-              />
-            </div>
-          )}
+          <div className="grid gap-4 lg:grid-cols-12">
+            <GlassChartCard
+              label="Revenue trend"
+              sublabel="Last 6 months by service date"
+              className="lg:col-span-7"
+            >
+              <MonthlyEarningsChart data={earningsData} />
+            </GlassChartCard>
 
-          {chartsBlock}
+            <GlassChartCard
+              label="Booking outcomes"
+              sublabel="Won, in progress, and lost"
+              className="lg:col-span-5"
+            >
+              <BookingFunnelChart
+                winRate={winRate}
+                winPct={kpis.winPct}
+                winTotal={kpis.winTotal}
+              />
+            </GlassChartCard>
+
+            <GlassChartCard
+              label="Queue by status"
+              sublabel="Where your bookings sit today"
+              className="lg:col-span-6"
+            >
+              <BookingStatusChart slices={statusBreakdown} />
+            </GlassChartCard>
+
+            <GlassSectionCard
+              title="Top services"
+              subtitle="Ranked by booking value"
+              className="lg:col-span-6"
+            >
+              <VendorServicePerformanceList rows={servicePerformance} />
+            </GlassSectionCard>
+          </div>
+
+          {upcomingBookings.length > 0 && (
+            <GlassSectionCard
+              title="Upcoming jobs"
+              subtitle="Confirmed bookings by service date"
+              action={
+                <GlassButton href="/vendor/dashboard/bookings" variant="ghost">
+                  All bookings
+                </GlassButton>
+              }
+            >
+              <VendorUpcomingBookingsList bookings={upcomingBookings} />
+            </GlassSectionCard>
+          )}
         </>
       )}
-    </div>
-  );
-
-  if (fullPage) {
-    return (
-      <div className="space-y-6 pb-4 md:space-y-8">
-        <GlassPageHeader
-          title="Analytics"
-          description="Storefront reach, inquiry pipeline, bookings, and earnings — everything in one place."
-          badge="Performance"
-          action={
-            <GlassButton
-              variant="ghost"
-              onClick={() => void handleRefresh()}
-              disabled={refreshing}
-              className="gap-1.5"
-            >
-              <RefreshCw size={16} className={cn(refreshing && "animate-spin")} aria-hidden />
-              Refresh
-            </GlassButton>
-          }
-        />
-
-        <div className="grid gap-3 sm:grid-cols-3">
-          <GlassQuickActionLink
-            href="/vendor/dashboard/inquiries"
-            label="Inquiry inbox"
-            description={
-              summary && summary.unreadInquiries > 0
-                ? `${summary.unreadInquiries} unread`
-                : "Reply and send quotes"
-            }
-            icon={<Inbox size={16} />}
-          />
-          <GlassQuickActionLink
-            href="/vendor/dashboard/profile"
-            label="Storefront profile"
-            description="Improve discovery & trust"
-            icon={<Store size={16} />}
-          />
-          <GlassQuickActionLink
-            href="/vendor/dashboard/bookings"
-            label="Bookings"
-            description={`${summary?.confirmedBookings ?? 0} confirmed`}
-            icon={<Briefcase size={16} />}
-          />
-        </div>
-
-        {body}
-      </div>
-    );
-  }
-
-  return body;
-}
-
-function WinRateDonut({
-  winPct,
-  winTotal,
-  winRate,
-  segments,
-}: {
-  winPct: number;
-  winTotal: number;
-  winRate: WinRateSummary;
-  segments: { label: string; value: number; color: string }[];
-}) {
-  return (
-    <div className="flex flex-wrap items-center gap-6">
-      <div
-        className="relative h-32 w-32 flex-shrink-0 rounded-full"
-        style={{ background: buildWinConic(winRate, winTotal) }}
-        role="img"
-        aria-label={`Win rate ${winPct} percent`}
-      >
-        <div className={vg.donutCenter}>
-          <span className={cn(vg.statValue, "text-2xl md:text-2xl")}>{winPct}%</span>
-          <span className={vg.label}>Won</span>
-        </div>
-      </div>
-      <ul className={cn("min-w-[8rem] flex-1 space-y-2", vg.body)}>
-        {segments.map((seg) => (
-          <li key={seg.label} className="flex items-center justify-between gap-4">
-            <span className={cn("flex items-center gap-2", vg.subtitle)}>
-              <span className={cn("h-2.5 w-2.5 rounded-full", seg.color)} aria-hidden />
-              {seg.label}
-            </span>
-            <span className={cn(vg.body, "font-medium tabular-nums")}>{seg.value}</span>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }

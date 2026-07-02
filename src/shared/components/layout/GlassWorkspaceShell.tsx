@@ -12,6 +12,27 @@ import { glassFontVariables } from "@/modules/design-system/regal-frost/fonts";
 
 const SIDEBAR_EXPANDED = "17rem";
 const SIDEBAR_COLLAPSED = "4.75rem";
+const SIDEBAR_STATE_KEY = "glass-workspace-sidebar-expanded";
+
+function readSidebarExpanded(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    const stored = sessionStorage.getItem(SIDEBAR_STATE_KEY);
+    if (stored === "0") return false;
+    if (stored === "1") return true;
+  } catch {
+    /* ignore */
+  }
+  return true;
+}
+
+function persistSidebarExpanded(expanded: boolean) {
+  try {
+    sessionStorage.setItem(SIDEBAR_STATE_KEY, expanded ? "1" : "0");
+  } catch {
+    /* ignore */
+  }
+}
 
 export type GlassNavItem = {
   href: string;
@@ -66,6 +87,7 @@ export function GlassWorkspaceShell({
   const pathname = usePathname();
   const { user, logOut } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarHydrated, setSidebarHydrated] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -75,6 +97,17 @@ export function GlassWorkspaceShell({
     () => flatItems.find((item) => isItemActive(pathname, item.href, item.exact)),
     [pathname, flatItems]
   );
+
+  useEffect(() => {
+    setSidebarOpen(readSidebarExpanded());
+    const frame = requestAnimationFrame(() => setSidebarHydrated(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
+    if (!sidebarHydrated) return;
+    persistSidebarExpanded(sidebarOpen);
+  }, [sidebarOpen, sidebarHydrated]);
 
   useEffect(() => {
     setMobileNavOpen(false);
@@ -96,6 +129,15 @@ export function GlassWorkspaceShell({
 
   const handleLogout = onLogout ?? logOut;
 
+  const toggleSidebar = () => {
+    setSidebarOpen((open) => !open);
+  };
+
+  const handleDesktopNavClick = (onNavigate?: () => void) => {
+    onNavigate?.();
+    // Stay collapsed when navigating from icon-only sidebar.
+  };
+
   const useStudioBrand = Boolean(workspaceBrand);
   const brandTitle = useStudioBrand ? workspaceBrand!.title : "MyWedding.lk";
   const brandSubtitle = useStudioBrand
@@ -112,25 +154,39 @@ export function GlassWorkspaceShell({
         .toUpperCase()
     : user?.email?.[0]?.toUpperCase() ?? "?";
 
-  const renderNavLink = (item: GlassNavItem, showLabel: boolean, onNavigate?: () => void) => {
+  const renderNavLink = (
+    item: GlassNavItem,
+    options: { collapsed: boolean; onNavigate?: () => void }
+  ) => {
     const isActive = isItemActive(pathname, item.href, item.exact);
+    const { collapsed, onNavigate } = options;
+
     return (
       <Link
         key={item.href}
         href={item.href}
-        onClick={onNavigate}
-        title={!showLabel ? item.label : undefined}
+        scroll={false}
+        onClick={() => handleDesktopNavClick(onNavigate)}
+        title={collapsed ? item.label : undefined}
         className={cn(
-          "group relative flex h-10 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-all duration-200",
+          "group relative flex h-10 shrink-0 items-center rounded-xl text-sm font-medium",
+          collapsed
+            ? "mx-auto w-10 justify-center px-0 transition-colors duration-150"
+            : "gap-3 px-3 transition-colors duration-200",
           isActive ? "vgo-nav-active" : "vgo-nav-idle"
         )}
         aria-current={isActive ? "page" : undefined}
       >
-        <span className="vgo-nav-icon flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition-colors duration-200">
+        <span
+          className={cn(
+            "vgo-nav-icon flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition-colors duration-150",
+            collapsed && isActive && "bg-transparent"
+          )}
+        >
           {item.icon}
         </span>
-        {showLabel && (
-          <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
+        {!collapsed ? (
+          <span className="flex min-w-0 flex-1 items-center justify-between gap-2 overflow-hidden">
             <span className="truncate leading-none">{item.label}</span>
             {item.badge != null && item.badge > 0 && (
               <span className="flex-shrink-0 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground">
@@ -138,18 +194,27 @@ export function GlassWorkspaceShell({
               </span>
             )}
           </span>
-        )}
+        ) : null}
       </Link>
     );
   };
 
-  const sidebarContent = (showLabels: boolean, onNavigate?: () => void) => (
+  const sidebarContent = (options: { collapsed: boolean; onNavigate?: () => void }) => (
     <>
-      <div className="vgo-sidebar-brand relative flex-shrink-0 border-b px-4 py-4">
+      <div
+        className={cn(
+          "vgo-sidebar-brand relative flex-shrink-0 border-b py-4 transition-[padding] duration-300 ease-in-out",
+          options.collapsed ? "px-2" : "px-4"
+        )}
+      >
         <Link
           href={dashboardHref}
-          className="flex min-w-0 items-center gap-3"
-          onClick={onNavigate}
+          scroll={false}
+          className={cn(
+            "flex min-w-0 items-center transition-[gap] duration-300 ease-in-out",
+            options.collapsed ? "justify-center gap-0" : "gap-3"
+          )}
+          onClick={() => handleDesktopNavClick(options.onNavigate)}
         >
           <div className="vgo-glass-subtle relative flex h-11 w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/60 p-1.5">
             {brandLogoUrl ? (
@@ -169,8 +234,8 @@ export function GlassWorkspaceShell({
               <Image src={Logo} alt="MyWedding.lk" fill sizes="44px" className="object-contain" />
             )}
           </div>
-          {showLabels && (
-            <div className="min-w-0">
+          {!options.collapsed ? (
+            <div className="min-w-0 overflow-hidden">
               <p className="truncate font-glass-body text-base font-semibold leading-tight text-foreground">
                 {brandTitle}
               </p>
@@ -183,27 +248,45 @@ export function GlassWorkspaceShell({
                 </p>
               )}
             </div>
-          )}
+          ) : null}
         </Link>
       </div>
 
-      <nav className="vgo-sidebar-nav workspace-shell-nav space-y-5 px-3 py-4">
-        {navGroups.map((group) => (
-          <div key={group.label}>
-            {showLabels && <p className="vgo-sidebar-group-label mb-2 px-3">{group.label}</p>}
-            <div className="space-y-1">
-              {group.items.map((item) => renderNavLink(item, showLabels, onNavigate))}
-            </div>
+      <nav
+        className={cn(
+          "vgo-sidebar-nav workspace-shell-nav py-4 transition-[padding] duration-300 ease-in-out",
+          options.collapsed ? "overflow-hidden px-2" : "overflow-y-auto px-3"
+        )}
+      >
+        {options.collapsed ? (
+          <div className="flex flex-col gap-1">
+            {flatItems.map((item) => renderNavLink(item, options))}
           </div>
-        ))}
+        ) : (
+          <div className="space-y-5">
+            {navGroups.map((group) => (
+              <div key={group.label}>
+                <p className="vgo-sidebar-group-label mb-2 px-3">{group.label}</p>
+                <div className="space-y-1">
+                  {group.items.map((item) => renderNavLink(item, options))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </nav>
 
-      {showLabels && sidebarFooter && (
+      {sidebarFooter && !options.collapsed ? (
         <div className="relative z-[2] flex-shrink-0">{sidebarFooter}</div>
-      )}
+      ) : null}
 
-      <div className="vgo-sidebar-footer relative z-[2] flex-shrink-0 border-t p-3">
-        {showLabels && user && (
+      <div
+        className={cn(
+          "vgo-sidebar-footer relative z-[2] flex-shrink-0 border-t transition-[padding] duration-300 ease-in-out",
+          options.collapsed ? "px-2 py-3" : "p-3"
+        )}
+      >
+        {user && !options.collapsed ? (
           <div className="vgo-user-card mb-2 flex items-center gap-3 rounded-xl border px-3 py-2.5">
             <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
               {userInitials}
@@ -215,14 +298,17 @@ export function GlassWorkspaceShell({
               <p className="truncate text-xs text-muted-foreground">{user.email}</p>
             </div>
           </div>
-        )}
+        ) : null}
         <button
           type="button"
           onClick={() => void handleLogout()}
-          className="flex h-10 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className={cn(
+            "flex h-10 items-center rounded-lg text-sm font-medium text-muted-foreground transition-colors duration-150 hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            options.collapsed ? "mx-auto w-10 justify-center px-0" : "w-full gap-3 px-3"
+          )}
         >
           <LogOut size={18} className="flex-shrink-0" aria-hidden />
-          {showLabels && <span>Sign out</span>}
+          {!options.collapsed ? <span>Sign out</span> : null}
         </button>
       </div>
     </>
@@ -240,10 +326,16 @@ export function GlassWorkspaceShell({
       <div className="vgo-mesh-orb vgo-mesh-orb--slate" aria-hidden />
 
       <aside
-        className="vgo-sidebar z-40 hidden flex-col transition-[width] duration-200 ease-out md:flex"
+        className={cn(
+          "vgo-sidebar z-40 hidden flex-col md:flex",
+          sidebarHydrated && "vgo-sidebar--animated"
+        )}
         style={{ width: sidebarWidth }}
+        data-collapsed={sidebarOpen ? undefined : ""}
       >
-        {sidebarContent(sidebarOpen)}
+        {sidebarContent({
+          collapsed: !sidebarOpen,
+        })}
       </aside>
 
       {mobileNavOpen && (
@@ -265,7 +357,10 @@ export function GlassWorkspaceShell({
                 <X size={20} />
               </button>
             </div>
-            {sidebarContent(true, () => setMobileNavOpen(false))}
+            {sidebarContent({
+              collapsed: false,
+              onNavigate: () => setMobileNavOpen(false),
+            })}
           </aside>
         </div>
       )}
@@ -275,7 +370,7 @@ export function GlassWorkspaceShell({
           <div className="vgo-topbar relative flex h-14 items-center justify-between gap-3 overflow-visible rounded-2xl px-4 md:h-[3.75rem] md:px-6">
             <button
               type="button"
-              onClick={() => setSidebarOpen((o) => !o)}
+              onClick={toggleSidebar}
               className="vgo-sidebar-toggle absolute top-1/2 z-50 hidden h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:flex"
               style={{ left: "-2rem" }}
               aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}

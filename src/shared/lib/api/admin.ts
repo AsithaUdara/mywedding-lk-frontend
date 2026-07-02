@@ -338,9 +338,32 @@ export interface AuditLogItem {
   actorId: string;
   actorFirstName: string;
   actorLastName: string;
+  actorDisplayName: string;
 }
 
+export interface EventAuditSummary {
+  eventId: string;
+  eventName: string;
+  eventDate: string;
+  lifecycleStage: string;
+  totalEntries: number;
+  actionTypeCounts: Record<string, number>;
+}
+
+export type EventAuditLogParams = {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  actionType?: string;
+};
+
 function mapAuditLogItem(raw: Record<string, unknown>): AuditLogItem {
+  const firstName = String(raw.actorFirstName ?? raw.ActorFirstName ?? "");
+  const lastName = String(raw.actorLastName ?? raw.ActorLastName ?? "");
+  const displayName = String(
+    raw.actorDisplayName ?? raw.ActorDisplayName ?? `${firstName} ${lastName}`.trim()
+  );
+
   return {
     id: String(raw.id ?? raw.Id ?? ""),
     actionType: String(raw.actionType ?? raw.ActionType ?? ""),
@@ -351,20 +374,48 @@ function mapAuditLogItem(raw: Record<string, unknown>): AuditLogItem {
         : null,
     timestampUtc: String(raw.timestampUtc ?? raw.TimestampUtc ?? ""),
     actorId: String(raw.actorId ?? raw.ActorId ?? ""),
-    actorFirstName: String(raw.actorFirstName ?? raw.ActorFirstName ?? ""),
-    actorLastName: String(raw.actorLastName ?? raw.ActorLastName ?? ""),
+    actorFirstName: firstName,
+    actorLastName: lastName,
+    actorDisplayName: displayName || "Unknown",
   };
 }
 
-export async function getEventAuditLog(token: string, eventId: string): Promise<AuditLogItem[]> {
-  const response = await apiFetch(token, `${getApiBaseUrl()}/api/events/${eventId}/audit-log`);
-  if (!response.ok) {
-    throw new Error(await parseApiError(response, "Failed to fetch audit log."));
-  }
+export async function getAdminEventAuditSummary(
+  token: string,
+  eventId: string
+): Promise<EventAuditSummary | null> {
+  const response = await adminFetch(token, `/api/admin/events/${eventId}/audit-log/summary`);
+  if (response.status === 404) return null;
   const data = await response.json();
-  return (Array.isArray(data) ? data : []).map((row) =>
-    mapAuditLogItem(row as Record<string, unknown>)
+  return {
+    eventId: String(data.eventId ?? data.EventId ?? eventId),
+    eventName: String(data.eventName ?? data.EventName ?? ""),
+    eventDate: String(data.eventDate ?? data.EventDate ?? ""),
+    lifecycleStage: String(data.lifecycleStage ?? data.LifecycleStage ?? ""),
+    totalEntries: Number(data.totalEntries ?? data.TotalEntries ?? 0),
+    actionTypeCounts: (data.actionTypeCounts ?? data.ActionTypeCounts ?? {}) as Record<string, number>,
+  };
+}
+
+export async function getAdminEventAuditLogPage(
+  token: string,
+  eventId: string,
+  params: EventAuditLogParams = {}
+): Promise<PagedResult<AuditLogItem>> {
+  const search = new URLSearchParams();
+  const page = params.page ?? 1;
+  const pageSize = params.pageSize ?? 10;
+  search.set("page", String(page));
+  search.set("pageSize", String(pageSize));
+  if (params.search?.trim()) search.set("search", params.search.trim());
+  if (params.actionType?.trim()) search.set("actionType", params.actionType.trim());
+
+  const res = await adminFetch(
+    token,
+    `/api/admin/events/${eventId}/audit-log?${search.toString()}`
   );
+  const data = await res.json();
+  return mapPagedResult(data as Record<string, unknown>, mapAuditLogItem);
 }
 
 export async function markPayoutSettled(token: string, settlementId: string): Promise<void> {

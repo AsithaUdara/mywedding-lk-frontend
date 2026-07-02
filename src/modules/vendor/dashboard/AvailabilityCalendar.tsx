@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CalendarDays,
   CalendarOff,
@@ -11,7 +11,12 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useAuth } from "@/shared/context/AuthContext";
-import { blockVendorDate, unblockVendorDate } from "@/shared/lib/api/vendors";
+import {
+  blockVendorDate,
+  getVendorAvailability,
+  unblockVendorDate,
+  type VendorAvailabilityMonth,
+} from "@/shared/lib/api/vendors";
 import { useVendorAvailabilityQuery } from "@/shared/hooks/query/useVendorQueries";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/shared/lib/query/queryKeys";
@@ -23,6 +28,7 @@ import {
   GlassSectionCard,
   GlassStatCard,
 } from "./glass-ui";
+import { VendorBlockDateModal } from "./VendorBlockDateModal";
 import { vd } from "./vendor-dashboard-theme";
 import { glassCalendarDayClass, vg } from "./vendor-glass-theme";
 
@@ -163,6 +169,10 @@ export function AvailabilityCalendar({ embedded = false, fullPage = false }: Ava
   const [cursor, setCursor] = useState(() => new Date());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [blockModalOpen, setBlockModalOpen] = useState(false);
+  const [pendingBlockDay, setPendingBlockDay] = useState<CalendarDay | null>(null);
+  const [blockReasonDraft, setBlockReasonDraft] = useState("");
+  const hasLoadedOnce = useRef(false);
 
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
@@ -176,6 +186,29 @@ export function AvailabilityCalendar({ embedded = false, fullPage = false }: Ava
     error: queryError,
   } = useVendorAvailabilityQuery(monthQueryKey);
 
+  useEffect(() => {
+    if (availability) hasLoadedOnce.current = true;
+  }, [availability]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const prefetchMonth = async (target: Date) => {
+      const key = monthKey(target);
+      await queryClient.prefetchQuery({
+        queryKey: queryKeys.vendor.availability(key),
+        queryFn: async () => {
+          const token = await user.getIdToken();
+          return getVendorAvailability(token, key);
+        },
+        staleTime: 60_000,
+      });
+    };
+
+    void prefetchMonth(new Date(year, month - 1, 1));
+    void prefetchMonth(new Date(year, month + 1, 1));
+  }, [user, year, month, queryClient]);
+
   const booked = useMemo(() => availability?.bookedDates ?? [], [availability?.bookedDates]);
   const blocked = useMemo(() => availability?.blockedDates ?? [], [availability?.blockedDates]);
   const blockedDetails = useMemo(
@@ -187,7 +220,9 @@ export function AvailabilityCalendar({ embedded = false, fullPage = false }: Ava
     if (queryError) setError(queryError.message);
   }, [queryError]);
 
-  const refreshing = isFetching && !loading;
+  const isMonthFetching = isFetching && !availability;
+  const showInitialSkeleton = !embedded && fullPage && loading && !hasLoadedOnce.current;
+  const isRefreshing = isFetching && hasLoadedOnce.current;
 
   const handleRefresh = async () => {
     await queryClient.invalidateQueries({ queryKey: queryKeys.vendor.availability(monthQueryKey) });
@@ -208,24 +243,91 @@ export function AvailabilityCalendar({ embedded = false, fullPage = false }: Ava
     [year, month, booked, blocked]
   );
 
-  const toggleBlock = async (day: CalendarDay) => {
-    if (!user || day.state === "outside" || day.state === "booked" || saving) return;
+  const toggleBlock = async (day: CalendarDay, reason?: string): Promise<boolean> => {
+    if (!user || day.state === "outside" || day.state === "booked" || saving) return false;
+
     const iso = dateIso(day.date);
+    const dayNum = day.date.getDate();
+    const queryKey = queryKeys.vendor.availability(monthQueryKey);
+    const trimmedReason = reason?.trim() || undefined;
+
+    await queryClient.cancelQueries({ queryKey });
+    const previous = queryClient.getQueryData<VendorAvailabilityMonth>(queryKey);
+
+    if (previous) {
+      const optimistic: VendorAvailabilityMonth =
+        day.state === "blocked"
+          ? {
+              bookedDates: previous.bookedDates,
+              blockedDates: previous.blockedDates.filter((value) => value !== dayNum),
+              blockedDateDetails: previous.blockedDateDetails.filter((entry) => entry.date !== iso),
+            }
+          : {
+              bookedDates: previous.bookedDates,
+              blockedDates: [...previous.blockedDates, dayNum].sort((a, b) => a - b),
+              blockedDateDetails: [
+                ...previous.blockedDateDetails,
+                { date: iso, reason: trimmedReason ?? null },
+              ],
+            };
+      queryClient.setQueryData(queryKey, optimistic);
+    }
+
     try {
       setSaving(true);
       const token = await user.getIdToken();
       if (day.state === "blocked") {
         await unblockVendorDate(token, iso);
       } else {
-        await blockVendorDate(token, iso);
+        await blockVendorDate(token, iso, trimmedReason);
       }
-      await queryClient.invalidateQueries({ queryKey: queryKeys.vendor.availability(monthQueryKey) });
+      void queryClient.invalidateQueries({ queryKey });
+      setError(null);
+      return true;
     } catch (err) {
+      if (previous) queryClient.setQueryData(queryKey, previous);
       setError(err instanceof Error ? err.message : "Failed to update availability.");
+      return false;
     } finally {
       setSaving(false);
     }
   };
+
+  const openBlockModal = (day: CalendarDay) => {
+    setPendingBlockDay(day);
+    setBlockReasonDraft("");
+    setBlockModalOpen(true);
+  };
+
+  const closeBlockModal = () => {
+    if (saving) return;
+    setBlockModalOpen(false);
+    setPendingBlockDay(null);
+    setBlockReasonDraft("");
+  };
+
+  const confirmBlockDay = async () => {
+    if (!pendingBlockDay) return;
+    const ok = await toggleBlock(pendingBlockDay, blockReasonDraft);
+    if (ok) closeBlockModal();
+  };
+
+  const handleDayToggle = (day: CalendarDay) => {
+    if (day.state === "blocked") {
+      void toggleBlock(day);
+      return;
+    }
+    openBlockModal(day);
+  };
+
+  const pendingBlockLabel = pendingBlockDay
+    ? pendingBlockDay.date.toLocaleDateString(undefined, {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "";
 
   const prevMonth = () => setCursor(new Date(year, month - 1, 1));
   const nextMonth = () => setCursor(new Date(year, month + 1, 1));
@@ -249,7 +351,7 @@ export function AvailabilityCalendar({ embedded = false, fullPage = false }: Ava
         )}
       </div>
       <div className="flex items-center gap-2">
-        {(loading || saving) && (
+        {(isMonthFetching || saving) && (
           <Loader2 size={18} className="animate-spin text-primary" aria-hidden />
         )}
         <button type="button" onClick={prevMonth} className={navBtnClass} aria-label="Previous month">
@@ -265,25 +367,26 @@ export function AvailabilityCalendar({ embedded = false, fullPage = false }: Ava
   const calendarBody = (
     <>
       {monthNav}
-      <CalendarGrid
-        grid={grid}
-        embedded={embedded}
-        fullPage={fullPage}
-        saving={saving}
-        blockedReasons={blockedReasons}
-        onToggle={(day) => void toggleBlock(day)}
-      />
+      <div
+        className={cn(
+          "relative transition-opacity duration-200",
+          isMonthFetching && "pointer-events-none opacity-60"
+        )}
+      >
+        <CalendarGrid
+          grid={grid}
+          embedded={embedded}
+          fullPage={fullPage}
+          saving={saving}
+          blockedReasons={blockedReasons}
+          onToggle={(day) => handleDayToggle(day)}
+        />
+      </div>
     </>
   );
 
-  if (loading && !refreshing && !embedded) {
-    if (fullPage) return <PageLoadingSkeleton />;
-    return (
-      <div className="flex items-center justify-center py-16 text-muted-foreground">
-        <Loader2 className="mr-2 animate-spin text-primary" size={20} aria-hidden />
-        Loading calendar…
-      </div>
-    );
+  if (showInitialSkeleton) {
+    return <PageLoadingSkeleton />;
   }
 
   const statRow = (
@@ -347,15 +450,9 @@ export function AvailabilityCalendar({ embedded = false, fullPage = false }: Ava
         title="Calendar"
         subtitle="Block dates you cannot serve. Booked days are set automatically from confirmed bookings."
       >
-        {refreshing ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">Refreshing calendar…</p>
-        ) : (
-          <>
-            {calendarBody}
-            {emptyMonthHint}
-            {blockedList}
-          </>
-        )}
+        {calendarBody}
+        {emptyMonthHint}
+        {blockedList}
       </GlassSectionCard>
       <GlassSectionCard title="How it works" subtitle="Three states for each day">
         <ol className="grid gap-3 sm:grid-cols-3">
@@ -376,6 +473,18 @@ export function AvailabilityCalendar({ embedded = false, fullPage = false }: Ava
     </>
   );
 
+  const modal = (
+    <VendorBlockDateModal
+      isOpen={blockModalOpen}
+      dateLabel={pendingBlockLabel}
+      reason={blockReasonDraft}
+      saving={saving}
+      onReasonChange={setBlockReasonDraft}
+      onClose={closeBlockModal}
+      onConfirm={() => void confirmBlockDay()}
+    />
+  );
+
   if (fullPage) {
     return (
       <div className="space-y-6 pb-4 md:space-y-8">
@@ -387,15 +496,16 @@ export function AvailabilityCalendar({ embedded = false, fullPage = false }: Ava
             <GlassButton
               variant="ghost"
               onClick={() => void handleRefresh()}
-              disabled={refreshing}
+              disabled={isRefreshing}
               className="gap-1.5"
             >
-              <RefreshCw size={16} className={cn(refreshing && "animate-spin")} aria-hidden />
+              <RefreshCw size={16} className={cn(isRefreshing && "animate-spin")} aria-hidden />
               Refresh
             </GlassButton>
           }
         />
         {fullBlock}
+        {modal}
       </div>
     );
   }
@@ -414,6 +524,7 @@ export function AvailabilityCalendar({ embedded = false, fullPage = false }: Ava
       {error && <ErrorBanner message={error} />}
       {embedded ? embeddedBlock : <article className={vd.cardPad}>{calendarBody}</article>}
       {!embedded && statRow}
+      {modal}
     </div>
   );
 }

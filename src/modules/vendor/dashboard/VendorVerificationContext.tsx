@@ -6,7 +6,7 @@ import type { VendorBusinessProfile } from "@/shared/lib/api/vendors";
 
 export type VendorVerificationStatus = "Pending" | "Verified" | "Rejected";
 
-type VendorVerificationContextValue = {
+export type VendorVerificationContextValue = {
   profile: VendorBusinessProfile | null;
   verificationStatus: VendorVerificationStatus;
   isVerified: boolean;

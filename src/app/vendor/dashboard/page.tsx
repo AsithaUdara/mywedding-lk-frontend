@@ -1,43 +1,30 @@
 "use client";
 
-import { ArrowRight, CalendarDays, Inbox, LineChart, Store } from "lucide-react";
-import { AnalyticsDashboard } from "@/modules/vendor/dashboard/AnalyticsDashboard";
-import { InquiryManagementInbox } from "@/modules/vendor/dashboard/InquiryManagementInbox";
-import { AvailabilityCalendar } from "@/modules/vendor/dashboard/AvailabilityCalendar";
+import { useMemo } from "react";
+import { CalendarCheck, Eye, MessageSquare, RefreshCw, Store, Trophy } from "lucide-react";
+import { useVendorDashboard } from "@/modules/vendor/dashboard/hooks/useVendorDashboard";
+import {
+  buildVendorAttentionItems,
+  vendorStorefrontSummary,
+  vendorThisWeekViews,
+  vendorWinRatePct,
+} from "@/modules/vendor/dashboard/vendorDashboardHelpers";
+import { VendorAttentionPanel } from "@/modules/vendor/dashboard/VendorAttentionPanel";
+import { VendorInquiryPreviewRow } from "@/modules/vendor/dashboard/VendorInquiryPreviewRow";
+import { VendorVerificationStatusChip } from "@/modules/vendor/dashboard/VendorVerificationBanner";
 import {
   GlassButton,
   GlassPageHeader,
-  GlassQuickActionLink,
   GlassSectionCard,
+  GlassStatCard,
 } from "@/modules/vendor/dashboard/glass-ui";
-import { useVendorVerification } from "@/modules/vendor/dashboard/VendorVerificationContext";
-import { VendorVerificationStatusChip } from "@/modules/vendor/dashboard/VendorVerificationBanner";
 import { vg } from "@/modules/vendor/dashboard/vendor-glass-theme";
+import { ErrorBanner, PageLoadingSkeleton, formatLKR } from "@/shared/components/ui";
 import { cn } from "@/shared/lib/cn";
+import type { VendorVerificationContextValue } from "@/modules/vendor/dashboard/VendorVerificationContext";
 
-const QUICK_LINKS = [
-  {
-    href: "/vendor/dashboard/analytics",
-    label: "Analytics",
-    description: "Views, inquiries, win rate",
-    icon: LineChart,
-  },
-  {
-    href: "/vendor/dashboard/inquiries",
-    label: "Inquiries",
-    description: "Messages and quotes",
-    icon: Inbox,
-  },
-  {
-    href: "/vendor/dashboard/availability",
-    label: "Availability",
-    description: "Calendar and blocked dates",
-    icon: CalendarDays,
-  },
-];
-
-function StorefrontStatusPill() {
-  const { loading, isVerified } = useVendorVerification();
+function StorefrontStatusPill({ verification }: { verification: VendorVerificationContextValue }) {
+  const { loading, isVerified } = verification;
 
   if (loading) {
     return (
@@ -47,7 +34,7 @@ function StorefrontStatusPill() {
         </div>
         <div>
           <p className={vg.label}>Storefront</p>
-          <p className={cn("font-glass-body text-sm font-medium text-muted-foreground")}>…</p>
+          <p className="text-sm font-medium text-muted-foreground">…</p>
         </div>
       </div>
     );
@@ -64,74 +51,144 @@ function StorefrontStatusPill() {
       </div>
       <div>
         <p className={vg.label}>Storefront</p>
-        <p className={cn("font-glass-body text-sm font-medium text-foreground")}>Live</p>
+        <p className="text-sm font-medium text-foreground">Live</p>
       </div>
     </div>
   );
 }
 
 export default function VendorDashboardOverview() {
+  const {
+    profile,
+    analytics,
+    previewInquiries,
+    profileViews,
+    winRate,
+    requestedCount,
+    verification,
+    loading,
+    refreshing,
+    error,
+    reload,
+  } = useVendorDashboard();
+
+  const storefront = vendorStorefrontSummary(analytics);
+  const thisWeekViews = vendorThisWeekViews(profileViews);
+  const winPct = vendorWinRatePct(winRate);
+
+  const attentionItems = useMemo(
+    () =>
+      buildVendorAttentionItems({
+        requestedBookings: requestedCount,
+        unreadInquiries: storefront.unreadInquiries,
+        isVerified: verification.isVerified,
+        isPending: verification.isPending,
+        isRejected: verification.isRejected,
+        activeServices: storefront.activeServices,
+      }),
+    [
+      requestedCount,
+      storefront.unreadInquiries,
+      storefront.activeServices,
+      verification.isVerified,
+      verification.isPending,
+      verification.isRejected,
+    ]
+  );
+
+  const primaryAction = attentionItems[0];
+  const businessName = profile?.businessName?.trim() || "Storefront";
+
+  if (loading && !analytics) {
+    return <PageLoadingSkeleton />;
+  }
+
   return (
-    <div className="space-y-6 md:space-y-8">
+    <div className="space-y-6 pb-4 md:space-y-8">
       <GlassPageHeader
-        title="Dashboard"
-        description="Respond to inquiries, manage services, and keep your storefront up to date."
+        title={businessName}
+        description={
+          verification.isVerified
+            ? `${storefront.activeServices} live service${storefront.activeServices === 1 ? "" : "s"} · ${formatLKR(storefront.totalRevenue)} confirmed · ${storefront.totalReviews > 0 ? `${storefront.averageRating.toFixed(1)}★ (${storefront.totalReviews} reviews)` : "No reviews yet"}`
+            : verification.isPending
+              ? "Complete your profile while verification is in progress"
+              : "Respond to inquiries and prepare your marketplace listing"
+        }
         badge="Overview"
-        action={<StorefrontStatusPill />}
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            <StorefrontStatusPill verification={verification} />
+            <GlassButton
+              type="button"
+              variant="ghost"
+              disabled={refreshing}
+              onClick={() => void reload()}
+              className="gap-1.5"
+            >
+              <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} aria-hidden />
+              Refresh
+            </GlassButton>
+            {primaryAction ? (
+              <GlassButton href={primaryAction.href} variant="primary">
+                {primaryAction.title}
+              </GlassButton>
+            ) : null}
+          </div>
+        }
       />
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        {QUICK_LINKS.map((item) => (
-          <GlassQuickActionLink
-            key={item.href}
-            href={item.href}
-            label={item.label}
-            description={item.description}
-            icon={<item.icon size={16} />}
-          />
-        ))}
+      {error && <ErrorBanner message={error} />}
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <GlassStatCard
+          label="Booking requests"
+          value={requestedCount}
+          sub={requestedCount > 0 ? "Awaiting response" : "No pending requests"}
+          icon={CalendarCheck}
+          iconTheme={requestedCount > 0 ? "warning" : "success"}
+        />
+        <GlassStatCard
+          label="Unread inquiries"
+          value={storefront.unreadInquiries}
+          sub={storefront.unreadInquiries > 0 ? "Awaiting reply" : "Inbox clear"}
+          icon={MessageSquare}
+          iconTheme={storefront.unreadInquiries > 0 ? "warning" : "success"}
+        />
+        <GlassStatCard
+          label="Profile views"
+          value={thisWeekViews}
+          sub="This week"
+          icon={Eye}
+          iconTheme="primary"
+        />
+        <GlassStatCard
+          label="Win rate"
+          value={`${winPct}%`}
+          sub="Inquiries → confirmed"
+          icon={Trophy}
+          iconTheme="accent"
+        />
       </div>
 
-      <GlassSectionCard
-        title="Performance"
-        subtitle="This week · profile views, inquiries, win rate"
-        action={
-          <GlassButton href="/vendor/dashboard/analytics">
-            Analytics
-            <ArrowRight size={14} aria-hidden />
-          </GlassButton>
-        }
-      >
-        <AnalyticsDashboard compact />
-      </GlassSectionCard>
+      <VendorAttentionPanel items={attentionItems} />
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      {previewInquiries.length > 0 && (
         <GlassSectionCard
-          title="Inquiries"
-          subtitle="Recent planner and client messages"
+          title="Recent inquiries"
+          subtitle="Latest planner and client messages"
           action={
-            <GlassButton href="/vendor/dashboard/inquiries">
-              Inbox
-              <ArrowRight size={14} aria-hidden />
+            <GlassButton href="/vendor/dashboard/inquiries" variant="ghost" className="gap-1">
+              Open inbox
             </GlassButton>
           }
         >
-          <InquiryManagementInbox embedded />
+          <ul className="space-y-3" role="list">
+            {previewInquiries.map((inquiry) => (
+              <VendorInquiryPreviewRow key={inquiry.id} inquiry={inquiry} />
+            ))}
+          </ul>
         </GlassSectionCard>
-
-        <GlassSectionCard
-          title="Availability"
-          subtitle="Booked and blocked dates"
-          action={
-            <GlassButton href="/vendor/dashboard/availability">
-              Calendar
-              <ArrowRight size={14} aria-hidden />
-            </GlassButton>
-          }
-        >
-          <AvailabilityCalendar embedded />
-        </GlassSectionCard>
-      </div>
+      )}
     </div>
   );
 }

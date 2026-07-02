@@ -135,7 +135,7 @@ export function VendorBookingContractUpload({
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         <input
           ref={inputRef}
           type="file"

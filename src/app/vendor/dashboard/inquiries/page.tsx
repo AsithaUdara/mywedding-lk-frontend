@@ -1,7 +1,7 @@
 "use client";
 
-import { InquiryManagementInbox } from "@/modules/vendor/dashboard/InquiryManagementInbox";
+import { VendorInquiriesInbox } from "@/modules/vendor/dashboard/VendorInquiriesInbox";
 
 export default function VendorInquiriesPage() {
-  return <InquiryManagementInbox fullPage />;
+  return <VendorInquiriesInbox />;
 }

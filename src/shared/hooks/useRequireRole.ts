@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/shared/context/AuthContext";
 import {
@@ -36,6 +36,7 @@ export function useRequireRole({
   const router = useRouter();
   const pathname = usePathname();
   const [status, setStatus] = useState<GuardStatus>("loading");
+  const verifiedUidRef = useRef<string | null>(null);
 
   const allowedRolesKey = allowedRoles.join("|");
 
@@ -53,11 +54,19 @@ export function useRequireRole({
 
     const verify = async () => {
       if (!user) {
+        verifiedUidRef.current = null;
         const safeReturn = getSafeReturnUrl(pathname);
         const query = safeReturn ? `?returnUrl=${encodeURIComponent(safeReturn)}` : "";
         router.replace(`${loginPath}${query}`);
         return;
       }
+
+      if (verifiedUidRef.current === user.uid) {
+        setStatus("authorized");
+        return;
+      }
+
+      setStatus("loading");
 
       try {
         const tokenResult = await user.getIdTokenResult(true);
@@ -66,37 +75,30 @@ export function useRequireRole({
         if (cancelled) return;
 
         if (allowedRoles.includes(role)) {
+          verifiedUidRef.current = user.uid;
           setStatus("authorized");
         } else {
+          verifiedUidRef.current = null;
           setStatus("denied");
           router.replace(deniedPath);
         }
       } catch {
         if (!cancelled) {
+          verifiedUidRef.current = null;
           setStatus("denied");
           router.replace(loginPath);
         }
       }
     };
 
-    setStatus("loading");
     void verify();
 
     return () => {
       cancelled = true;
     };
-    // allowedRoles should be a stable module-level constant (see RoleGuard call sites).
+    // pathname is read inside verify for returnUrl only — must not re-trigger full verify when already authorized.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- role list encoded in allowedRolesKey
-  }, [
-    user,
-    authLoading,
-    enabled,
-    allowedRolesKey,
-    loginPath,
-    deniedPath,
-    pathname,
-    router,
-  ]);
+  }, [user, authLoading, enabled, allowedRolesKey, loginPath, deniedPath, router]);
 
   return {
     loading: !enabled ? false : authLoading || status === "loading",

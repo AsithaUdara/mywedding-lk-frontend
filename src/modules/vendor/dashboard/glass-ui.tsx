@@ -196,7 +196,7 @@ export function GlassChartCard({
     <div className={cn(rf.chartCard, className)}>
       <p className={rf.chartTitle}>{label}</p>
       {sublabel && <p className={cn("mt-0.5", rf.caption)}>{sublabel}</p>}
-      <div className="mt-4">{children}</div>
+      <div className="mt-5 min-h-[320px] w-full">{children}</div>
     </div>
   );
 }
@@ -226,17 +226,17 @@ export function GlassWinRatePipeline({
     <div className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className={rf.label}>Lead conversion</p>
+          <p className={rf.label}>Close rate</p>
           <p className={cn(rf.statValue, "text-3xl sm:text-4xl")}>{winPct}%</p>
           <p className={cn(rf.caption, "mt-1")}>
             {winTotal === 0
-              ? "No leads in your pipeline yet"
-              : `${winRate.won} of ${winTotal} inquiries confirmed as bookings`}
+              ? "No bookings in your pipeline yet"
+              : `${winRate.won} of ${winTotal} bookings won`}
           </p>
         </div>
         {winRate.pending > 0 && (
           <p className={cn(rf.caption, "max-w-xs rounded-xl border border-primary/15 bg-primary/5 px-3 py-2 text-primary")}>
-            {winRate.pending} still in progress — reply in your inbox to convert them.
+            {winRate.pending} still open — accept requests or move them to confirmed.
           </p>
         )}
       </div>
@@ -273,7 +273,7 @@ export function GlassWinRatePipeline({
           </div>
         </>
       ) : (
-        <p className={rf.subtitle}>When planners and clients reach out, your conversion breakdown appears here.</p>
+        <p className={rf.subtitle}>When you receive and close bookings, your win/loss breakdown appears here.</p>
       )}
     </div>
   );

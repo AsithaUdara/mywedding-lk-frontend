@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { X, Save, AlertCircle, Upload, Trash2 } from "lucide-react";
-import { VendorService } from "./page";
+import type { VendorService } from "@/modules/vendor/dashboard/vendorServiceHelpers";
 import { getVendorCategories, VendorCategory } from "@/shared/lib/api/vendors";
 import { validateServiceImageFile } from "@/shared/lib/vendorMedia";
 import { ToggleSwitch } from "@/modules/vendor/dashboard/components";
