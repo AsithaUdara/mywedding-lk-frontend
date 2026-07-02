@@ -20,7 +20,8 @@ const VendorDetailPage = async ({ params }: { params: Promise<{ vendorId: string
   const mapQuery = encodeURIComponent(
     [vendor.businessName, vendor.city, vendor.province, "Sri Lanka"].filter(Boolean).join(", ")
   );
-  const mapUrl = `https://www.google.com/maps/embed/v1/place?key=AIzaSyAZXfMfsfRyCaPwkugdAlXNobgPHIQsH30&q=${mapQuery}`;
+  const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const mapUrl = `https://www.google.com/maps/embed/v1/place?key=${googleMapsApiKey}&q=${mapQuery}`;
 
   return (
     <VendorDetailClientWrapper>
